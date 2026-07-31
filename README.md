@@ -352,6 +352,11 @@ constant-current fraction of a charge shrinks monotonically as a cell ages, and
 unlike a capacity test it is observable on **every ordinary charge**, with no
 dedicated full discharge required.
 
+The two negative bars are not a rendering artifact: permutation importance is
+measured as the increase in RMSE when a feature is shuffled, so a negative value
+means shuffling *helped*. Voltage-derived features are noise for this model on
+this cohort — worth knowing before adding more of them.
+
 ![Feature importance](figures/explainability/feature_importance_transformer.png)
 
 The same rankings at individual-feature level, from three methods side by side.
