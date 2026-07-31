@@ -54,6 +54,8 @@ def render_evaluation_report(
     cfg: ExperimentConfig,
     comparison: pd.DataFrame,
     comparison_common: pd.DataFrame | None = None,
+    cv_metrics: dict[str, Any] | None = None,
+    cv_per_fold: pd.DataFrame | None = None,
     results: dict[str, EvaluationResult],
     champion: str,
     dataset_summary: pd.DataFrame,
@@ -241,6 +243,42 @@ def render_evaluation_report(
         add("")
         add(to_markdown_table(comparison_common))
         add("")
+
+    # -- cross-validation ----------------------------------------------------
+    if cv_metrics:
+        add("### 4.2 Leave-one-battery-out cross-validation")
+        add("")
+        add(
+            f"The cohort is {cv_metrics.get('n_folds', '—')} cells, so the single "
+            "holdout above puts **one** cell in the test partition — one sample. "
+            "Leave-one-battery-out holds out each cell in turn, re-fitting the "
+            "feature pipeline inside every fold, and pools the out-of-fold "
+            "predictions. It uses every row for evaluation instead of a fifth of "
+            "them, and the spread across folds is a far more honest uncertainty "
+            "statement than a bootstrap over correlated rows."
+        )
+        add("")
+        add(
+            f"**Pooled ({champion}):** MAE {cv_metrics.get('mae', float('nan')):.2f} · "
+            f"RMSE {cv_metrics.get('rmse', float('nan')):.2f} · "
+            f"R² {cv_metrics.get('r2', float('nan')):.3f} · "
+            f"bias {cv_metrics.get('bias', float('nan')):+.2f} cycles"
+        )
+        add("")
+        add(
+            f"**Spread across folds:** MAE σ = {cv_metrics.get('mae_across_folds_std', float('nan')):.2f}, "
+            f"RMSE σ = {cv_metrics.get('rmse_across_folds_std', float('nan')):.2f} cycles. "
+            "Read that as the real uncertainty on the headline number."
+        )
+        add("")
+        if cv_per_fold is not None and not cv_per_fold.empty:
+            keep = [
+                c
+                for c in ("battery_id", "n", "mae", "rmse", "mape", "r2", "bias", "alpha_lambda")
+                if c in cv_per_fold.columns
+            ]
+            add(to_markdown_table(cv_per_fold[keep]))
+            add("")
 
     # -- per battery --------------------------------------------------------
     add("## 5. Per-cell breakdown")

@@ -6,14 +6,17 @@ untested or dishonest.
 ## 1. Data limitations
 
 ### 1.1 Eight cells is a small sample
-The modelling cohort is 8 cells out of 34, ~610 labelled rows, 2 held-out test
-cells. Every aggregate metric therefore has wide real uncertainty. The bootstrap
-interval in the report resamples **rows**, which are strongly correlated within a
-cell, so it *understates* the spread. The per-cell breakdown is the honest view.
+The modelling cohort is 5 cells out of 34, 520 labelled rows. A single
+battery-holdout split therefore puts **one** cell in the test partition, and the
+metric swings on which cell is drawn — §8.2 of the README shows Ridge finishing
+last on validation and first on test in the same run.
 
-**Mitigation:** report per-cell metrics; use battery-holdout so the number at
-least answers the right question. **Fix:** more cells — CALCE, Oxford, Stanford/
-Toyota (which has 124 cells).
+**Mitigation:** the headline is leave-one-battery-out cross-validated over all
+five cells, and the per-fold spread (σ ≈ 2.3 cycles MAE) is reported alongside
+the mean as the real uncertainty. The bootstrap interval is also reported but
+resamples **rows**, which are correlated within a cell, so it understates the
+spread and should not be quoted on its own. **Fix:** more cells — CALCE, Oxford,
+Stanford/Toyota (which has 124).
 
 ### 1.2 Right-censored cells are dropped, not modelled
 Five cells never reach 70 % SoH; they are excluded. In any real fleet, *most*
@@ -25,7 +28,8 @@ experiment's end date.
 censoring-aware loss. This is the single largest methodological gap.
 
 ### 1.3 The cohort gates are a modelling decision
-`min_start_soh`, `min_fade_fraction` and `min_labelled_cycles` remove 21 cells.
+`min_start_soh`, `min_fade_fraction`, `min_labelled_cycles` and
+`truncate_at_collapse` remove 29 cells.
 Each exclusion is principled and logged, but they collectively define which
 population the reported metric describes. A reader who wants the cold-chamber
 cells included should set `data.eol_reference: initial`.
@@ -62,11 +66,14 @@ this directly. The literature's usual remedy — a piecewise-linear target cap �
 is implemented (`target.cap_at`) but off by default, because it improves the
 metric partly by making the problem easier rather than the model better.
 
-### 2.4 The champion is chosen on two validation cells
-Selection uses validation RMSE over B0006 and B0042. With so few cells, model
-selection is itself high-variance: a different holdout could crown a different
-champion. Nested cross-validation over cells would be more robust and is
-affordable at this dataset size.
+### 2.4 Model selection is high-variance
+Selection uses validation RMSE over a **single** cell (B0006). This is not a
+theoretical concern: in the reported run Ridge is *last* on validation and
+*first* on test, while the Transformer is first on validation and second on test.
+The cross-validated headline sidesteps the problem for *reporting*, but the
+champion that gets persisted to `models/trained_model.pkl` is still chosen on one
+cell. Nested cross-validation over cells is the proper fix and is affordable at
+this dataset size.
 
 ### 2.5 Explanations are confounded by collinearity
 SHAP and permutation importance distribute credit among correlated features. The

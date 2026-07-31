@@ -164,6 +164,25 @@ class DataConfig(_Base):
         description="Reject cells whose capacity never falls by at least this "
         "fraction of reference — a flat series carries no degradation signal.",
     )
+    truncate_at_collapse: bool = Field(
+        default=True,
+        description="End a cell's record where its capacity collapses to a level "
+        "no ageing cell reaches gradually. On the NASA rig, cells moved into a 4 degC "
+        "chamber mid-experiment report ~0.07 Ah — the discharge test aborts almost "
+        "immediately — which is a regime change, not end of life.",
+    )
+    collapse_fraction: float = Field(
+        default=0.25,
+        gt=0.0,
+        lt=1.0,
+        description="Capacity below this fraction of the reference marks a collapse.",
+    )
+    collapse_persistence: int = Field(
+        default=5,
+        ge=1,
+        description="Cycles the collapse must persist before the record is truncated. "
+        "Guards against truncating on a single bad reading.",
+    )
     drop_incomplete_cycles: bool = True
     allow_synthetic_fallback: bool = Field(
         default=True,

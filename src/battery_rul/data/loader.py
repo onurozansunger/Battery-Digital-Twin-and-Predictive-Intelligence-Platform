@@ -110,7 +110,10 @@ def load_cycles(cfg: ExperimentConfig, *, use_cache: bool | None = None) -> Cycl
         fallback_cfg = cfg.data.model_copy(update={"source": "synthetic", "batteries": None})
         raw, meta = get_source(fallback_cfg, cfg.paths.raw_dir).load()
 
-    frame = _trim_leading_artifacts(raw, cfg)
+    # Order matters: truncate the tail collapse before trimming the head, so the
+    # early-life reference used by the head trim is computed on a clean record.
+    frame = _truncate_at_collapse(raw, cfg)
+    frame = _trim_leading_artifacts(frame, cfg)
     frame = _derive_health(frame, cfg)
     frame, report = validate_cycles(frame, data_cfg=cfg.data, validation_cfg=cfg.validation)
     frame = _apply_cohort_gates(frame, cfg, report)
@@ -133,6 +136,91 @@ def load_cycles(cfg: ExperimentConfig, *, use_cache: bool | None = None) -> Cycl
         logger.info("Cached cycle table -> %s", cache_path)
 
     return CycleDataset(frame=frame, metadata=meta, validation=report)
+
+
+def _truncate_at_collapse(df: pd.DataFrame, cfg: ExperimentConfig) -> pd.DataFrame:
+    """End a cell's record at a sustained capacity collapse.
+
+    Why this exists
+    ---------------
+    Cells B0042-B0044 were moved from a 22 degC chamber into a 4 degC chamber at
+    cycle 41. Measured capacity drops from ~1.5 Ah to ~0.07 Ah in one step and
+    stays there for the remaining 67 cycles. The cells are not dead — at 4 degC the
+    discharge test terminates almost immediately, so what is recorded is not a
+    capacity measurement of a working cell at all.
+
+    Left in, this is not a cosmetic problem: the end-of-life detector reads the
+    collapse as a persistent threshold crossing and labels EOL at cycle 44, which
+    is wrong by roughly the entire remaining life of the cell. Every RUL label for
+    those cells would be wrong.
+
+    Why the single-step jump check does not catch it
+    -----------------------------------------------
+    ``validation.max_capacity_jump`` inspects first differences, so it flags the
+    one transition cycle and drops it — after which the series looks perfectly
+    smooth at 0.07 Ah and nothing further trips. A first-difference test cannot
+    see a *level shift*; it can only see the edge, and dropping the edge hides the
+    evidence. This check looks at the level instead.
+
+    The rule
+    --------
+    Find the first cycle whose capacity falls below ``collapse_fraction`` of the
+    cell's reference capacity **and** stays below for ``collapse_persistence``
+    consecutive cycles, then discard that cycle and everything after it. The
+    persistence requirement means a single corrupt reading truncates nothing. The
+    threshold is far below any state of health a gradually ageing cell reaches, so
+    genuine degradation is never truncated.
+    """
+    if not cfg.data.truncate_at_collapse:
+        return df
+
+    fraction = cfg.data.collapse_fraction
+    persistence = cfg.data.collapse_persistence
+    kept: list[pd.DataFrame] = []
+    truncated: dict[str, tuple[int, int]] = {}
+
+    for battery_id, group in df.groupby("battery_id", sort=False):
+        group = group.sort_values("cycle_index", kind="stable")
+        capacity = group["capacity_ah"].to_numpy(dtype=float)
+
+        # Reference is the cell's early-life level, robust to a bad first reading.
+        reference = float(np.nanmedian(capacity[: min(10, len(capacity))]))
+        if not np.isfinite(reference) or reference <= 0:
+            kept.append(group)
+            continue
+
+        below = capacity < fraction * reference
+        cut = None
+        for idx in range(len(below)):
+            if not below[idx]:
+                continue
+            window = below[idx : idx + persistence]
+            if window.size >= min(persistence, len(below) - idx) and window.all():
+                cut = idx
+                break
+
+        if cut is None:
+            kept.append(group)
+            continue
+
+        truncated[str(battery_id)] = (int(group["cycle_index"].iloc[cut]), len(capacity) - cut)
+        survivor = group.iloc[:cut].copy()
+        if survivor.empty:
+            logger.warning("%s: capacity collapses immediately; cell discarded", battery_id)
+            continue
+        kept.append(survivor)
+
+    if truncated:
+        logger.warning(
+            "Truncated %d cell(s) at a sustained capacity collapse (regime change, "
+            "not end of life): %s",
+            len(truncated),
+            ", ".join(f"{k} at cycle {c} (-{n} rows)" for k, (c, n) in sorted(truncated.items())),
+        )
+
+    if not kept:
+        raise ValueError("Every cell collapsed immediately; check nominal_capacity_ah")
+    return pd.concat(kept, ignore_index=True)
 
 
 def _trim_leading_artifacts(df: pd.DataFrame, cfg: ExperimentConfig) -> pd.DataFrame:

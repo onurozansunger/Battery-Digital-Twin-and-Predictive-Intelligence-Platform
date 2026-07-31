@@ -30,6 +30,8 @@
   │        ▼                                                     │
   │  coerce_schema()           canonical cycle-level table       │
   │        ▼                                                     │
+  │  _truncate_at_collapse()   end record at a regime change     │
+  │        ▼                                                     │
   │  _trim_leading_artifacts() drop aborted opening cycles       │
   │        ▼                                                     │
   │  _derive_health()          trailing-median capacity, SoH     │
@@ -63,6 +65,8 @@
   │  champion = argmin(VALIDATION metric)                        │
   │        ▼                                                     │
   │  score champion + zoo on TEST (once)                         │
+  │        ▼                                                     │
+  │  leave-one-battery-out CV  ◄── the headline number           │
   └───────────────────────┬──────────────────────────────────────┘
                           │  models/trained_model.pkl
                           │  models/feature_pipeline.pkl
@@ -104,7 +108,7 @@
 | `models/neural.py` | LSTM, GRU, Transformer + shared training loop |
 | `models/search_spaces.py` | Optuna spaces, versioned with the code |
 | `evaluation/metrics.py` | MAE/RMSE/MAPE/R² + α-λ, prognostic horizon |
-| `evaluation/evaluator.py` | Scoring, comparison tables, learning curves |
+| `evaluation/evaluator.py` | Scoring, comparison tables, LOBO cross-validation, learning curves |
 | `evaluation/reporting.py` | Markdown report rendering |
 | `explainability/explain.py` | SHAP, permutation importance, error analysis |
 | `visualization/` | Shared style, EDA figures, result figures |
@@ -153,6 +157,32 @@ training columns, and `FeaturePipeline.transform` then selects the exact set and
 order it was fitted on — raising loudly if any are missing.
 `test_predict_matches_training_time_scores` asserts the two paths agree
 numerically.
+
+## Two data-quality traps worth knowing about
+
+Both were found by looking at plots of the loaded data, not by a failing test,
+and both silently corrupted labels before they were fixed.
+
+**Aborted opening cycles.** Nine cells begin with one to seven discharges whose
+capacity is a fraction of the cell's true beginning-of-life level — the rig was
+still being brought up. Left in, they corrupt the beginning-of-life reference and
+every `*_ratio_to_initial` feature. `_trim_leading_artifacts` removes a *prefix*
+only, stopping at the first healthy cycle.
+
+**Sustained collapse from a regime change.** Cells B0042–B0044 move into a 4 °C
+chamber at cycle 41 and their measured capacity drops from ~1.5 Ah to ~0.07 Ah,
+staying there. The cells are not dead; the discharge test aborts almost
+immediately at that temperature. The end-of-life detector reads the collapse as a
+persistent threshold crossing and labels EOL at cycle 44 — wrong by roughly the
+entire remaining life of three cells.
+
+The instructive part is *why the existing check missed it*. `max_capacity_jump`
+inspects first differences, so it flagged the single transition cycle and dropped
+it — after which the series looked perfectly smooth at 0.07 Ah and nothing
+further tripped. **A first-difference test can only see the edge of a level
+shift, and dropping the edge destroys the evidence.** `_truncate_at_collapse`
+tests the *level* instead, with a persistence requirement so one bad reading
+truncates nothing.
 
 ## Native library load order
 

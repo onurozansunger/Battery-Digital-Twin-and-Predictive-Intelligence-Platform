@@ -8,6 +8,7 @@
 | **Version** | 0.1.0 |
 | **Type** | Model zoo of nine estimators; one champion selected per run |
 | **Champion (default config)** | Transformer encoder — attention-pooled, pre-norm, 20-cycle window |
+| **Headline metric** | MAE 8.06 cycles, R² 0.850 (leave-one-battery-out over 5 cells) |
 | **Input** | 80 causal features derived from a cell's own charge/discharge/EIS history |
 | **Output** | A single scalar: estimated remaining cycles until 70 % SoH |
 | **Training data** | NASA Ames PCoE battery aging dataset — see `docs/dataset_card.md` |
@@ -21,7 +22,7 @@ foundation for a digital-twin system (milestone 2).
 
 **Not intended.** Safety-critical decisions. Do not use this model to decide
 whether a cell is safe to keep in service, to certify a battery pack, or as the
-sole input to a warranty or maintenance action. It is trained on eight laboratory
+sole input to a warranty or maintenance action. It is trained on five laboratory
 cells of one chemistry and has never been validated in the field.
 
 **Out of scope.** Other chemistries (LFP, NMC, solid-state), other formats
@@ -68,52 +69,43 @@ squared error there drags the whole fit toward the last few cycles of each cell.
 
 ## Performance
 
-Held-out cells **B0005** and **B0034**, never seen during training, scaling,
-feature selection, or model choice. Regenerate with
-`python scripts/run_pipeline.py --config configs/default.yaml`; live numbers are
-in `reports/metrics.json` and `reports/evaluation_report.md`.
+Regenerate with `python scripts/run_pipeline.py --config configs/default.yaml`;
+live numbers are in `reports/metrics.json` and `reports/evaluation_report.md`.
 
-| Model | MAE | RMSE | R² | α-λ (20 %) | within 10 cycles |
+### Headline — leave-one-battery-out cross-validation
+
+Each of the 5 cells is held out in turn; the feature pipeline is re-fit inside
+every fold; out-of-fold predictions are pooled.
+
+| | MAE | RMSE | R² | Bias | within 10 cycles |
 |---|---|---|---|---|---|
-| **Transformer** | **11.0** | **13.0** | **0.790** | 0.378 | 51.9 % |
-| GRU | 12.5 | 14.6 | 0.733 | 0.269 | 41.0 % |
-| Ridge | 14.1 | 17.5 | 0.718 | 0.454 | 41.2 % |
-| LSTM | 14.9 | 18.5 | 0.575 | 0.282 | 47.4 % |
-| Linear regression | 19.7 | 20.2 | 0.625 | 0.139 | 5.7 % |
-| Random forest | 17.4 | 20.7 | 0.606 | 0.351 | 35.1 % |
-| CatBoost | 17.8 | 23.4 | 0.498 | 0.418 | 43.3 % |
-| XGBoost | 22.9 | 25.2 | 0.417 | 0.186 | 13.9 % |
-| LightGBM | 23.2 | 25.5 | 0.402 | 0.170 | 13.9 % |
+| **Transformer, pooled (400 rows)** | **8.06** | **9.93** | **0.850** | −1.84 | 61.3 % |
 
-Errors are in **cycles**. RMSE 95 % bootstrap CI for the champion: 11.77–14.20.
+| Held-out cell | n | MAE | RMSE | R² | Bias |
+|---|---|---|---|---|---|
+| B0005 | 103 | 6.66 | 8.85 | 0.911 | −4.64 |
+| B0006 | 87 | 6.52 | 8.20 | 0.894 | −2.40 |
+| B0018 | 75 | 8.47 | 9.77 | 0.797 | +8.46 |
+| B0033 | 82 | 11.99 | 13.71 | 0.664 | −8.37 |
+| B0034 | 53 | 6.66 | 7.46 | 0.762 | +0.09 |
 
-The report also contains a **like-for-like** table restricted to the 156 rows
-every model can score (sequence models cannot score a cell's first 19 cycles, and
-those early rows are the hardest). On that footing Ridge rises to 2nd with a bias
-of −1.0 cycles against the Transformer's −6.8 — it is materially better
-calibrated, and materially easier to explain. If the deployment need were an
-unbiased estimate rather than the lowest RMSE, Ridge would be the right choice.
+Errors are in **cycles**. Per-fold MAE spans 6.5 – 12.0 (σ = 2.34). **Quote that
+spread**, not a bootstrap interval over rows — rows within a cell are correlated,
+so the bootstrap understates the real uncertainty.
 
-### Reading these numbers honestly
+### Single battery-holdout (train B0018/B0033/B0034, val B0006, test B0005)
 
-* **Gradient boosting underperforms the linear and neural models.** That is not a
-  bug — it is what a battery-holdout split does to tree ensembles. Trees
-  extrapolate by returning a constant outside the training range, and each
-  held-out cell has a slightly different capacity scale. The linear and recurrent
-  models extrapolate; the trees cannot. Under a chronological split
-  (`configs/chronological.yaml`) the ranking reverses.
-* **The neural models carry a systematic negative bias** (≈ −7 cycles): they
-  predict *less* remaining life than the cell has. Ridge, by contrast, is nearly
-  unbiased (−1.0). For maintenance planning under-prediction is the safe
-  direction, but it is still a systematic error — and it means the champion's
-  advantage over Ridge is in variance, not calibration.
-* **The α-λ accuracy is low** (38 %) and the **prognostic horizon is not reached
-  on either test cell** — predictions never settle inside the ±20 % relative cone
-  and stay there. The cone tightens to two or three cycles near end of life, so
-  this is a demanding bar at an MAE of 11, but it is the honest answer: this model
-  tells you "roughly how long left", not "swap it on Tuesday".
-* **Two test cells.** The per-cell table in the evaluation report carries more
-  information than any aggregate here.
+| Model | MAE | RMSE | R² | Bias | α-λ (20 %) |
+|---|---|---|---|---|---|
+| Ridge | 10.83 | 13.19 | 0.860 | +3.60 | 0.590 |
+| **Transformer** (champion) | 11.62 | 13.82 | 0.784 | **−1.19** | 0.398 |
+| GRU | 15.10 | 16.86 | 0.678 | +3.42 | 0.350 |
+| Random Forest | 19.19 | 23.51 | 0.555 | −5.15 | 0.361 |
+| LightGBM | 20.77 | 23.62 | 0.550 | −4.34 | 0.238 |
+| LSTM | 19.46 | 23.65 | 0.367 | −6.32 | 0.243 |
+| XGBoost | 21.22 | 24.24 | 0.526 | −4.55 | 0.246 |
+| CatBoost | 21.85 | 27.19 | 0.404 | −6.21 | 0.344 |
+| Linear Regression | 31.13 | 33.80 | 0.079 | −31.13 | 0.008 |
 
 ## Factors affecting performance
 
@@ -127,14 +119,17 @@ unbiased estimate rather than the lowest RMSE, Ridge would be the right choice.
 
 ## Evaluation methodology
 
-* **Split:** whole cells held out (`battery_holdout`). Train B0018, B0033, B0043,
-  B0044; validate B0006, B0042; test B0005, B0034.
+* **Split:** whole cells held out (`battery_holdout`). Train B0018, B0033, B0034;
+  validate B0006; test B0005.
+* **Headline:** leave-one-battery-out cross-validation over all 5 cells, with the
+  feature pipeline re-fit inside each fold.
 * **Selection:** champion chosen by validation RMSE. The test partition is scored
   once, after selection.
 * **Metrics:** MAE, RMSE, MAPE (denominator floored at 1 cycle, since RUL reaches
   zero), SMAPE, R², max error, signed bias, α-λ accuracy, prognostic horizon.
-* **Uncertainty:** percentile bootstrap over rows. Rows within a cell are
-  correlated, so the interval **understates** true uncertainty.
+* **Uncertainty:** the spread of per-fold metrics across the cross-validation. A
+  percentile bootstrap over rows is also reported but **understates** true
+  uncertainty, since rows within a cell are correlated.
 
 ## Explainability
 
@@ -156,11 +151,11 @@ windowed inputs needs DeepExplainer over 3-D tensors and is deferred.
 ## Ethical considerations
 
 Low direct risk — no personal data, no human subjects. The meaningful risk is
-**misplaced confidence**: an R² of 0.79 on eight laboratory cells could be read
+**misplaced confidence**: an R² of 0.85 on five laboratory cells could be read
 as fitness for deployment. It is not. A wrong RUL prediction in a real system
 means either a cell retired early (wasted capacity, unnecessary e-waste) or a
-cell kept past its safe window (a genuine hazard). This model's negative bias
-favours the former, but that is a property of this dataset, not a guarantee.
+cell kept past its safe window (a genuine hazard). This model's bias favours the former early in
+life but reverses near end of life — exactly where the cost is highest.
 
 ## Caveats and recommendations
 

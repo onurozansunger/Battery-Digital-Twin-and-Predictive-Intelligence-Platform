@@ -18,6 +18,7 @@ from battery_rul.evaluation.evaluator import (
     EvaluationResult,
     compare_models,
     compare_models_common_rows,
+    cross_validate_by_battery,
     evaluate_model,
 )
 from battery_rul.evaluation.metrics import METRIC_DIRECTION
@@ -48,6 +49,8 @@ class TrainingArtifacts:
     test_results: dict[str, EvaluationResult] = field(default_factory=dict)
     comparison: pd.DataFrame = field(default_factory=pd.DataFrame)
     comparison_common: pd.DataFrame = field(default_factory=pd.DataFrame)
+    cv_metrics: dict[str, Any] = field(default_factory=dict)
+    cv_per_fold: pd.DataFrame = field(default_factory=pd.DataFrame)
     champion: str = ""
     feature_pipeline: FeaturePipeline | None = None
     partitions: dict[str, TrainingData] = field(default_factory=dict)
@@ -166,6 +169,17 @@ def run(
         mape_epsilon=cfg.evaluation.mape_epsilon,
         alpha=cfg.evaluation.alpha,
     )
+    # With a cohort this small the single holdout puts one cell in test, so the
+    # headline number is one sample. Leave-one-battery-out pools out-of-fold
+    # predictions over every cell and is the number worth quoting.
+    with timer("cross_validate"):
+        artifacts.cv_metrics, artifacts.cv_per_fold = cross_validate_by_battery(
+            artifacts.champion,
+            prepared,
+            cfg,
+            params=artifacts.champion_model.params,
+        )
+
     artifacts.timings = timer.as_dict()
 
     _persist(artifacts, cfg)
@@ -237,6 +251,16 @@ def _persist(artifacts: TrainingArtifacts, cfg: ExperimentConfig) -> None:
         "test": {n: r.to_dict() for n, r in artifacts.test_results.items()},
         "comparison": artifacts.comparison.to_dict(orient="records"),
         "comparison_common_rows": artifacts.comparison_common.to_dict(orient="records"),
+        "cross_validation": {
+            "scheme": "leave-one-battery-out",
+            "model": artifacts.champion,
+            "pooled": artifacts.cv_metrics,
+            "per_fold": (
+                artifacts.cv_per_fold.to_dict(orient="records")
+                if not artifacts.cv_per_fold.empty
+                else []
+            ),
+        },
         "failures": artifacts.failures,
         "timings_s": artifacts.timings,
     }
@@ -249,6 +273,8 @@ def _persist(artifacts: TrainingArtifacts, cfg: ExperimentConfig) -> None:
     write_table(predictions, reports_dir / "predictions_test.csv")
     if artifacts.comparison is not None and not artifacts.comparison.empty:
         write_table(artifacts.comparison, reports_dir / "model_comparison.csv")
+    if artifacts.cv_per_fold is not None and not artifacts.cv_per_fold.empty:
+        write_table(artifacts.cv_per_fold, reports_dir / "cross_validation_by_battery.csv")
     if artifacts.comparison_common is not None and not artifacts.comparison_common.empty:
         write_table(artifacts.comparison_common, reports_dir / "model_comparison_common_rows.csv")
 

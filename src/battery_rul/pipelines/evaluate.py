@@ -128,6 +128,8 @@ def run(
             cfg=cfg,
             comparison=artifacts.comparison,
             comparison_common=artifacts.comparison_common,
+            cv_metrics=artifacts.cv_metrics,
+            cv_per_fold=artifacts.cv_per_fold,
             results=artifacts.test_results,
             champion=artifacts.champion,
             dataset_summary=pd.DataFrame(manifest.get("battery_summary", [])),

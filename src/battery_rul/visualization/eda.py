@@ -182,12 +182,13 @@ def generate_eda_figures(
                 data.append(
                     ((series - median) / scale).to_numpy() if scale else np.zeros(len(series))
                 )
-            bp = ax.boxplot(
-                data,
-                labels=[c.replace("_", "\n") for c in outlier_columns],
-                showfliers=True,
-                patch_artist=True,
-            )
+            # Tick labels are set afterwards rather than passed to boxplot():
+            # matplotlib renamed that keyword from `labels` to `tick_labels` in
+            # 3.9 and removed the old spelling, so passing either one pins the
+            # project to a matplotlib generation.
+            bp = ax.boxplot(data, showfliers=True, patch_artist=True)
+            ax.set_xticks(range(1, len(outlier_columns) + 1))
+            ax.set_xticklabels([c.replace("_", "\n") for c in outlier_columns])
             for patch in bp["boxes"]:
                 patch.set_facecolor("#0072B2")
                 patch.set_alpha(0.35)

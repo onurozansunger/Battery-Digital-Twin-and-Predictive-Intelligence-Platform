@@ -6,6 +6,7 @@ from battery_rul.evaluation.evaluator import (
     EvaluationResult,
     compare_models,
     compare_models_common_rows,
+    cross_validate_by_battery,
     evaluate_model,
     learning_curve,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "compare_models",
     "compare_models_common_rows",
     "compute_metrics",
+    "cross_validate_by_battery",
     "evaluate_model",
     "learning_curve",
     "per_battery_metrics",

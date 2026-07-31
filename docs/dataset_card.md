@@ -63,7 +63,7 @@ step of that type. Nothing is ever back-filled from a future step.
 
 ## Cohort selection
 
-Of the 34 cells, the default configuration admits **8**. The exclusions are
+Of the 34 cells, the default configuration admits **5**. The exclusions are
 mechanical and logged, not hand-picked — the config asks for every cell on disk
 and the gates below select the cohort:
 
@@ -74,8 +74,10 @@ and the gates below select the cohort:
 | Never degrades measurably | `data.min_fade_fraction` | B0031 |
 | Never reaches end of life (right-censored) | `target.require_eol_reached` | B0007, B0029, B0030, B0032, B0036 |
 | Fewer than 25 labelled cycles before EOL | `target.min_labelled_cycles` | B0046, B0047, B0048 |
+| Sustained capacity collapse (regime change) | `data.truncate_at_collapse` | B0042, B0043, B0044 truncated to 40 cycles, then right-censored; B0033 truncated to 139 |
 
-**Retained cohort:** B0005, B0006, B0018, B0033, B0034, B0042, B0043, B0044.
+**Retained cohort:** B0005, B0006, B0018, B0033, B0034 — all cycled at a constant
+24 °C, 520 labelled rows.
 
 ### Why cells are excluded, in plain terms
 
@@ -87,6 +89,22 @@ and the gates below select the cohort:
 * **B0046–B0048** cross the threshold within 12–19 cycles for the same reason.
   They contribute a handful of rows describing a cold cell rather than an aged
   one.
+* **B0042–B0044** are the subtlest case, and the one that produced a real bug.
+  They were moved from a 22 °C to a 4 °C chamber at cycle 41. Measured capacity
+  drops from ~1.5 Ah to ~0.07 Ah in a single step and stays there for the
+  remaining 67 cycles — at 4 °C the discharge test terminates almost immediately,
+  so what is recorded is not a capacity measurement of a working cell at all.
+  Left in, the EOL detector reads the collapse as a persistent threshold crossing
+  and labels end-of-life at cycle 44, which is wrong by roughly the whole
+  remaining life of the cell.
+
+  The single-step jump check (`validation.max_capacity_jump`) does **not** catch
+  this: it inspects first differences, so it flags the one transition cycle and
+  drops it, after which the series looks perfectly smooth at 0.07 Ah. A
+  first-difference test can only see the edge of a level shift, and dropping the
+  edge hides the evidence. `data.truncate_at_collapse` looks at the *level*
+  instead and ends the record at the collapse. Truncated to 40 cycles, these
+  cells no longer reach 1.40 Ah and are excluded as right-censored.
 * **The censored group** simply had their experiment stopped early. Their true
   RUL is unknown; training on "RUL = cycles until the lab went home" teaches the
   wrong thing. Handling them properly needs survival analysis (see
@@ -104,6 +122,7 @@ which uses the 2.0 Ah rating.
 |---|---|---|
 | Aborted / partial leading discharges | 9 cells, 1–7 cycles each | Trimmed by `data.trim_leading_outliers`; cycle index re-based to 1 |
 | Single-step capacity jumps > 0.7 Ah | 14 cycles | Dropped as rig glitches |
+| Sustained capacity collapse from a chamber change | 4 cells | Record truncated at the collapse (`_truncate_at_collapse`) |
 | Missing impedance for early cycles | ~8 % of rows | Causal forward-fill from the last preceding sweep |
 | Non-physical EIS values (negative or > 10 Ω) | occasional | Nullified, then causally imputed |
 | Capacity recovery after rest | pervasive, by design | **Not** removed — it is real physics. Handled via trailing-median smoothing and the EOL persistence rule |
@@ -118,16 +137,17 @@ given run are in `data/processed/manifest.json`.
 
 | | |
 |---|---|
-| Cells | 8 |
-| Discharge cycles (post-validation) | ~1 100 |
-| Labelled rows (pre-EOL, post-warm-up) | ~610 |
-| RUL range | 0 – 126 cycles |
-| Ambient conditions | 24 °C (5 cells), mixed 4/22 °C (3 cells) |
+| Cells | 5 (B0005, B0006, B0018, B0033, B0034) |
+| Labelled rows (pre-EOL) | 520 |
+| Rows after the warm-up trim | 495 |
+| RUL range | 0 – 126 cycles (mean 52.8) |
+| End-of-life cycle | 77 – 127 |
+| Ambient conditions | 24 °C throughout, all cells |
 
 ## Known biases and limitations
 
-1. **Small cohort.** Eight cells is a small sample. Per-cell metrics carry more
-   information than the aggregate.
+1. **Small cohort.** Five cells is a small sample. The leave-one-battery-out
+   spread across folds (σ ≈ 2.3 cycles MAE) is the honest uncertainty statement.
 2. **One chemistry, one format.** LCO 18650. Nothing here has been shown to
    transfer to LFP, NMC, or pouch/prismatic formats.
 3. **Laboratory duty cycles.** Constant-current discharge in a chamber. Real EV

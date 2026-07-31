@@ -60,22 +60,28 @@ The question this milestone answers is deliberately the hard one:
 
 ## 2. What this repository actually claims
 
-Two numbers, kept separate throughout:
+The headline number is **leave-one-battery-out cross-validated**, not a single
+split:
 
-* **MAE ≈ 11 cycles, R² ≈ 0.79** on two *entirely unseen cells* under a
-  battery-holdout split. This is the deployment-relevant number.
-* Under a chronological split — where the model has already seen each test cell's
-  early life — the numbers are much better. That is a *different, easier
-  question*, and it is reported separately (`configs/chronological.yaml`) rather
-  than presented as the headline.
+| | MAE | RMSE | R² |
+|---|---|---|---|
+| **Leave-one-battery-out (5 cells, 400 scored rows)** | **8.06** | **9.93** | **0.850** |
+| Single battery-holdout (1 test cell) | 11.62 | 13.82 | 0.784 |
+
+Errors are in **discharge cycles**. Per-fold MAE ranges 6.5 – 12.0 cycles
+(σ = 2.34), and *that spread is the real uncertainty on the headline*, not the
+bootstrap interval over rows.
+
+Cross-validation is used because after the data-quality gates the cohort is five
+cells — a single holdout would put **one** cell in test, and the metric would
+swing on which cell was drawn. It demonstrably does: Ridge finishes **last on the
+validation cell and first on the test cell** (see §8).
 
 Random row-level splitting is not used anywhere. On this data it produces R²
 above 0.99 and means nothing: consecutive cycles of one cell are near-duplicates,
 so a random split lets a model interpolate between neighbouring rows instead of
 forecasting.
 
-The cohort is **8 cells**. That is a small sample and the per-cell breakdown in
-`reports/evaluation_report.md` carries more information than any aggregate.
 `docs/limitations.md` is not an afterthought — read it before quoting a number.
 
 ## 3. Dataset
@@ -89,10 +95,30 @@ enriched with summary statistics of that discharge, of the most recent preceding
 charge, and of the most recent preceding impedance sweep. Nothing is ever
 back-filled from a future step.
 
-Of the 34 cells, 8 pass the cohort gates (too short, begins already degraded,
-never degrades, right-censored, too few labelled cycles). Every exclusion is
-mechanical and logged — the config asks for *all* cells and the gates select the
-cohort deterministically. Full accounting in **[`docs/dataset_card.md`](docs/dataset_card.md)**.
+Of the 34 cells, **5** pass the cohort gates — too short, begins already
+degraded, never degrades, right-censored, too few labelled cycles, or a
+mid-experiment regime change. Every exclusion is mechanical and logged: the
+config asks for *all* cells and the gates select the cohort deterministically.
+Full accounting in **[`docs/dataset_card.md`](docs/dataset_card.md)**.
+
+![Capacity degradation](figures/eda/01_capacity_degradation.png)
+
+*The dataset in one figure.* Faint lines are raw capacity measurements, bold
+lines the causal trailing median, the dashed line the 1.40 Ah end-of-life
+threshold. Two things to notice: the raw traces are **not monotonic** — that is
+real capacity recovery after rest periods, not noise, and it is why the EOL rule
+requires a *persistent* crossing; and cells reach end of life anywhere between
+cycle 77 and 127, which is the cell-to-cell variation the model has to survive.
+
+One gate is worth calling out because finding it changed the results. Cells
+B0042–B0044 were moved into a 4 °C chamber at cycle 41; measured capacity drops
+from ~1.5 Ah to ~0.07 Ah in one step and stays there. The cells are not dead —
+at 4 °C the discharge test terminates almost immediately. A first-difference
+jump check cannot see a *level shift* (it flags the single edge, drops it, and
+the series then looks perfectly smooth at 0.07 Ah), so the EOL detector read the
+collapse as a threshold crossing and labelled end-of-life at cycle 44 — wrong by
+roughly the entire remaining life of three cells. `_truncate_at_collapse` now
+ends a record at a sustained collapse, with a regression test.
 
 Adding CALCE, Oxford or Stanford later means writing one `BatterySource`
 subclass. No other file changes.
@@ -116,6 +142,13 @@ Three decisions worth stating explicitly:
   wall-clock age reflects lab scheduling rather than physics.
 * **The smoother is trailing, never centred.** A centred median would read future
   cycles into the present — the label itself would leak.
+
+![RUL target](figures/eda/08_target_distribution.png)
+
+*Left:* the target's distribution across all labelled rows. *Right:* RUL falls
+linearly to zero within each cell, but each cell starts from a different height —
+that height is what the model must infer from a few dozen cycles of history, and
+it is the entire difficulty of the problem.
 
 ## 5. Pipeline
 
@@ -149,9 +182,8 @@ Full diagram and module map: **[`docs/architecture.md`](docs/architecture.md)**.
 
 ### Feature engineering
 
-~700 features generated from 14 base signals, pruned to ~400 by an unsupervised
-filter, then reduced to the top 80 by supervised selection fitted on training rows
-only:
+~700 features generated from 14 base signals, pruned by an unsupervised filter,
+then reduced to the top 80 by supervised selection fitted on training rows only:
 
 rolling mean/std/min/max/range/deviation · EWM · lags · differences · percentage
 changes · trailing OLS slopes · ratio and delta vs beginning of life · expanding
@@ -205,74 +237,102 @@ study is reproducible from a git revision.
 
 ## 8. Results
 
-Test cells **B0005** and **B0034** — never seen during training, scaling, feature
-selection or model choice. Champion selected on *validation* cells B0006/B0042.
+### 8.1 The headline: leave-one-battery-out cross-validation
 
-| Rank | Model | MAE | RMSE | MAPE | R² | α-λ (20 %) | ≤10 cycles |
-|---|---|---|---|---|---|---|---|
-| 1 | **Transformer** | **11.00** | **12.99** | 69.5 % | **0.790** | 0.378 | 51.9 % |
-| 2 | GRU | 12.52 | 14.64 | 66.2 % | 0.733 | 0.269 | 41.0 % |
-| 3 | Ridge | 14.12 | 17.49 | 67.8 % | 0.718 | 0.454 | 41.2 % |
-| 4 | LSTM | 14.92 | 18.48 | 91.5 % | 0.575 | 0.282 | 47.4 % |
-| 5 | Linear Regression | 19.70 | 20.19 | 96.9 % | 0.625 | 0.139 | 5.7 % |
-| 6 | Random Forest | 17.37 | 20.68 | 116.4 % | 0.606 | 0.351 | 35.1 % |
-| 7 | CatBoost | 17.81 | 23.35 | 123.5 % | 0.498 | 0.418 | 43.3 % |
-| 8 | XGBoost | 22.87 | 25.17 | 192.0 % | 0.417 | 0.186 | 13.9 % |
-| 9 | LightGBM | 23.19 | 25.49 | 187.5 % | 0.402 | 0.170 | 13.9 % |
+Each of the 5 cells is held out in turn, the feature pipeline is re-fit inside
+every fold, and out-of-fold predictions are pooled. Champion: **Transformer**.
 
-Errors are in **cycles**. MAPE uses a denominator floored at 1 cycle, because RUL
-legitimately reaches zero at end of life.
+| | MAE | RMSE | R² | Bias | within 10 cycles |
+|---|---|---|---|---|---|
+| **Pooled (400 rows, 5 folds)** | **8.06** | **9.93** | **0.850** | −1.84 | 61.3 % |
 
-### Like-for-like
+| Held-out cell | n | MAE | RMSE | R² | Bias |
+|---|---|---|---|---|---|
+| B0005 | 103 | 6.66 | 8.85 | 0.911 | −4.64 |
+| B0006 | 87 | 6.52 | 8.20 | 0.894 | −2.40 |
+| B0018 | 75 | 8.47 | 9.77 | 0.797 | +8.46 |
+| B0033 | 82 | 11.99 | 13.71 | 0.664 | −8.37 |
+| B0034 | 53 | 6.66 | 7.46 | 0.762 | +0.09 |
 
-The table above compares models on **different row counts**: sequence models
-cannot score a cell's first 19 cycles, and those early rows are the hardest ones.
-That difference alone can reorder a ranking, so the pipeline also emits a table
-restricted to the 156 rows every model can score:
+Per-fold MAE spans 6.5 – 12.0 cycles (σ = 2.34). **That spread is the honest
+uncertainty on the headline number** — more so than any bootstrap over rows,
+because rows within a cell are strongly correlated.
+
+### 8.2 The single holdout, and why it is not the headline
+
+Train on B0018/B0033/B0034, validate on B0006, test on B0005:
 
 | Rank | Model | MAE | RMSE | R² | Bias | α-λ (20 %) |
 |---|---|---|---|---|---|---|
-| 1 | **Transformer** | **11.00** | **12.99** | **0.790** | −6.76 | 0.378 |
-| 2 | Ridge | 11.84 | 14.19 | 0.749 | **−0.99** | 0.474 |
-| 3 | GRU | 12.52 | 14.64 | 0.733 | −7.02 | 0.269 |
-| 4 | Random Forest | 15.48 | 18.40 | 0.579 | +3.32 | 0.372 |
-| 5 | LSTM | 14.92 | 18.48 | 0.575 | −7.25 | 0.282 |
-| 6 | CatBoost | 15.47 | 19.05 | 0.548 | −0.24 | 0.397 |
-| 7 | Linear Regression | 19.21 | 19.76 | 0.514 | −3.94 | 0.115 |
-| 8 | LightGBM | 21.85 | 24.27 | 0.267 | +9.30 | 0.212 |
-| 9 | XGBoost | 21.89 | 24.31 | 0.264 | +9.46 | 0.205 |
+| 1 | Ridge | **10.83** | **13.19** | **0.860** | +3.60 | 0.590 |
+| 2 | **Transformer** (champion) | 11.62 | 13.82 | 0.784 | **−1.19** | 0.398 |
+| 3 | GRU | 15.10 | 16.86 | 0.678 | +3.42 | 0.350 |
+| 4 | Random Forest | 19.19 | 23.51 | 0.555 | −5.15 | 0.361 |
+| 5 | LightGBM | 20.77 | 23.62 | 0.550 | −4.34 | 0.238 |
+| 6 | LSTM | 19.46 | 23.65 | 0.367 | −6.32 | 0.243 |
+| 7 | XGBoost | 21.22 | 24.24 | 0.526 | −4.55 | 0.246 |
+| 8 | CatBoost | 21.85 | 27.19 | 0.404 | −6.21 | 0.344 |
+| 9 | Linear Regression | 31.13 | 33.80 | 0.079 | −31.13 | 0.008 |
 
-On equal footing **Ridge moves from 3rd to 2nd and is by far the best-calibrated
-model** — a bias of −1.0 cycles against the Transformer's −6.8. If you needed an
-unbiased estimate rather than the lowest RMSE, Ridge is the better choice, and
-its 80-feature linear form is also the easiest to defend to a reliability
-engineer. That trade-off is invisible in the headline table.
+![Model comparison](figures/results/model_comparison.png)
 
-### Four things these tables are really saying
+**Ridge finishes last on the validation cell (RMSE 24.7) and first on the test
+cell (13.2).** The Transformer does the reverse — best on validation (4.7), second
+on test. With one validation cell and one test cell, model selection is close to
+a coin flip, and this run demonstrates it rather than hiding it. It is the single
+strongest argument for the cross-validated number in §8.1, and for treating any
+"best model" claim at this cohort size with suspicion.
 
-**Gradient boosting loses, and that is informative.** Trees extrapolate by
-returning a constant outside their training range, and each held-out cell sits at
-a slightly different capacity scale. The linear and recurrent models extrapolate;
-the trees cannot. Swap to `configs/chronological.yaml` — where the model has seen
-each test cell's early life — and the ranking reverses. The gap between those two
-rankings is a better description of the problem than either number alone.
+### 8.3 Like-for-like
 
-**The neural models under-predict systematically** (bias ≈ −7 cycles), while the
-regularised linear model is nearly unbiased. For maintenance planning
-under-prediction is the safe direction, but it is a systematic error, not a
-safety feature — and it means the champion's advantage is in variance, not
-calibration.
+Sequence models cannot score a cell's first 19 cycles, and those early rows are
+the hardest — so the table above compares models on different row counts.
+Restricted to the 103 rows every model can score, Ridge's lead widens (MAE 9.19
+vs 11.62) but its bias grows to +7.9 against the Transformer's −1.2. If you need
+an unbiased estimate rather than the lowest error, the ranking flips again.
 
-**α-λ accuracy is low (38 %) even for the champion.** The relative error cone
-tightens as RUL → 0; near end of life ±20 % is two or three cycles. The model is
-useful for "roughly how long left", not for "swap it on Tuesday".
+### 8.4 What the model actually gets wrong
 
-**Error grows with remaining life** — 7.4 cycles MAE at RUL 25–50, 28.8 at RUL
-100+. A fresh cell looks nearly identical whether it will last 120 or 160 cycles.
-This is the central difficulty of battery prognostics, not a defect of the model.
+![RUL trajectory](figures/results/rul_trajectories_transformer.png)
 
-Per-cell breakdowns, residual diagnostics, learning curves and bootstrap
-intervals: **`reports/evaluation_report.md`** (regenerated on every run).
+This is the most informative plot in the repository. The prediction tracks truth
+closely from about cycle 60 onward, but early in life the model predicts ~74
+cycles remaining when the true answer is ~100. It is regressing toward the mean
+of the training cells, because at cycle 25 a healthy cell genuinely does not yet
+look like one that will last 127 cycles rather than 90.
+
+![Error by RUL band](figures/explainability/error_by_rul_band_transformer.png)
+
+The same effect quantified: MAE is 8.5 cycles at RUL 25–50 but 27.8 at RUL 100+,
+and the bias flips sign across the life curve — it **under**-predicts remaining
+life when the cell is fresh and **over**-predicts it near end of life. For a
+maintenance decision that is the wrong way round near EOL, and it is the reason
+§14 puts uncertainty quantification at the top of the roadmap.
+
+![Prediction vs truth](figures/results/pred_vs_truth_transformer.png)
+
+Predicted against true RUL, with the ±20 % α-λ cone shaded. Points leave the cone
+at both ends of the life curve for the reason above.
+
+![Residual diagnostics](figures/results/residual_analysis_transformer.png)
+
+Residual diagnostics: distribution, residual vs true RUL (the clear downward
+trend is the level-dependent bias), a Q–Q plot against the normal, and absolute
+error against state of health.
+
+### 8.5 Two more things worth noticing
+
+**Gradient boosting loses badly, and that is informative.** Trees extrapolate by
+returning a constant outside their training range, and each unseen cell sits at a
+slightly different capacity scale. The linear and recurrent models extrapolate;
+the trees cannot. Under a chronological split (`configs/chronological.yaml`),
+where the model has already seen each test cell's early life, the ranking
+reverses.
+
+**Unregularised OLS collapses** (R² 0.08, bias −31 cycles) while Ridge tops the
+table. With 3 training cells and 80 features, the only thing separating them is
+the L2 penalty. It is a compact demonstration of why the baseline you compare
+against has to be a *tuned* baseline.
 
 ## 9. Explainability
 
@@ -280,12 +340,23 @@ Three independent views — SHAP, permutation importance (computed within-cell s
 signal marginals are preserved), and native model importances — plus an error
 analysis by remaining-life band.
 
+![Signal family importance](figures/explainability/signal_family_importance_transformer.png)
+
 Importance is **also aggregated into physical signal families**, and that is the
 reading to trust. The feature set is deliberately collinear; under collinearity
 SHAP and permutation importance distribute credit among correlated features
-rather than isolating a cause. Family-level attribution on the default run puts
-capacity-derived and current signals well ahead of discharge timing, with
-temperature and resistance contributing little.
+rather than isolating a cause. At family level the picture is physically sensible:
+capacity-derived signals and **charge timing** dominate, with load current next.
+Charge timing scoring so highly is a genuinely useful operational finding — the
+constant-current fraction of a charge shrinks monotonically as a cell ages, and
+unlike a capacity test it is observable on **every ordinary charge**, with no
+dedicated full discharge required.
+
+![Feature importance](figures/explainability/feature_importance_transformer.png)
+
+The same rankings at individual-feature level, from three methods side by side.
+Where they disagree, that disagreement is the collinearity — which is exactly why
+the family-level view above is the one to quote.
 
 ## 10. Reproducing everything
 
@@ -343,6 +414,7 @@ reports/metrics.json                  all metrics + full provenance
 reports/evaluation_report.md          the written report
 reports/model_comparison.csv          comparison table
 reports/model_comparison_common_rows.csv   like-for-like comparison
+reports/cross_validation_by_battery.csv    leave-one-battery-out per-fold table
 reports/predictions_test.{csv,parquet}
 reports/explainability.json
 reports/permutation_importance.csv
@@ -385,7 +457,7 @@ battery-rul-platform/
 │   ├── visualization/          style · eda · results
 │   ├── pipelines/              prepare_data · tune · train · evaluate · predict · run_pipeline
 │   └── utils/                  logging · seed · io · timing
-├── tests/                      147 tests
+├── tests/                      151 tests
 ├── pyproject.toml
 ├── requirements.txt
 └── README.md
@@ -411,7 +483,7 @@ python scripts/train.py \
 ## 13. Testing
 
 ```bash
-pytest                    # 147 tests, ~25 s
+pytest                    # 151 tests, ~30 s
 pytest --cov=battery_rul  # with coverage
 ruff check . && black --check .
 ```
@@ -419,7 +491,9 @@ ruff check . && black --check .
 Coverage spans data loading and schema coercion, the validation gate, target
 generation and EOL detection, feature engineering, **the causality guarantees**,
 all three splitting strategies, metrics, every model's fit/predict/persist cycle,
-and the end-to-end pipeline including training/serving consistency.
+the end-to-end pipeline including training/serving consistency, and regression
+guards for both data-quality bugs found while building this (the leading-artifact
+trim and the sustained-collapse truncation).
 
 The suite runs entirely on the synthetic generator, so it needs no dataset
 download; the one test that parses real NASA files is marked `slow` and skips
@@ -429,9 +503,10 @@ cleanly when they are absent.
 
 Summarised — the full treatment is **[`docs/limitations.md`](docs/limitations.md)**.
 
-* **8 cells, 2 test cells.** Small. Per-cell metrics matter more than aggregates,
-  and the bootstrap interval understates true uncertainty (rows within a cell are
-  correlated).
+* **5 cells.** Small. The cross-validated number uses every cell, but five is
+  still five; quote the per-fold spread (σ = 2.34 cycles) alongside the mean, and
+  treat any "best model" claim with suspicion — §8.2 shows the ranking flipping
+  between validation and test.
 * **Right-censored cells are excluded, not modelled.** In a real fleet most cells
   are healthy and censored — this discards exactly the population you would
   monitor. Survival analysis is the fix and the largest methodological gap.
@@ -441,8 +516,6 @@ Summarised — the full treatment is **[`docs/limitations.md`](docs/limitations.
 * **One chemistry, one format, one rig.** LCO 18650, chamber-cycled, 2008-era
   instrumentation. Transfer to field data is unproven.
 * **Early-life RUL is close to unpredictable** and the metrics reflect that.
-* **The champion is selected on two validation cells**, so model selection is
-  itself high-variance.
 * **Not a serving system.** Batch inference only — no API, container, registry or
   drift monitoring.
 

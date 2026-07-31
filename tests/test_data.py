@@ -8,7 +8,7 @@ import pytest
 
 from battery_rul.config import ExperimentConfig
 from battery_rul.data import available_sources, load_cycles
-from battery_rul.data.loader import _trim_leading_artifacts
+from battery_rul.data.loader import _trim_leading_artifacts, _truncate_at_collapse
 from battery_rul.data.schema import REQUIRED_COLUMNS, coerce_schema, schema_frame
 from battery_rul.data.validation import validate_cycles
 
@@ -180,6 +180,72 @@ def test_trim_reindexes_cycles_from_one(cfg: ExperimentConfig, raw_cycles: pd.Da
 def test_trim_is_a_noop_on_clean_data(cfg: ExperimentConfig, raw_cycles: pd.DataFrame):
     out = _trim_leading_artifacts(raw_cycles, cfg)
     assert len(out) == len(raw_cycles)
+
+
+# ---------------------------------------------------------------------------
+# Sustained-collapse truncation
+# ---------------------------------------------------------------------------
+def test_collapse_truncates_the_tail(cfg: ExperimentConfig, raw_cycles: pd.DataFrame):
+    """The B0042-B0044 failure mode: a regime change read as end of life.
+
+    Capacity drops 20x in one step and stays down. That is a chamber/protocol
+    change, not degradation, and the record must end there.
+    """
+    corrupted = raw_cycles.copy()
+    mask = (corrupted["battery_id"] == "T0001") & (corrupted["cycle_index"] >= 60)
+    corrupted.loc[mask, "capacity_ah"] = 0.07
+
+    out = _truncate_at_collapse(corrupted, cfg)
+    kept = out[out["battery_id"] == "T0001"]
+    assert kept["cycle_index"].max() == 59
+    assert kept["capacity_ah"].min() > 1.0
+    # Other cells untouched.
+    assert len(out[out["battery_id"] == "T0002"]) == len(
+        raw_cycles[raw_cycles["battery_id"] == "T0002"]
+    )
+
+
+def test_collapse_ignores_a_single_bad_reading(cfg: ExperimentConfig, raw_cycles: pd.DataFrame):
+    """Persistence matters: one corrupt cycle must not truncate a whole record."""
+    corrupted = raw_cycles.copy()
+    corrupted.loc[
+        (corrupted["battery_id"] == "T0001") & (corrupted["cycle_index"] == 70), "capacity_ah"
+    ] = 0.05
+
+    out = _truncate_at_collapse(corrupted, cfg)
+    assert len(out[out["battery_id"] == "T0001"]) == len(
+        raw_cycles[raw_cycles["battery_id"] == "T0001"]
+    )
+
+
+def test_collapse_is_a_noop_on_clean_data(cfg: ExperimentConfig, raw_cycles: pd.DataFrame):
+    assert len(_truncate_at_collapse(raw_cycles, cfg)) == len(raw_cycles)
+
+
+def test_collapse_prevents_a_false_eol_label(cfg: ExperimentConfig, raw_cycles: pd.DataFrame):
+    """End to end: without truncation the collapse would be labelled as EOL.
+
+    This is the regression guard for the bug itself — a single-step jump check
+    cannot see a level shift, so the EOL detector read the collapse as a
+    persistent threshold crossing and mislabelled the entire cell.
+    """
+    from battery_rul.data.loader import _derive_health
+    from battery_rul.features.target import find_eol_cycle
+
+    corrupted = raw_cycles.copy()
+    mask = (corrupted["battery_id"] == "T0001") & (corrupted["cycle_index"] >= 40)
+    corrupted.loc[mask, "capacity_ah"] = 0.07
+
+    # Without truncation: EOL is detected right at the collapse.
+    untruncated = _derive_health(corrupted, cfg)
+    naive_eol = find_eol_cycle(untruncated[untruncated["battery_id"] == "T0001"], cfg)
+    assert naive_eol is not None and naive_eol <= 45
+
+    # With truncation: the corrupted region is gone, so no false crossing exists.
+    truncated = _derive_health(_truncate_at_collapse(corrupted, cfg), cfg)
+    group = truncated[truncated["battery_id"] == "T0001"]
+    assert group["capacity_ah"].min() > 1.0
+    assert find_eol_cycle(group, cfg) is None
 
 
 # ---------------------------------------------------------------------------

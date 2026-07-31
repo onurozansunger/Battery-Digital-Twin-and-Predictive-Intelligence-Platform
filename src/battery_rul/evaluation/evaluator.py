@@ -17,7 +17,7 @@ from battery_rul.evaluation.metrics import (
     prognostic_horizon,
     residual_summary,
 )
-from battery_rul.features.target import inverse_transform_target
+from battery_rul.features.target import inverse_transform_target, transform_target
 from battery_rul.models.base import BaseModel, TrainingData
 from battery_rul.utils.logging import get_logger
 
@@ -268,6 +268,120 @@ def compare_models_common_rows(
     table.insert(0, "rank", range(1, len(table) + 1))
     logger.info("Common-row comparison over %d rows scoreable by every model", len(keys))
     return table.reset_index(drop=True).round(4)
+
+
+def cross_validate_by_battery(
+    model_name: str,
+    prepared,
+    cfg: ExperimentConfig,
+    *,
+    params: dict[str, Any] | None = None,
+) -> tuple[dict[str, float], pd.DataFrame]:
+    """Leave-one-battery-out cross-validation over the whole cohort.
+
+    Why this is the number worth quoting here
+    -----------------------------------------
+    After the data-quality gates the cohort is five cells, so a single
+    battery-holdout split puts **one** cell in the test partition. That is one
+    sample: the reported metric would swing on which cell happened to be drawn,
+    and no confidence interval computed on its rows would capture that.
+
+    Leave-one-battery-out fixes exactly that. Every cell is held out once, the
+    feature pipeline is re-fit inside each fold (so scaler and selection
+    statistics never see the held-out cell), and the reported metric pools the
+    out-of-fold predictions for all cells. It costs *k* fits and uses every row
+    for evaluation instead of a fifth of them.
+
+    The single holdout split is still reported alongside it — it is the honest
+    "train once, deploy once" number, and the spread between the two is itself
+    informative.
+
+    Returns
+    -------
+    (pooled_metrics, per_fold_table)
+    """
+    from battery_rul.features.pipeline import FeaturePipeline
+    from battery_rul.models.base import TrainingData, build_model
+
+    frame = prepared.frame
+    features = prepared.feature_names
+    y_all = transform_target(frame[cfg.target.name].to_numpy(dtype=float), cfg)
+    cells = sorted(frame["battery_id"].unique().tolist())
+
+    if len(cells) < 3:
+        logger.warning("Too few cells (%d) for leave-one-battery-out CV", len(cells))
+        return {}, pd.DataFrame()
+
+    battery_col = frame["battery_id"].to_numpy()
+    pooled_true: list[np.ndarray] = []
+    pooled_pred: list[np.ndarray] = []
+    rows = []
+
+    for cell in cells:
+        test_mask = battery_col == cell
+        train_mask = ~test_mask
+        if train_mask.sum() < 20 or test_mask.sum() < 5:
+            continue
+
+        pipeline = FeaturePipeline(cfg=cfg.features)
+        pipeline.fit(frame.loc[train_mask, features], y_all[train_mask])
+
+        def _make(mask, _pipe=pipeline):
+            subset = frame.loc[mask].reset_index(drop=True)
+            return TrainingData(
+                X=_pipe.transform(subset[features]),
+                y=y_all[mask],
+                frame=subset,
+                feature_names=_pipe.feature_names,
+            )
+
+        fold_train, fold_test = _make(train_mask), _make(test_mask)
+        try:
+            model = build_model(model_name, cfg, **(params or {})).fit(fold_train)
+            predictions = inverse_transform_target(model.predict(fold_test), cfg)
+        except Exception as exc:  # noqa: BLE001 - a failed fold must not sink the CV
+            logger.warning("LOBO fold %s failed for %s: %s", cell, model_name, exc)
+            continue
+
+        truth = inverse_transform_target(fold_test.y, cfg)
+        fold_metrics = compute_metrics(
+            truth, predictions, mape_epsilon=cfg.evaluation.mape_epsilon, alpha=cfg.evaluation.alpha
+        )
+        fold_metrics["battery_id"] = cell
+        rows.append(fold_metrics)
+        pooled_true.append(truth)
+        pooled_pred.append(predictions)
+
+    if not rows:
+        return {}, pd.DataFrame()
+
+    per_fold = pd.DataFrame(rows)
+    per_fold = per_fold[["battery_id"] + [c for c in per_fold.columns if c != "battery_id"]]
+
+    pooled = compute_metrics(
+        np.concatenate(pooled_true),
+        np.concatenate(pooled_pred),
+        mape_epsilon=cfg.evaluation.mape_epsilon,
+        alpha=cfg.evaluation.alpha,
+    )
+    # The spread across folds is the honest uncertainty statement at this cohort
+    # size — far more meaningful than a bootstrap over correlated rows.
+    pooled["mae_across_folds_std"] = float(per_fold["mae"].std())
+    pooled["rmse_across_folds_std"] = float(per_fold["rmse"].std())
+    pooled["n_folds"] = int(len(per_fold))
+
+    logger.info(
+        "LOBO CV %-18s pooled MAE=%6.2f RMSE=%6.2f R2=%6.3f over %d cells "
+        "(per-cell MAE %.2f-%.2f)",
+        model_name,
+        pooled["mae"],
+        pooled["rmse"],
+        pooled["r2"],
+        len(per_fold),
+        per_fold["mae"].min(),
+        per_fold["mae"].max(),
+    )
+    return pooled, per_fold.round(4)
 
 
 def learning_curve(
