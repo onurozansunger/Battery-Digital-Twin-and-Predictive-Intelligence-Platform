@@ -1,0 +1,182 @@
+# =============================================================================
+# Battery RUL — default experiment
+#
+# This is the configuration the headline results in reports/ were produced with.
+# Every value here is consumed through a validated pydantic model
+# (src/battery_rul/config.py); an unknown key is an error, not a silent no-op.
+# =============================================================================
+
+experiment_name: battery_rul_v1
+description: >-
+  NASA li-ion remaining-useful-life baseline. Battery-holdout split, causal
+  feature engineering, nine models compared, champion selected on validation.
+seed: 42
+
+paths:
+  raw_dir: data/raw
+  interim_dir: data/interim
+  processed_dir: data/processed
+  models_dir: models
+  figures_dir: figures
+  reports_dir: reports
+  artifacts_dir: reports/artifacts
+
+data:
+  source: nasa
+  subdir: nasa
+  # `null` = auto-discover every cell on disk. The health gates and the
+  # right-censoring rule below select the usable cohort deterministically, so
+  # the cohort is derived from the data rather than hand-picked.
+  batteries: null
+  exclude_batteries: []
+  min_cycles: 30
+  nominal_capacity_ah: 2.0     # NASA 18650 rated capacity
+  eol_threshold: 0.70          # 70 % SoH — the automotive second-life convention
+  eol_reference: nominal
+  capacity_smoothing_window: 5 # trailing median; never centred (that would leak)
+  trim_leading_outliers: true
+  leading_outlier_ratio: 0.90
+  leading_outlier_lookahead: 10
+  min_start_soh: 0.80          # a cell must begin life healthy
+  min_fade_fraction: 0.02      # …and must actually degrade
+  drop_incomplete_cycles: true
+  allow_synthetic_fallback: true
+  cache_interim: true
+
+validation:
+  max_missing_fraction: 0.05
+  max_capacity_jump: 0.35
+  voltage_bounds_v: [0.0, 5.0]
+  temperature_bounds_c: [-40.0, 100.0]
+  require_monotonic_cycle_index: true
+  fail_fast: false
+
+features:
+  rolling_windows: [3, 5, 10, 20]
+  lags: [1, 2, 3, 5, 10]
+  slope_windows: [5, 10, 20]
+  ewm_halflives: [5, 15]
+  base_signals:
+    - capacity_ah
+    - soh
+    - discharge_duration_s
+    - charge_duration_s
+    - voltage_mean_v
+    - voltage_min_v
+    - voltage_std_v
+    - voltage_slope_v_per_s
+    - current_mean_a
+    - temperature_mean_c
+    - temperature_max_c
+    - internal_resistance_ohm
+    - energy_throughput_wh
+    - cc_ct_ratio
+  include_cycle_index: true
+  include_cumulative: true
+  drop_warmup_cycles: 5
+  min_periods_fraction: 1.0
+  variance_threshold: 1.0e-10
+  correlation_prune_threshold: 0.98
+  scaler: robust               # median/IQR — resistant to the rig glitches
+  max_features: 80             # supervised top-K, fit on TRAIN rows only
+  selection_method: tree_importance
+
+target:
+  name: rul_cycles
+  clip_negative: true
+  cap_at: null                 # no piecewise-linear cap; see docs/model_card.md
+  log_transform: false
+  drop_post_eol: true
+  require_eol_reached: true
+  min_labelled_cycles: 25
+
+split:
+  strategy: battery_holdout    # the deployment question: unseen cells
+  test_batteries: null
+  val_batteries: null
+  test_size: 0.25
+  val_size: 0.20
+  n_folds: 5
+  walk_forward_min_train_fraction: 0.4
+  walk_forward_horizon: 50
+  gap_cycles: 0
+  seed: 42
+
+models:
+  enabled:
+    - linear_regression
+    - ridge
+    - random_forest
+    - xgboost
+    - lightgbm
+    - catboost
+    - lstm
+    - gru
+    - transformer
+  select_by: rmse
+  select_mode: min
+  params: {}
+  sequence:
+    window: 20
+    stride: 1
+    hidden_size: 96
+    num_layers: 2
+    dropout: 0.15
+    bidirectional: false
+    d_model: 96
+    nhead: 4
+    dim_feedforward: 192
+  training:
+    epochs: 120
+    batch_size: 32
+    learning_rate: 0.002
+    weight_decay: 0.0001
+    grad_clip: 1.0
+    early_stopping_patience: 20
+    lr_scheduler: plateau
+    loss: huber
+    huber_delta: 5.0
+    device: auto
+    num_workers: 0
+    seed: 42
+
+tuning:
+  enabled: false               # see configs/tuned.yaml
+  models: [xgboost, lightgbm, random_forest]
+  n_trials: 40
+  timeout_s: 1800
+  metric: rmse
+  direction: minimize
+  sampler: tpe
+  pruner: median
+  cv_folds: 3
+  study_name: battery_rul
+  storage: null
+  seed: 42
+
+evaluation:
+  metrics: [mae, rmse, mape, smape, r2, max_error, alpha_lambda]
+  mape_epsilon: 1.0            # RUL reaches 0; floor the MAPE denominator
+  alpha: 0.20
+  residual_bins: 40
+  bootstrap_samples: 1000
+  confidence_level: 0.95
+  per_battery_breakdown: true
+  learning_curve_fractions: [0.25, 0.5, 0.75, 1.0]
+
+explainability:
+  enabled: true
+  shap_enabled: true
+  shap_max_samples: 2000
+  shap_background_samples: 200
+  permutation_repeats: 10
+  top_k_features: 25
+  error_analysis_quantile: 0.90
+
+viz:
+  dpi: 160
+  figure_format: png
+  style: battery_rul
+  palette: viridis
+  figsize: [10.0, 6.0]
+  max_batteries_per_plot: 12

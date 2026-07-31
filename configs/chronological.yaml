@@ -1,0 +1,22 @@
+# The forecasting question: given a cell's history so far, predict its future.
+# This is the split milestone 2 (Digital Twin) builds on, where per-cell state is
+# tracked continuously rather than cells being classified cold.
+extends: default.yaml
+
+experiment_name: battery_rul_chronological
+description: >-
+  Per-cell temporal split with a purge gap. Expect markedly better numbers than
+  the battery-holdout default — the model has seen each test cell's early life,
+  which is a genuinely easier and different problem.
+
+split:
+  strategy: chronological
+  test_batteries: null
+  val_batteries: null
+  test_size: 0.25
+  val_size: 0.15
+  n_folds: 5
+  walk_forward_min_train_fraction: 0.4
+  walk_forward_horizon: 50
+  gap_cycles: 5          # purge window; stops trailing windows bleeding across
+  seed: 42

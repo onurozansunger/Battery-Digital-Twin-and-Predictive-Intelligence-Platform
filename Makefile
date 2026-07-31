@@ -1,0 +1,57 @@
+# Battery RUL platform — common tasks.
+.PHONY: help install data prepare train tune evaluate predict all fast smoke test lint format clean clean-data
+
+help:  ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+
+install:  ## Install the package with dev extras
+	pip install -e ".[dev]"
+
+data:  ## Download and unpack the NASA dataset (~209 MB)
+	python scripts/download_data.py
+
+prepare:  ## Stage 1 — build the modelling dataset
+	python scripts/prepare_data.py --config configs/default.yaml
+
+tune:  ## Stage 1b — Optuna hyperparameter search
+	python scripts/tune.py --config configs/tuned.yaml
+
+train:  ## Stage 2 — fit the model zoo
+	python scripts/train.py --config configs/default.yaml
+
+evaluate:  ## Stage 3 — figures, SHAP and the evaluation report
+	python scripts/evaluate.py --config configs/default.yaml
+
+predict:  ## Stage 4 — score the held-out cells
+	python scripts/predict.py --config configs/default.yaml
+
+all:  ## Full pipeline with the default config
+	python scripts/run_pipeline.py --config configs/default.yaml
+
+fast:  ## Full pipeline, reduced zoo (~1 minute)
+	python scripts/run_pipeline.py --config configs/fast.yaml
+
+smoke:  ## Full pipeline on synthetic data — no dataset needed
+	python scripts/run_pipeline.py --config configs/synthetic.yaml
+
+test:  ## Run the test suite
+	pytest
+
+test-fast:  ## Tests, skipping the real-data parse test
+	pytest -m "not slow"
+
+lint:  ## Static checks
+	ruff check src tests scripts
+	black --check src tests scripts
+
+format:  ## Auto-format
+	ruff check --fix src tests scripts
+	black src tests scripts
+
+clean:  ## Remove caches and build artifacts
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	rm -rf .pytest_cache .ruff_cache .mypy_cache build dist *.egg-info htmlcov .coverage
+
+clean-data:  ## Remove derived data and run artifacts (keeps data/raw)
+	rm -rf data/interim/*.parquet data/processed/* models/zoo models/*.pkl
+	rm -rf reports/* figures/*

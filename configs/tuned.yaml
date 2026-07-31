@@ -1,0 +1,22 @@
+# Full run with Optuna hyperparameter optimisation enabled.
+# Noticeably slower: 60 trials x 3 grouped CV folds per model.
+extends: default.yaml
+
+experiment_name: battery_rul_tuned
+description: >-
+  NASA li-ion RUL with Optuna-optimised gradient boosting. Search spaces are
+  defined in src/battery_rul/models/search_spaces.py and versioned with the code.
+
+tuning:
+  enabled: true
+  models: [random_forest, xgboost, lightgbm, catboost]
+  n_trials: 60
+  timeout_s: 2400
+  metric: rmse
+  direction: minimize
+  sampler: tpe
+  pruner: median
+  cv_folds: 3
+  study_name: battery_rul_tuned
+  storage: null
+  seed: 42

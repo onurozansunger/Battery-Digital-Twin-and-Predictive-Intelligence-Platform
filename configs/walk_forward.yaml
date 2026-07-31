@@ -1,0 +1,18 @@
+# Expanding-origin cross-validation — the honest variance estimate for a
+# forecaster that is periodically retrained in production.
+extends: default.yaml
+
+experiment_name: battery_rul_walk_forward
+description: Walk-forward (expanding origin) validation over cycles.
+
+split:
+  strategy: walk_forward
+  test_batteries: null
+  val_batteries: null
+  test_size: 0.25
+  val_size: 0.15
+  n_folds: 5
+  walk_forward_min_train_fraction: 0.45
+  walk_forward_horizon: 30
+  gap_cycles: 3
+  seed: 42

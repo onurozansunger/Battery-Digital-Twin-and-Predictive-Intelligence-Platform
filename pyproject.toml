@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "battery-rul"
+version = "0.1.0"
+description = "Production-grade Remaining Useful Life prediction for lithium-ion batteries."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Onur Ozan Sunger" }]
+keywords = ["battery", "prognostics", "remaining-useful-life", "time-series", "machine-learning"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scipy>=1.11",
+    "scikit-learn>=1.4",
+    "pyarrow>=14.0",
+    "pydantic>=2.5",
+    "pyyaml>=6.0",
+    "joblib>=1.3",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "tqdm>=4.66",
+    "rich>=13.7",
+    "xgboost>=2.0",
+    "lightgbm>=4.1",
+    "catboost>=1.2",
+    "optuna>=3.5",
+    "shap>=0.44",
+    "torch>=2.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "ruff>=0.3",
+    "black>=24.1",
+    "mypy>=1.8",
+    "jupyter>=1.0",
+]
+
+[project.scripts]
+battery-rul = "battery_rul.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+battery_rul = ["py.typed"]
+
+# ----------------------------------------------------------------------------
+# Tooling
+# ----------------------------------------------------------------------------
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "ARG", "PTH", "RET", "TID"]
+ignore = ["E501", "B008", "N803", "N806"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG001", "ARG002"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: end-to-end pipeline tests",
+]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]

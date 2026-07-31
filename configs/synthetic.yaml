@@ -1,0 +1,26 @@
+# Runs the entire pipeline against the physics-informed synthetic generator.
+# Useful for CI and for developing on a machine without the 200 MB NASA archive.
+# Metrics from this config describe the simulator, not real cells.
+extends: fast.yaml
+
+experiment_name: battery_rul_synthetic
+description: Pipeline smoke test on synthetic cells. NOT a source of real results.
+
+data:
+  source: synthetic
+  subdir: synthetic
+  batteries: null
+  exclude_batteries: []
+  min_cycles: 30
+  nominal_capacity_ah: 2.0
+  eol_threshold: 0.7
+  eol_reference: nominal
+  capacity_smoothing_window: 5
+  trim_leading_outliers: true
+  leading_outlier_ratio: 0.9
+  leading_outlier_lookahead: 10
+  min_start_soh: 0.8
+  min_fade_fraction: 0.02
+  drop_incomplete_cycles: true
+  allow_synthetic_fallback: true
+  cache_interim: false
