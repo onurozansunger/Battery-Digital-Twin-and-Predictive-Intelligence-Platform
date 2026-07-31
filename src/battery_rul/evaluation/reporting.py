@@ -32,7 +32,13 @@ def to_markdown_table(df: pd.DataFrame, *, max_rows: int = 60, floatfmt: str = "
     frame = df.head(max_rows).copy()
     for column in frame.columns:
         if pd.api.types.is_float_dtype(frame[column]):
-            frame[column] = frame[column].map(lambda v: "—" if pd.isna(v) else floatfmt.format(v))
+            values = frame[column]
+            # A column that is float only because it carries NaN (cycle counts,
+            # EOL indices) should not be rendered as "127.0000".
+            finite = values.dropna()
+            integral = not finite.empty and (finite % 1 == 0).all()
+            fmt = "{:.0f}" if integral else floatfmt
+            frame[column] = values.map(lambda v, _f=fmt: "—" if pd.isna(v) else _f.format(v))
         else:
             frame[column] = frame[column].astype(str)
 
