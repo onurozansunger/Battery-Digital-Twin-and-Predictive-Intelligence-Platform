@@ -1,172 +1,172 @@
 {
-  "model": "transformer",
+  "model": "gru",
   "native_importance_top": {},
   "permutation_importance_top": [
     {
-      "feature": "discharge_duration_s_ewm_15",
-      "importance_mean": 1.49517,
-      "importance_std": 0.15539,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "discharge_duration_s_lag_5",
-      "importance_mean": 1.3807,
-      "importance_std": 0.21719,
-      "baseline_rmse": 13.823
-    },
-    {
       "feature": "energy_throughput_wh_cumstd",
-      "importance_mean": 1.10366,
-      "importance_std": 0.12116,
-      "baseline_rmse": 13.823
+      "importance_mean": 1.01775,
+      "importance_std": 0.07008,
+      "baseline_rmse": 14.73621
     },
     {
-      "feature": "charge_duration_s_cummax",
-      "importance_mean": 0.77484,
-      "importance_std": 0.06013,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "discharge_duration_s_rmax_5",
-      "importance_mean": 0.69723,
-      "importance_std": 0.07931,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "soh_cumstd",
-      "importance_mean": 0.6663,
-      "importance_std": 0.09676,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "discharge_duration_s_cumstd",
-      "importance_mean": 0.61965,
-      "importance_std": 0.09952,
-      "baseline_rmse": 13.823
+      "feature": "discharge_duration_s_rmax_10",
+      "importance_mean": 0.88266,
+      "importance_std": 0.18737,
+      "baseline_rmse": 14.73621
     },
     {
       "feature": "discharge_duration_s_cummin",
-      "importance_mean": 0.58764,
-      "importance_std": 0.08212,
-      "baseline_rmse": 13.823
+      "importance_mean": 0.83324,
+      "importance_std": 0.06295,
+      "baseline_rmse": 14.73621
     },
     {
       "feature": "soh_delta_from_initial",
-      "importance_mean": 0.47732,
-      "importance_std": 0.07965,
-      "baseline_rmse": 13.823
+      "importance_mean": 0.73058,
+      "importance_std": 0.07182,
+      "baseline_rmse": 14.73621
     },
     {
-      "feature": "soh_ewm_15",
-      "importance_mean": 0.46882,
-      "importance_std": 0.06071,
-      "baseline_rmse": 13.823
+      "feature": "discharge_duration_s_rmax_5",
+      "importance_mean": 0.66825,
+      "importance_std": 0.0706,
+      "baseline_rmse": 14.73621
     },
     {
-      "feature": "cum_discharge_time_h",
-      "importance_mean": 0.44905,
-      "importance_std": 0.0415,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "current_mean_a_lag_1",
-      "importance_mean": 0.37255,
-      "importance_std": 0.0539,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "soh_cummin",
-      "importance_mean": 0.37012,
-      "importance_std": 0.0454,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "discharge_duration_s_cummean",
-      "importance_mean": 0.36467,
-      "importance_std": 0.05891,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "temperature_max_c_delta_from_initial",
-      "importance_mean": 0.36064,
-      "importance_std": 0.0491,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "log_cycle_index",
-      "importance_mean": 0.35621,
-      "importance_std": 0.05674,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "inv_cycle_index",
-      "importance_mean": 0.32309,
-      "importance_std": 0.11377,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "current_mean_a_delta_from_initial",
-      "importance_mean": 0.30579,
-      "importance_std": 0.0537,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "energy_throughput_wh_cummin",
-      "importance_mean": 0.30199,
-      "importance_std": 0.04236,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "current_mean_a_lag_3",
-      "importance_mean": 0.29462,
-      "importance_std": 0.03672,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "current_mean_a_ewm_5",
-      "importance_mean": 0.29408,
-      "importance_std": 0.05184,
-      "baseline_rmse": 13.823
-    },
-    {
-      "feature": "current_mean_a_lag_2",
-      "importance_mean": 0.28976,
-      "importance_std": 0.05107,
-      "baseline_rmse": 13.823
+      "feature": "soh_rmax_10",
+      "importance_mean": 0.55761,
+      "importance_std": 0.05444,
+      "baseline_rmse": 14.73621
     },
     {
       "feature": "capacity_ah_rmax_5",
-      "importance_mean": 0.27308,
-      "importance_std": 0.02926,
-      "baseline_rmse": 13.823
+      "importance_mean": 0.49123,
+      "importance_std": 0.0579,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "temperature_max_c_delta_from_initial",
+      "importance_mean": 0.43953,
+      "importance_std": 0.05632,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "capacity_ah",
+      "importance_mean": 0.41084,
+      "importance_std": 0.04007,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "charge_energy_wh",
+      "importance_mean": 0.40616,
+      "importance_std": 0.0584,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "soh_lag_10",
+      "importance_mean": 0.35194,
+      "importance_std": 0.03312,
+      "baseline_rmse": 14.73621
     },
     {
       "feature": "current_mean_a_rmax_5",
-      "importance_mean": 0.25957,
-      "importance_std": 0.06228,
-      "baseline_rmse": 13.823
+      "importance_mean": 0.33004,
+      "importance_std": 0.04713,
+      "baseline_rmse": 14.73621
     },
     {
-      "feature": "capacity_ah_lag_1",
-      "importance_mean": 0.23652,
-      "importance_std": 0.03335,
-      "baseline_rmse": 13.823
+      "feature": "current_mean_a_rmean_5",
+      "importance_mean": 0.32024,
+      "importance_std": 0.02839,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "capacity_ah_lag_3",
+      "importance_mean": 0.28466,
+      "importance_std": 0.0289,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "soh_rmin_10",
+      "importance_mean": 0.27508,
+      "importance_std": 0.03318,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "discharge_duration_s_cumstd",
+      "importance_mean": 0.27082,
+      "importance_std": 0.04002,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "capacity_ah_cumstd",
+      "importance_mean": 0.26776,
+      "importance_std": 0.03976,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "discharge_duration_s_ewm_15",
+      "importance_mean": 0.26146,
+      "importance_std": 0.02638,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "cum_discharge_time_h",
+      "importance_mean": 0.24776,
+      "importance_std": 0.02276,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "current_mean_a_rmean_20",
+      "importance_mean": 0.23901,
+      "importance_std": 0.04581,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "current_mean_a_rmax_20",
+      "importance_mean": 0.227,
+      "importance_std": 0.03588,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "current_mean_a_rmin_3",
+      "importance_mean": 0.22598,
+      "importance_std": 0.01932,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "log_cycle_index",
+      "importance_mean": 0.22163,
+      "importance_std": 0.0297,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "current_mean_a_lag_2",
+      "importance_mean": 0.20923,
+      "importance_std": 0.02959,
+      "baseline_rmse": 14.73621
+    },
+    {
+      "feature": "soh_cumstd",
+      "importance_mean": 0.20586,
+      "importance_std": 0.0309,
+      "baseline_rmse": 14.73621
     }
   ],
   "shap_importance_top": {},
   "family_importance": {
-    "capacity": 4.40069,
-    "charge_timing": 4.325463,
-    "current": 2.764366,
-    "cycle_position": 1.128349,
-    "temperature": 0.481197,
-    "resistance": 0.137921,
-    "other": -0.24138,
-    "voltage": -0.536294
+    "capacity": 5.740788,
+    "current": 2.928208,
+    "charge_timing": 1.730754,
+    "temperature": 0.603076,
+    "cycle_position": 0.596691,
+    "other": -0.031392,
+    "resistance": -0.335342,
+    "voltage": -0.6285
   },
   "error_analysis": {
     "error_quantile": 0.9,
-    "abs_error_threshold": 25.813,
+    "abs_error_threshold": 27.681,
     "n_worst_rows": 11,
     "worst_batteries": {
       "B0005": 11
@@ -177,37 +177,37 @@
       {
         "rul_band": "0\u201310",
         "n": 10,
-        "mae": 10.239,
-        "bias": 10.239,
-        "p90_abs_error": 10.425
+        "mae": 13.838,
+        "bias": 13.838,
+        "p90_abs_error": 15.157
       },
       {
         "rul_band": "10\u201325",
         "n": 15,
-        "mae": 10.685,
-        "bias": 10.685,
-        "p90_abs_error": 11.405
+        "mae": 11.694,
+        "bias": 11.694,
+        "p90_abs_error": 12.485
       },
       {
         "rul_band": "25\u201350",
         "n": 25,
-        "mae": 8.528,
-        "bias": 8.528,
-        "p90_abs_error": 10.027
+        "mae": 6.981,
+        "bias": 6.981,
+        "p90_abs_error": 9.988
       },
       {
         "rul_band": "50\u2013100",
         "n": 50,
-        "mae": 12.757,
-        "bias": -10.31,
-        "p90_abs_error": 26.508
+        "mae": 12.266,
+        "bias": -10.763,
+        "p90_abs_error": 30.049
       },
       {
         "rul_band": "100+",
         "n": 3,
-        "mae": 27.78,
-        "bias": -27.78,
-        "p90_abs_error": 28.279
+        "mae": 34.24,
+        "bias": -34.24,
+        "p90_abs_error": 35.216
       }
     ],
     "worst_rows": [
@@ -215,84 +215,84 @@
         "battery_id": "B0005",
         "cycle_index": 25,
         "y_true": 102.0,
-        "y_pred": 73.59,
-        "abs_error": 28.41
-      },
-      {
-        "battery_id": "B0005",
-        "cycle_index": 31,
-        "y_true": 96.0,
-        "y_pred": 68.16,
-        "abs_error": 27.84
+        "y_pred": 66.53,
+        "abs_error": 35.47
       },
       {
         "battery_id": "B0005",
         "cycle_index": 26,
         "y_true": 101.0,
-        "y_pred": 73.25,
-        "abs_error": 27.75
-      },
-      {
-        "battery_id": "B0005",
-        "cycle_index": 32,
-        "y_true": 95.0,
-        "y_pred": 67.38,
-        "abs_error": 27.62
-      },
-      {
-        "battery_id": "B0005",
-        "cycle_index": 33,
-        "y_true": 94.0,
-        "y_pred": 66.7,
-        "abs_error": 27.3
+        "y_pred": 66.8,
+        "abs_error": 34.2
       },
       {
         "battery_id": "B0005",
         "cycle_index": 27,
         "y_true": 100.0,
-        "y_pred": 72.82,
-        "abs_error": 27.18
-      },
-      {
-        "battery_id": "B0005",
-        "cycle_index": 34,
-        "y_true": 93.0,
-        "y_pred": 66.21,
-        "abs_error": 26.79
+        "y_pred": 66.95,
+        "abs_error": 33.05
       },
       {
         "battery_id": "B0005",
         "cycle_index": 28,
         "y_true": 99.0,
-        "y_pred": 72.27,
-        "abs_error": 26.73
+        "y_pred": 66.92,
+        "abs_error": 32.08
+      },
+      {
+        "battery_id": "B0005",
+        "cycle_index": 31,
+        "y_true": 96.0,
+        "y_pred": 64.04,
+        "abs_error": 31.96
+      },
+      {
+        "battery_id": "B0005",
+        "cycle_index": 32,
+        "y_true": 95.0,
+        "y_pred": 63.62,
+        "abs_error": 31.38
       },
       {
         "battery_id": "B0005",
         "cycle_index": 29,
         "y_true": 98.0,
-        "y_pred": 71.52,
-        "abs_error": 26.48
+        "y_pred": 66.97,
+        "abs_error": 31.03
       },
       {
         "battery_id": "B0005",
-        "cycle_index": 35,
-        "y_true": 92.0,
-        "y_pred": 65.87,
-        "abs_error": 26.13
+        "cycle_index": 33,
+        "y_true": 94.0,
+        "y_pred": 63.49,
+        "abs_error": 30.51
       },
       {
         "battery_id": "B0005",
         "cycle_index": 30,
         "y_true": 97.0,
-        "y_pred": 71.11,
-        "abs_error": 25.89
+        "y_pred": 67.0,
+        "abs_error": 30.0
+      },
+      {
+        "battery_id": "B0005",
+        "cycle_index": 34,
+        "y_true": 93.0,
+        "y_pred": 63.59,
+        "abs_error": 29.41
+      },
+      {
+        "battery_id": "B0005",
+        "cycle_index": 35,
+        "y_true": 92.0,
+        "y_pred": 64.2,
+        "abs_error": 27.8
       }
     ]
   },
   "figures": [
-    "/Users/ozanbabac5/Desktop/Battery Digital Twin & Predictive Intelligence Platform/figures/explainability/feature_importance_transformer.png",
-    "/Users/ozanbabac5/Desktop/Battery Digital Twin & Predictive Intelligence Platform/figures/explainability/signal_family_importance_transformer.png",
-    "/Users/ozanbabac5/Desktop/Battery Digital Twin & Predictive Intelligence Platform/figures/explainability/error_by_rul_band_transformer.png"
+    "<project_root>/figures/explainability/feature_importance_gru.png",
+    "<project_root>/figures/explainability/signal_family_importance_gru.png",
+    "<project_root>/figures/explainability/error_by_rul_band_gru.png"
   ]
 }

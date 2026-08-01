@@ -8,7 +8,7 @@
 | **Version** | 0.1.0 |
 | **Type** | Model zoo of nine estimators; one champion selected per run |
 | **Champion (default config)** | Transformer encoder — attention-pooled, pre-norm, 20-cycle window |
-| **Headline metric** | MAE 8.06 cycles, R² 0.850 (leave-one-battery-out over 5 cells) |
+| **Headline metric** | See `reports/metrics.json → nested_evaluation`. The previously published MAE 8.06 / R² 0.850 figure is **withdrawn** — it predates the Milestone 1.1 hardening and is not comparable. |
 | **Input** | 80 causal features derived from a cell's own charge/discharge/EIS history |
 | **Output** | A single scalar: estimated remaining cycles until 70 % SoH |
 | **Training data** | NASA Ames PCoE battery aging dataset — see `docs/dataset_card.md` |
@@ -79,7 +79,15 @@ every fold; out-of-fold predictions are pooled.
 
 | | MAE | RMSE | R² | Bias | within 10 cycles |
 |---|---|---|---|---|---|
-| **Transformer, pooled (400 rows)** | **8.06** | **9.93** | **0.850** | −1.84 | 61.3 % |
+| **Transformer, pooled (400 rows)** | ~~8.06~~ | ~~9.93~~ | ~~0.850~~ | ~~−1.84~~ | ~~61.3 %~~ |
+
+> **Withdrawn.** These figures predate Milestone 1.1. They were produced with
+> pre-split feature pruning, an end-of-life rule that accepted an unconfirmed
+> two-cycle crossing at the end of a record, and a champion selected on a
+> one-cell validation partition. The current numbers — including the nested
+> estimate that accounts for model selection — are in `reports/metrics.json` and
+> `reports/nested_model_comparison*.csv`. Do not quote the two side by side; see
+> `docs/MILESTONE_1_1_HARDENING.md`.
 
 | Held-out cell | n | MAE | RMSE | R² | Bias |
 |---|---|---|---|---|---|
@@ -123,7 +131,14 @@ so the bootstrap understates the real uncertainty.
   validate B0006; test B0005.
 * **Headline:** leave-one-battery-out cross-validation over all 5 cells, with the
   feature pipeline re-fit inside each fold.
-* **Selection:** champion chosen by validation RMSE. The test partition is scored
+* **Selection (Milestone 1.1):** the quotable headline now comes from a **nested**
+  leave-one-battery-out design — family selection runs inside every outer fold, so
+  the pooled metric estimates the whole procedure rather than an already-chosen
+  model, and interpretable baselines (cohort median life, capacity-fade
+  extrapolation, SOH nearest-analogue, elastic net, ridge) compete on identical
+  folds. The single-split champion below is still fitted and persisted for the
+  Milestone 1 artifact path.
+* **Selection (Milestone 1, retained):** champion chosen by validation RMSE. The test partition is scored
   once, after selection.
 * **Metrics:** MAE, RMSE, MAPE (denominator floored at 1 cycle, since RUL reaches
   zero), SMAPE, R², max error, signed bias, α-λ accuracy, prognostic horizon.

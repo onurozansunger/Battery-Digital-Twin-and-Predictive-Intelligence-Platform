@@ -238,7 +238,9 @@ def _shap_values(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if model.is_tree and getattr(model, "estimator", None) is not None:
-                explainer = shap.TreeExplainer(model.estimator)
+                # `estimator` is a family-specific attribute, not part of the
+                # BaseModel interface; the guard above is what makes it safe.
+                explainer = shap.TreeExplainer(model.estimator)  # type: ignore[attr-defined]
                 values = explainer.shap_values(X, check_additivity=False)
             elif model.is_sequence:
                 # Sequence models take 3-D tensors; explaining them faithfully

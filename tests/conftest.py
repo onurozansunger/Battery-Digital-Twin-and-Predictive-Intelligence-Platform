@@ -42,6 +42,7 @@ def cfg(tmp_path: Path) -> ExperimentConfig:
             "models.training.epochs": 3,
             "models.sequence.window": 8,
             "evaluation.bootstrap_samples": 0,
+            "evaluation.nested_enabled": False,
             "explainability.enabled": False,
         }
     )

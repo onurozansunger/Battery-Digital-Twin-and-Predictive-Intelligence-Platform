@@ -22,9 +22,10 @@ from battery_rul.evaluation.evaluator import (
     evaluate_model,
 )
 from battery_rul.evaluation.metrics import METRIC_DIRECTION
+from battery_rul.evaluation.nested import NestedResult, nested_model_comparison
 from battery_rul.features.pipeline import FeaturePipeline
 from battery_rul.features.target import transform_target
-from battery_rul.models.base import BaseModel, TrainingData, build_model
+from battery_rul.models.base import BaseModel, TrainingData, available_models, build_model
 from battery_rul.pipelines.prepare_data import PreparedData, load_prepared
 from battery_rul.utils.io import environment_fingerprint, save_json, save_pickle, write_table
 from battery_rul.utils.logging import get_logger, log_section
@@ -51,6 +52,7 @@ class TrainingArtifacts:
     comparison_common: pd.DataFrame = field(default_factory=pd.DataFrame)
     cv_metrics: dict[str, Any] = field(default_factory=dict)
     cv_per_fold: pd.DataFrame = field(default_factory=pd.DataFrame)
+    nested: NestedResult = field(default_factory=NestedResult)
     champion: str = ""
     feature_pipeline: FeaturePipeline | None = None
     partitions: dict[str, TrainingData] = field(default_factory=dict)
@@ -180,6 +182,19 @@ def run(
             params=artifacts.champion_model.params,
         )
 
+    # The cross-validation above still describes a model that was *chosen* using
+    # the validation cell. The nested design below re-runs family selection inside
+    # every outer fold, so its pooled metric estimates the whole procedure. It is
+    # the number the reports quote as the headline.
+    if cfg.evaluation.nested_enabled:
+        with timer("nested_comparison"):
+            artifacts.nested = nested_model_comparison(
+                prepared,
+                cfg,
+                candidates=[c for c in cfg.evaluation.nested_candidates if c in available_models()],
+                select_by=cfg.evaluation.nested_select_by,
+            )
+
     artifacts.timings = timer.as_dict()
 
     _persist(artifacts, cfg)
@@ -210,7 +225,7 @@ def _select_champion(artifacts: TrainingArtifacts, cfg: ExperimentConfig) -> str
     if not scores:
         return next(iter(artifacts.models))
 
-    champion = (min if direction == "min" else max)(scores, key=scores.get)
+    champion = (min if direction == "min" else max)(scores, key=lambda name: scores[name])
     logger.info(
         "Champion %s selected on %s %s = %.4f",
         champion,
@@ -261,6 +276,7 @@ def _persist(artifacts: TrainingArtifacts, cfg: ExperimentConfig) -> None:
                 else []
             ),
         },
+        "nested_evaluation": artifacts.nested.to_dict(),
         "failures": artifacts.failures,
         "timings_s": artifacts.timings,
     }
@@ -277,6 +293,17 @@ def _persist(artifacts: TrainingArtifacts, cfg: ExperimentConfig) -> None:
         write_table(artifacts.cv_per_fold, reports_dir / "cross_validation_by_battery.csv")
     if artifacts.comparison_common is not None and not artifacts.comparison_common.empty:
         write_table(artifacts.comparison_common, reports_dir / "model_comparison_common_rows.csv")
+    if not artifacts.nested.candidate_metrics.empty:
+        write_table(artifacts.nested.candidate_metrics, reports_dir / "nested_model_comparison.csv")
+    if not artifacts.nested.candidate_metrics_common.empty:
+        write_table(
+            artifacts.nested.candidate_metrics_common,
+            reports_dir / "nested_model_comparison_common_rows.csv",
+        )
+    if not artifacts.nested.per_fold.empty:
+        write_table(artifacts.nested.per_fold, reports_dir / "nested_per_fold.csv")
+    if not artifacts.nested.nested_predictions.empty:
+        write_table(artifacts.nested.nested_predictions, reports_dir / "nested_predictions.parquet")
 
     logger.info("Champion -> %s", models_dir / MODEL_FILENAME)
     logger.info("Metrics  -> %s", reports_dir / METRICS_FILENAME)

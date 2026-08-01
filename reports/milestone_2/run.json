@@ -1,0 +1,1057 @@
+{
+  "experiment_name": "battery_rul_v1",
+  "environment": {
+    "generated_at": "2026-08-01T08:46:38.230880+00:00",
+    "python": "3.13.5",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "git_revision": "82ef951",
+    "packages": {
+      "numpy": "2.3.1",
+      "pandas": "2.3.2",
+      "sklearn": "1.8.0",
+      "xgboost": "3.3.0",
+      "lightgbm": "4.7.0",
+      "catboost": "1.2.10",
+      "torch": "2.11.0",
+      "optuna": "4.9.0"
+    }
+  },
+  "config": {
+    "experiment_name": "battery_rul_v1",
+    "description": "NASA li-ion remaining-useful-life baseline. Battery-holdout split, causal feature engineering, nine models compared, champion selected on validation.",
+    "seed": 42,
+    "paths": {
+      "root": "<project_root>",
+      "raw_dir": "<project_root>/data/raw",
+      "interim_dir": "<project_root>/data/interim",
+      "processed_dir": "<project_root>/data/processed",
+      "models_dir": "<project_root>/models",
+      "figures_dir": "<project_root>/figures",
+      "reports_dir": "<project_root>/reports",
+      "artifacts_dir": "<project_root>/reports/artifacts"
+    },
+    "data": {
+      "source": "nasa",
+      "subdir": "nasa",
+      "batteries": null,
+      "exclude_batteries": [],
+      "min_cycles": 30,
+      "nominal_capacity_ah": 2.0,
+      "eol_threshold": 0.7,
+      "eol_reference": "nominal",
+      "capacity_smoothing_window": 5,
+      "trim_leading_outliers": true,
+      "leading_outlier_ratio": 0.9,
+      "leading_outlier_lookahead": 10,
+      "min_start_soh": 0.8,
+      "min_fade_fraction": 0.02,
+      "truncate_at_collapse": true,
+      "collapse_fraction": 0.25,
+      "collapse_persistence": 5,
+      "drop_incomplete_cycles": true,
+      "allow_synthetic_fallback": true,
+      "cache_interim": true
+    },
+    "validation": {
+      "max_missing_fraction": 0.05,
+      "max_capacity_jump": 0.35,
+      "voltage_bounds_v": [
+        0.0,
+        5.0
+      ],
+      "temperature_bounds_c": [
+        -40.0,
+        100.0
+      ],
+      "require_monotonic_cycle_index": true,
+      "fail_fast": false,
+      "missingness_indicators": true,
+      "indicator_columns": null
+    },
+    "features": {
+      "rolling_windows": [
+        3,
+        5,
+        10,
+        20
+      ],
+      "lags": [
+        1,
+        2,
+        3,
+        5,
+        10
+      ],
+      "slope_windows": [
+        5,
+        10,
+        20
+      ],
+      "ewm_halflives": [
+        5,
+        15
+      ],
+      "base_signals": [
+        "capacity_ah",
+        "soh",
+        "discharge_duration_s",
+        "charge_duration_s",
+        "voltage_mean_v",
+        "voltage_min_v",
+        "voltage_std_v",
+        "voltage_slope_v_per_s",
+        "current_mean_a",
+        "temperature_mean_c",
+        "temperature_max_c",
+        "internal_resistance_ohm",
+        "energy_throughput_wh",
+        "cc_ct_ratio"
+      ],
+      "include_cycle_index": true,
+      "include_cumulative": true,
+      "drop_warmup_cycles": 5,
+      "min_periods_fraction": 1.0,
+      "variance_threshold": 1e-10,
+      "correlation_prune_threshold": 0.98,
+      "fallback_imputation": "median",
+      "scaler": "robust",
+      "max_features": 80,
+      "selection_method": "tree_importance"
+    },
+    "target": {
+      "name": "rul_cycles",
+      "eol_persistence": 3,
+      "clip_negative": true,
+      "cap_at": null,
+      "log_transform": false,
+      "drop_post_eol": true,
+      "require_eol_reached": true,
+      "min_labelled_cycles": 25
+    },
+    "split": {
+      "strategy": "battery_holdout",
+      "test_batteries": null,
+      "val_batteries": null,
+      "test_size": 0.25,
+      "val_size": 0.2,
+      "n_folds": 5,
+      "walk_forward_min_train_fraction": 0.4,
+      "walk_forward_horizon": 50,
+      "gap_cycles": 0,
+      "seed": 42
+    },
+    "models": {
+      "enabled": [
+        "linear_regression",
+        "ridge",
+        "random_forest",
+        "xgboost",
+        "lightgbm",
+        "catboost",
+        "lstm",
+        "gru",
+        "transformer"
+      ],
+      "params": {},
+      "sequence": {
+        "window": 20,
+        "stride": 1,
+        "hidden_size": 96,
+        "num_layers": 2,
+        "dropout": 0.15,
+        "bidirectional": false,
+        "d_model": 96,
+        "nhead": 4,
+        "dim_feedforward": 192
+      },
+      "training": {
+        "epochs": 120,
+        "batch_size": 32,
+        "learning_rate": 0.002,
+        "weight_decay": 0.0001,
+        "grad_clip": 1.0,
+        "early_stopping_patience": 20,
+        "lr_scheduler": "plateau",
+        "loss": "huber",
+        "huber_delta": 5.0,
+        "device": "auto",
+        "num_workers": 0,
+        "seed": 42
+      },
+      "select_by": "rmse",
+      "select_mode": "min"
+    },
+    "tuning": {
+      "enabled": false,
+      "models": [
+        "xgboost",
+        "lightgbm",
+        "random_forest"
+      ],
+      "n_trials": 40,
+      "timeout_s": 1800,
+      "direction": "minimize",
+      "metric": "rmse",
+      "sampler": "tpe",
+      "pruner": "median",
+      "cv_folds": 3,
+      "study_name": "battery_rul",
+      "storage": null,
+      "seed": 42
+    },
+    "evaluation": {
+      "metrics": [
+        "mae",
+        "rmse",
+        "mape",
+        "smape",
+        "r2",
+        "max_error",
+        "alpha_lambda"
+      ],
+      "mape_epsilon": 1.0,
+      "alpha": 0.2,
+      "residual_bins": 40,
+      "bootstrap_samples": 1000,
+      "confidence_level": 0.95,
+      "per_battery_breakdown": true,
+      "learning_curve_fractions": [
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "nested_enabled": true,
+      "nested_candidates": [
+        "cohort_median_life",
+        "capacity_fade_extrapolation",
+        "soh_analogue",
+        "elastic_net",
+        "ridge",
+        "random_forest",
+        "xgboost",
+        "lightgbm",
+        "gru",
+        "transformer"
+      ],
+      "nested_select_by": "mae"
+    },
+    "explainability": {
+      "enabled": true,
+      "shap_enabled": true,
+      "shap_max_samples": 2000,
+      "shap_background_samples": 200,
+      "permutation_repeats": 10,
+      "top_k_features": 25,
+      "error_analysis_quantile": 0.9
+    },
+    "viz": {
+      "dpi": 160,
+      "figure_format": "png",
+      "style": "battery_rul",
+      "palette": "viridis",
+      "figsize": [
+        10.0,
+        6.0
+      ],
+      "max_batteries_per_plot": 12
+    },
+    "soh": {
+      "reference_strategy": "first_n_cycle_mean",
+      "reference_cycles": 5,
+      "target_name": "soh_target",
+      "healthy_min": 0.9,
+      "slightly_degraded_min": 0.8,
+      "warning_min": 0.7,
+      "plausible_min": 0.2,
+      "plausible_max": 1.2
+    },
+    "risk": {
+      "horizon_cycles": 30,
+      "additional_horizons": [
+        20,
+        50
+      ],
+      "target_name": "failure_within_horizon",
+      "model": "lightgbm",
+      "class_weight_balanced": true,
+      "threshold": null,
+      "threshold_objective": "f1",
+      "min_recall": 0.8,
+      "low_max": 0.2,
+      "medium_max": 0.5,
+      "high_max": 0.8
+    },
+    "multitask": {
+      "enabled": true,
+      "encoder": "transformer",
+      "window": 20,
+      "stride": 1,
+      "d_model": 96,
+      "nhead": 4,
+      "num_layers": 2,
+      "dim_feedforward": 192,
+      "hidden_size": 96,
+      "dropout": 0.15,
+      "head_hidden": 64,
+      "rul_loss": "huber",
+      "soh_loss": "huber",
+      "risk_loss": "bce",
+      "focal_gamma": 2.0,
+      "rul_weight": 1.0,
+      "soh_weight": 1.0,
+      "risk_weight": 0.5,
+      "rul_scale": 100.0,
+      "epochs": 120,
+      "batch_size": 32,
+      "learning_rate": 0.002,
+      "weight_decay": 0.0001,
+      "grad_clip": 1.0,
+      "early_stopping_patience": 20,
+      "device": "auto",
+      "seed": 42
+    },
+    "uncertainty": {
+      "method": "split_conformal",
+      "coverage": 0.9,
+      "normalise_by_life_stage": true,
+      "stage_edges": [
+        0.9,
+        0.8
+      ],
+      "min_calibration_rows": 20
+    },
+    "calibration": {
+      "method": "isotonic",
+      "min_calibration_rows": 30,
+      "n_bins": 10
+    },
+    "quality": {
+      "min_cycles_for_prediction": 15,
+      "min_cycles_good": 40,
+      "max_missing_fraction_acceptable": 0.3,
+      "max_missing_fraction_good": 0.05,
+      "max_cycle_gap": 25,
+      "good_min_score": 0.8,
+      "acceptable_min_score": 0.6,
+      "poor_min_score": 0.35,
+      "ood_z_threshold": 5.0
+    },
+    "recommendations": {
+      "inspection_rul_cycles": 40,
+      "replacement_rul_cycles": 15,
+      "urgent_rul_cycles": 5,
+      "inspection_risk": 0.3,
+      "replacement_risk": 0.6,
+      "urgent_risk": 0.85,
+      "temperature_trend_c_per_10_cycles": 0.5,
+      "resistance_trend_pct_per_10_cycles": 2.0,
+      "fade_trend_pct_per_10_cycles": 1.0,
+      "inspection_window_cycles": [
+        10,
+        20
+      ],
+      "disclaimer": "Engineering decision support from a research prototype. Not a substitute for battery-management-system protection and not validated for safety-critical or autonomous use. Review by a qualified engineer is required."
+    },
+    "artifacts": {
+      "root": "<project_root>/artifacts",
+      "rul_dir": "<project_root>/artifacts/rul",
+      "soh_dir": "<project_root>/artifacts/soh",
+      "risk_dir": "<project_root>/artifacts/risk",
+      "multitask_dir": "<project_root>/artifacts/multitask",
+      "calibration_dir": "<project_root>/artifacts/calibration",
+      "bundle_dir": "<project_root>/artifacts/bundles",
+      "schema_version": "2.0",
+      "strict_compatibility": true
+    },
+    "service": {
+      "api_host": "127.0.0.1",
+      "api_port": 8000,
+      "api_title": "Battery Digital Twin API",
+      "api_root_path": "",
+      "max_history_cycles": 5000,
+      "dashboard_api_url": "http://127.0.0.1:8000",
+      "dashboard_mode": "service",
+      "request_id_header": "X-Request-ID"
+    }
+  },
+  "targets": {
+    "soh": {
+      "representation": "fraction in [0, 1]",
+      "strategy": "first_n_cycle_mean",
+      "reference_cycles": 5,
+      "reference_capacity_ah_by_battery": {
+        "B0005": 1.84608,
+        "B0006": 2.02466,
+        "B0018": 1.84566,
+        "B0033": 1.66348,
+        "B0034": 1.64295
+      },
+      "n_rows": 520,
+      "soh_min": 0.68909,
+      "soh_max": 1.02987,
+      "soh_mean": 0.88764,
+      "n_clipped_to_plausible_range": 0,
+      "class_counts": {
+        "healthy": 245,
+        "slightly_degraded": 185,
+        "warning": 86,
+        "critical": 4
+      }
+    },
+    "risk": {
+      "definition": "RUL(t) <= H, derived from the capacity end-of-life threshold",
+      "is_observed_safety_failure": false,
+      "primary_horizon_cycles": 30,
+      "horizons": [
+        20,
+        30,
+        50
+      ],
+      "n_rows": 520,
+      "positives": {
+        "20": 105,
+        "30": 155,
+        "50": 255
+      },
+      "positive_rate": {
+        "20": 0.20192,
+        "30": 0.29808,
+        "50": 0.49038
+      },
+      "excluded_right_censored_batteries": []
+    }
+  },
+  "rul": {
+    "model": "random_forest",
+    "estimator": {
+      "method": "split_conformal",
+      "target": "rul_cycles",
+      "coverage_target": 0.9,
+      "n_calibration_rows": 373,
+      "global_quantile": 24.49923,
+      "stage_quantiles": {
+        "early": 28.04297,
+        "late": 22.64258,
+        "mid": 19.54365
+      },
+      "stage_counts": {
+        "early": 159,
+        "late": 70,
+        "mid": 144
+      },
+      "stage_variable": "measured state of health",
+      "stage_edges": [
+        0.9,
+        0.8
+      ],
+      "clip": {
+        "lower": 0.0,
+        "upper": null
+      }
+    },
+    "out_of_fold_coverage": {
+      "n": 373,
+      "empirical_coverage": 0.91689,
+      "mean_interval_width": 46.9618,
+      "median_interval_width": 45.2852,
+      "by_battery_id": {
+        "B0006": {
+          "n": 106,
+          "empirical_coverage": 0.95283,
+          "mean_interval_width": 46.9236
+        },
+        "B0018": {
+          "n": 94,
+          "empirical_coverage": 1.0,
+          "mean_interval_width": 45.8726
+        },
+        "B0033": {
+          "n": 101,
+          "empirical_coverage": 0.86139,
+          "mean_interval_width": 49.4214
+        },
+        "B0034": {
+          "n": 72,
+          "empirical_coverage": 0.83333,
+          "mean_interval_width": 44.9896
+        }
+      },
+      "by_life_stage": {
+        "early": {
+          "n": 159,
+          "empirical_coverage": 0.91195,
+          "mean_interval_width": 56.0167
+        },
+        "late": {
+          "n": 70,
+          "empirical_coverage": 0.92857,
+          "mean_interval_width": 44.0381
+        },
+        "mid": {
+          "n": 144,
+          "empirical_coverage": 0.91667,
+          "mean_interval_width": 38.3848
+        }
+      }
+    },
+    "test_coverage": {
+      "n": 122,
+      "empirical_coverage": 0.80328,
+      "mean_interval_width": 48.6027,
+      "median_interval_width": 50.6855,
+      "by_battery_id": {
+        "B0005": {
+          "n": 122,
+          "empirical_coverage": 0.80328,
+          "mean_interval_width": 48.6027
+        }
+      },
+      "by_life_stage": {
+        "early": {
+          "n": 61,
+          "empirical_coverage": 0.65574,
+          "mean_interval_width": 56.0859
+        },
+        "late": {
+          "n": 20,
+          "empirical_coverage": 0.85,
+          "mean_interval_width": 45.2852
+        },
+        "mid": {
+          "n": 41,
+          "empirical_coverage": 1.0,
+          "mean_interval_width": 39.0873
+        }
+      }
+    }
+  },
+  "soh": {
+    "selected_model": "lightgbm",
+    "validation_selection_mae": {
+      "elastic_net": 0.0904960710457645,
+      "random_forest": 0.06033897237266693,
+      "lightgbm": 0.04000819599764962
+    },
+    "out_of_fold_metrics": {
+      "n": 373,
+      "mae": 0.024428528331925173,
+      "rmse": 0.03204334301804523,
+      "mse": 0.001026775831772108,
+      "median_ae": 0.020016664155904862,
+      "max_error": 0.08900950647355554,
+      "mape": 2.4428528331925174,
+      "smape": 2.4428528331925174,
+      "r2": 0.8289548011183508,
+      "bias": 0.0031168646955152643,
+      "std_residual": 0.031891393607711135,
+      "alpha_lambda": 1.0,
+      "within_10_cycles": 1.0,
+      "within_25_cycles": 1.0,
+      "max_absolute_error": 0.08900950647355554
+    },
+    "test_metrics": {
+      "n": 122,
+      "mae": 0.013381143439742706,
+      "rmse": 0.020036893105347134,
+      "mse": 0.0004014770853151075,
+      "median_ae": 0.007613944344008694,
+      "max_error": 0.055180164766473805,
+      "mape": 1.3381143439742706,
+      "smape": 1.3381143439742706,
+      "r2": 0.937511222633237,
+      "bias": -0.007199851180883163,
+      "std_residual": 0.018698642418321254,
+      "alpha_lambda": 1.0,
+      "within_10_cycles": 1.0,
+      "within_25_cycles": 1.0
+    },
+    "per_battery": [
+      {
+        "battery_id": "B0005",
+        "partition": "test",
+        "n": 122,
+        "mae": 0.013381143439742706,
+        "rmse": 0.020036893105347134,
+        "mse": 0.0004014770853151075,
+        "median_ae": 0.007613944344008694,
+        "max_error": 0.055180164766473805,
+        "mape": 1.3381143439742706,
+        "smape": 1.3381143439742706,
+        "r2": 0.937511222633237,
+        "bias": -0.007199851180883163,
+        "std_residual": 0.018698642418321254,
+        "alpha_lambda": 1.0,
+        "within_10_cycles": 1.0,
+        "within_25_cycles": 1.0
+      },
+      {
+        "battery_id": "B0006",
+        "partition": "out_of_fold",
+        "n": 106,
+        "mae": 0.04000819599764962,
+        "rmse": 0.048959846936016654,
+        "mse": 0.0023970666119981793,
+        "median_ae": 0.025268764336687788,
+        "max_error": 0.08900950647355554,
+        "mape": 4.000819599764962,
+        "smape": 4.000819599764962,
+        "r2": 0.7340885044332631,
+        "bias": 0.0397498696438002,
+        "std_residual": 0.028583465068096114,
+        "alpha_lambda": 1.0,
+        "within_10_cycles": 1.0,
+        "within_25_cycles": 1.0
+      },
+      {
+        "battery_id": "B0018",
+        "partition": "out_of_fold",
+        "n": 94,
+        "mae": 0.008366964285864791,
+        "rmse": 0.009791825444036275,
+        "mse": 9.58798455264762e-05,
+        "median_ae": 0.00825232916028329,
+        "max_error": 0.027937151750180966,
+        "mape": 0.8366964285864791,
+        "smape": 0.8366964285864791,
+        "r2": 0.9801392355205455,
+        "bias": -0.0005602417970317034,
+        "std_residual": 0.009775785117080618,
+        "alpha_lambda": 1.0,
+        "within_10_cycles": 1.0,
+        "within_25_cycles": 1.0
+      },
+      {
+        "battery_id": "B0033",
+        "partition": "out_of_fold",
+        "n": 101,
+        "mae": 0.02224116963299593,
+        "rmse": 0.023582756965729024,
+        "mse": 0.0005561464261046408,
+        "median_ae": 0.02233167261262714,
+        "max_error": 0.04087349776496496,
+        "mape": 2.224116963299593,
+        "smape": 2.224116963299593,
+        "r2": 0.756284894102295,
+        "bias": -0.02224116963299593,
+        "std_residual": 0.007840714218803061,
+        "alpha_lambda": 1.0,
+        "within_10_cycles": 1.0,
+        "within_25_cycles": 1.0
+      },
+      {
+        "battery_id": "B0034",
+        "partition": "out_of_fold",
+        "n": 72,
+        "mae": 0.025529437725740987,
+        "rmse": 0.029747742646182372,
+        "mse": 0.0008849281925434974,
+        "median_ae": 0.025177878574549062,
+        "max_error": 0.06400099226815725,
+        "mape": 2.552943772574099,
+        "smape": 2.552943772574099,
+        "r2": -0.5357306066739262,
+        "bias": -0.010442705402250806,
+        "std_residual": 0.027854588426779875,
+        "alpha_lambda": 1.0,
+        "within_10_cycles": 1.0,
+        "within_25_cycles": 1.0
+      }
+    ],
+    "n_train_rows": 267,
+    "representation": "fraction in [0, 1]"
+  },
+  "risk": {
+    "model": "lightgbm",
+    "horizon_cycles": 30,
+    "calibration": {
+      "method": "isotonic",
+      "n_calibration_rows": 373,
+      "fitted_on": "validation/calibration partition only",
+      "threshold": 0.48901,
+      "threshold_selection": {
+        "objective": "f1",
+        "precision": 0.5518867924528302,
+        "recall": 0.9435483870967742,
+        "specificity": 0.6184738955823293,
+        "f1": 0.6964285714285715,
+        "objective_value": 0.6964285714285715
+      },
+      "metrics_before": {
+        "brier": 0.27757,
+        "ece": 0.26943
+      },
+      "metrics_after": {
+        "brier": 0.14165,
+        "ece": 0.0
+      },
+      "n_bins": 10
+    },
+    "threshold": 0.489010989010989,
+    "out_of_fold_raw": {
+      "n": 373,
+      "n_positive": 124,
+      "positive_rate": 0.3324396782841823,
+      "threshold": 0.489010989010989,
+      "brier": 0.27757156877097744,
+      "ece": 0.26943337246985605,
+      "roc_auc": 0.7848652675216997,
+      "pr_auc": 0.6286797152520628,
+      "roc_auc_cycle_index_baseline": 0.9564386578572355,
+      "pr_auc_cycle_index_baseline": 0.9282123507735737,
+      "beats_cycle_index_baseline": false,
+      "precision": 0.5739130434782609,
+      "recall": 0.532258064516129,
+      "f1": 0.5523012552301255,
+      "true_negative": 200,
+      "false_positive": 49,
+      "false_negative": 58,
+      "true_positive": 66
+    },
+    "out_of_fold_calibrated": {
+      "n": 373,
+      "n_positive": 124,
+      "positive_rate": 0.3324396782841823,
+      "threshold": 0.489010989010989,
+      "brier": 0.14165070854078898,
+      "ece": 8.512702011871173e-17,
+      "roc_auc": 0.8334466899857494,
+      "pr_auc": 0.6467441895698134,
+      "roc_auc_cycle_index_baseline": 0.9564386578572355,
+      "pr_auc_cycle_index_baseline": 0.9282123507735737,
+      "beats_cycle_index_baseline": false,
+      "precision": 0.5518867924528302,
+      "recall": 0.9435483870967742,
+      "f1": 0.6964285714285714,
+      "true_negative": 154,
+      "false_positive": 95,
+      "false_negative": 7,
+      "true_positive": 117,
+      "calibration_is_in_sample": true,
+      "note": "Calibrated on these rows; Brier and ECE here are in-sample. Read the test-partition figures for out-of-sample calibration quality."
+    },
+    "test_calibrated": {
+      "n": 122,
+      "n_positive": 31,
+      "positive_rate": 0.2540983606557377,
+      "threshold": 0.489010989010989,
+      "brier": 0.09237326162730648,
+      "ece": 0.10130112052587296,
+      "roc_auc": 0.9340659340659341,
+      "pr_auc": 0.7209302325581395,
+      "roc_auc_cycle_index_baseline": 1.0,
+      "pr_auc_cycle_index_baseline": 1.0,
+      "beats_cycle_index_baseline": false,
+      "precision": 0.7209302325581395,
+      "recall": 1.0,
+      "f1": 0.8378378378378378,
+      "true_negative": 79,
+      "false_positive": 12,
+      "false_negative": 0,
+      "true_positive": 31,
+      "n_test_cells": 1
+    },
+    "reliability_curve": [
+      {
+        "bin_lower": 0.0,
+        "bin_upper": 0.1,
+        "n": 109,
+        "mean_predicted": 0.0,
+        "observed": 0.0
+      },
+      {
+        "bin_lower": 0.1,
+        "bin_upper": 0.2,
+        "n": 52,
+        "mean_predicted": 0.13461538461538464,
+        "observed": 0.1346153846153846
+      },
+      {
+        "bin_lower": 0.2,
+        "bin_upper": 0.30000000000000004,
+        "n": 0,
+        "mean_predicted": NaN,
+        "observed": NaN
+      },
+      {
+        "bin_lower": 0.30000000000000004,
+        "bin_upper": 0.4,
+        "n": 0,
+        "mean_predicted": NaN,
+        "observed": NaN
+      },
+      {
+        "bin_lower": 0.4,
+        "bin_upper": 0.5,
+        "n": 182,
+        "mean_predicted": 0.48901098901098883,
+        "observed": 0.489010989010989
+      },
+      {
+        "bin_lower": 0.5,
+        "bin_upper": 0.6000000000000001,
+        "n": 2,
+        "mean_predicted": 0.5,
+        "observed": 0.5
+      },
+      {
+        "bin_lower": 0.6000000000000001,
+        "bin_upper": 0.7000000000000001,
+        "n": 0,
+        "mean_predicted": NaN,
+        "observed": NaN
+      },
+      {
+        "bin_lower": 0.7000000000000001,
+        "bin_upper": 0.8,
+        "n": 0,
+        "mean_predicted": NaN,
+        "observed": NaN
+      },
+      {
+        "bin_lower": 0.8,
+        "bin_upper": 0.9,
+        "n": 5,
+        "mean_predicted": 0.8,
+        "observed": 0.8
+      },
+      {
+        "bin_lower": 0.9,
+        "bin_upper": 1.0,
+        "n": 23,
+        "mean_predicted": 1.0,
+        "observed": 1.0
+      }
+    ]
+  },
+  "multitask": {
+    "fit": {
+      "encoder": "transformer",
+      "window": 20,
+      "n_features": 80,
+      "n_train_windows": 210,
+      "n_val_windows": 87,
+      "n_parameters": 176452,
+      "best_epoch": 2,
+      "best_val_total_loss": 0.082866,
+      "epochs_run": 23,
+      "risk_pos_weight": 1.2580645084381104,
+      "loss_weights": {
+        "rul": 1.0,
+        "soh": 1.0,
+        "risk": 0.5
+      },
+      "rul_scale": 100.0,
+      "device": "mps",
+      "feature_names": [
+        "capacity_ah",
+        "n_samples_discharge",
+        "charge_energy_wh",
+        "capacity_ah_rmax_3",
+        "capacity_ah_rmax_5",
+        "capacity_ah_rmax_10",
+        "capacity_ah_rmax_20",
+        "capacity_ah_rrange_20",
+        "capacity_ah_lag_1",
+        "capacity_ah_lag_3",
+        "capacity_ah_lag_5",
+        "capacity_ah_cumstd",
+        "soh_rmin_10",
+        "soh_rmax_10",
+        "soh_rmin_20",
+        "soh_rmax_20",
+        "soh_ewm_15",
+        "soh_lag_3",
+        "soh_lag_5",
+        "soh_lag_10",
+        "soh_delta_from_initial",
+        "soh_cummean",
+        "soh_cummin",
+        "soh_cumstd",
+        "discharge_duration_s_rmax_3",
+        "discharge_duration_s_rmax_5",
+        "discharge_duration_s_rmin_10",
+        "discharge_duration_s_rmax_10",
+        "discharge_duration_s_ewm_15",
+        "discharge_duration_s_cummin",
+        "discharge_duration_s_cumstd",
+        "charge_duration_s_cummin",
+        "charge_duration_s_cummax",
+        "voltage_min_v_rstd_10",
+        "voltage_min_v_rstd_20",
+        "voltage_min_v_rrange_20",
+        "voltage_min_v_cumstd",
+        "voltage_slope_v_per_s_ratio_to_initial",
+        "current_mean_a_rmin_3",
+        "current_mean_a_rmean_5",
+        "current_mean_a_rmin_5",
+        "current_mean_a_rmax_5",
+        "current_mean_a_rmean_10",
+        "current_mean_a_rmax_10",
+        "current_mean_a_rmean_20",
+        "current_mean_a_rmin_20",
+        "current_mean_a_rmax_20",
+        "current_mean_a_ewm_5",
+        "current_mean_a_ewm_15",
+        "current_mean_a_lag_1",
+        "current_mean_a_lag_2",
+        "current_mean_a_lag_3",
+        "current_mean_a_cummean",
+        "current_mean_a_cummax",
+        "current_mean_a_cumstd",
+        "temperature_max_c_delta_from_initial",
+        "temperature_max_c_cumstd",
+        "internal_resistance_ohm_rmax_20",
+        "internal_resistance_ohm_rrange_20",
+        "energy_throughput_wh_rmax_20",
+        "energy_throughput_wh_cumstd",
+        "cc_ct_ratio_rmean_3",
+        "cc_ct_ratio_rmax_3",
+        "cc_ct_ratio_rmean_5",
+        "cc_ct_ratio_rmin_5",
+        "cc_ct_ratio_rmax_5",
+        "cc_ct_ratio_rmin_10",
+        "cc_ct_ratio_rmean_20",
+        "cc_ct_ratio_rmin_20",
+        "cc_ct_ratio_ewm_5",
+        "cc_ct_ratio_lag_1",
+        "cc_ct_ratio_lag_2",
+        "cc_ct_ratio_lag_3",
+        "cc_ct_ratio_lag_5",
+        "cc_ct_ratio_delta_from_initial",
+        "cc_ct_ratio_cummean",
+        "cc_ct_ratio_cumstd",
+        "log_cycle_index",
+        "inv_cycle_index",
+        "cum_discharge_time_h"
+      ]
+    },
+    "partitions": {
+      "val": {
+        "n_rows": 106,
+        "n_scored": 87,
+        "n_unscored": 19,
+        "coverage": 0.8208,
+        "rul": {
+          "n": 87,
+          "mae": 8.798632501185626,
+          "rmse": 11.12681132648928,
+          "mse": 123.80593029529014,
+          "median_ae": 8.048357963562012,
+          "max_error": 25.496376037597656,
+          "mape": 59.83308264267492,
+          "smape": 33.04446357062511,
+          "r2": 0.8036903853668761,
+          "bias": -6.413259506225586,
+          "std_residual": 9.092636185457842,
+          "alpha_lambda": 0.4942528735632184,
+          "within_10_cycles": 0.5977011494252874,
+          "within_25_cycles": 0.9885057471264368
+        },
+        "soh": {
+          "n": 87,
+          "mae": 0.16314835795040789,
+          "rmse": 0.169811162473512,
+          "mse": 0.02883583090060549,
+          "median_ae": 0.16909688711166382,
+          "max_error": 0.22201675176620483,
+          "mape": 16.31483579504079,
+          "smape": 16.31483579504079,
+          "r2": -3.670564885822797,
+          "bias": 0.16314835795040789,
+          "std_residual": 0.047100363042030476,
+          "alpha_lambda": 0.6896551724137931,
+          "within_10_cycles": 1.0,
+          "within_25_cycles": 1.0
+        },
+        "risk": {
+          "n": 87,
+          "n_positive": 31,
+          "positive_rate": 0.3563218390804598,
+          "threshold": 0.5,
+          "brier": 0.032025887016713814,
+          "ece": 0.04018769685136177,
+          "roc_auc": 1.0,
+          "pr_auc": 0.9999999999999998,
+          "roc_auc_cycle_index_baseline": 1.0,
+          "pr_auc_cycle_index_baseline": 0.9999999999999998,
+          "beats_cycle_index_baseline": false,
+          "precision": 1.0,
+          "recall": 0.8709677419354839,
+          "f1": 0.9310344827586207,
+          "true_negative": 56,
+          "false_positive": 0,
+          "false_negative": 4,
+          "true_positive": 27
+        },
+        "n_cells": 1
+      },
+      "test": {
+        "n_rows": 122,
+        "n_scored": 103,
+        "n_unscored": 19,
+        "coverage": 0.8443,
+        "rul": {
+          "n": 103,
+          "mae": 14.43019716022084,
+          "rmse": 20.098410875041765,
+          "mse": 403.94611970199713,
+          "median_ae": 7.678291320800781,
+          "max_error": 47.58245086669922,
+          "mape": 49.85530229357979,
+          "smape": 35.016002739634075,
+          "r2": 0.5430473759027181,
+          "bias": -13.419208591424146,
+          "std_residual": 14.96231801833679,
+          "alpha_lambda": 0.3883495145631068,
+          "within_10_cycles": 0.6213592233009708,
+          "within_25_cycles": 0.7572815533980582
+        },
+        "soh": {
+          "n": 103,
+          "mae": 0.05465823701284464,
+          "rmse": 0.06389234463644786,
+          "mse": 0.004082231703142628,
+          "median_ae": 0.055686771869659424,
+          "max_error": 0.12760698795318604,
+          "mape": 5.465823701284464,
+          "smape": 5.465823701284464,
+          "r2": 0.2802989609142844,
+          "bias": 0.05200611619116033,
+          "std_residual": 0.03711597475284947,
+          "alpha_lambda": 1.0,
+          "within_10_cycles": 1.0,
+          "within_25_cycles": 1.0
+        },
+        "risk": {
+          "n": 103,
+          "n_positive": 31,
+          "positive_rate": 0.30097087378640774,
+          "threshold": 0.5,
+          "brier": 0.0782140064843837,
+          "ece": 0.09831932939824115,
+          "roc_auc": 1.0,
+          "pr_auc": 0.9999999999999998,
+          "roc_auc_cycle_index_baseline": 1.0,
+          "pr_auc_cycle_index_baseline": 0.9999999999999998,
+          "beats_cycle_index_baseline": false,
+          "precision": 1.0,
+          "recall": 0.6451612903225806,
+          "f1": 0.7843137254901961,
+          "true_negative": 72,
+          "false_positive": 0,
+          "false_negative": 11,
+          "true_positive": 20
+        },
+        "n_cells": 1
+      }
+    }
+  },
+  "timings_s": {
+    "prepare": 0.131,
+    "rul_uncertainty": 3.401,
+    "soh": 16.67,
+    "risk": 4.282,
+    "multitask": 5.24
+  }
+}

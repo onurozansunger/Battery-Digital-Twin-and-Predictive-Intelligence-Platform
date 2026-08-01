@@ -155,7 +155,10 @@ def test_leakage_detector_catches_a_planted_violation(labelled_cycles, cfg: Expe
 
     def leaky_builder(df, feature_cfg):
         frame, report = build_features(df, feature_cfg)
-        source = feature_columns(frame)[0]
+        # A column that actually varies within a cell — a constant one would make
+        # the reverse cumulative minimum constant too, and the planted violation
+        # would be undetectable for reasons that have nothing to do with the guard.
+        source = next(c for c in feature_columns(frame) if frame[c].std() > 1e-9)
         # Reverse cumulative minimum: at cycle k this reads every cycle AFTER k.
         frame["planted_future_min"] = (
             frame.iloc[::-1].groupby("battery_id")[source].cummin().iloc[::-1]
@@ -190,12 +193,15 @@ def test_warmup_rows_are_dropped(labelled_cycles, cfg: ExperimentConfig):
     assert report.warmup_rows_dropped > 0
 
 
-def test_prune_false_yields_a_superset(labelled_cycles, cfg: ExperimentConfig):
-    """The serving path relies on this: unpruned output must contain every
-    column the pruned (training) output produced."""
-    pruned, _ = build_features(labelled_cycles, cfg.features, prune=True)
-    unpruned, _ = build_features(labelled_cycles, cfg.features, prune=False)
-    assert set(feature_columns(pruned)) <= set(feature_columns(unpruned))
+def test_feature_generation_is_stateless_across_calls(labelled_cycles, cfg: ExperimentConfig):
+    """Generation must not prune (Milestone 1.1): the column set is a pure
+    function of the configuration, not of the rows in hand. Serving relies on it —
+    a batch of one cell must produce the same columns as the training table."""
+    everything, _ = build_features(labelled_cycles, cfg.features)
+    one_cell, _ = build_features(
+        labelled_cycles[labelled_cycles["battery_id"] == "T0001"], cfg.features
+    )
+    assert feature_columns(everything) == feature_columns(one_cell)
 
 
 def test_empty_input_raises(cfg: ExperimentConfig):
@@ -214,6 +220,7 @@ def test_pipeline_fit_transform_shape(labelled_cycles, cfg: ExperimentConfig):
     pipeline = FeaturePipeline(cfg=cfg.features)
     X = pipeline.fit_transform(frame[names], y)
     assert X.shape == (len(frame), len(pipeline.feature_names))
+    assert cfg.features.max_features is not None
     assert len(pipeline.feature_names) <= cfg.features.max_features
 
 

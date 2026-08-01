@@ -199,7 +199,11 @@ def test_search_space_sampling_produces_valid_params(cfg: ExperimentConfig):
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     for name in ("xgboost", "lightgbm", "random_forest"):
         study = optuna.create_study(direction="minimize")
-        study.optimize(lambda trial, _n=name: float(len(SEARCH_SPACES[_n](trial))), n_trials=2)
+
+        def _objective(trial: optuna.Trial, _n: str = name) -> float:
+            return float(len(SEARCH_SPACES[_n](trial)))
+
+        study.optimize(_objective, n_trials=2)
         assert study.best_value > 0
 
 

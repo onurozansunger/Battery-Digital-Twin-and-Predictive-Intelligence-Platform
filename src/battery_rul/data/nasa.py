@@ -221,13 +221,13 @@ class NASABatterySource(BatterySource):
         for step in cycles:
             step_type = step["type"]
             if step_type == "charge":
-                summary = self._summarise_charge(step)
-                if summary is not None:
-                    last_charge = summary
+                charge_summary = self._summarise_charge(step)
+                if charge_summary is not None:
+                    last_charge = charge_summary
             elif step_type == "impedance":
-                summary = self._summarise_impedance(step)
-                if summary is not None:
-                    last_impedance = summary
+                impedance_summary = self._summarise_impedance(step)
+                if impedance_summary is not None:
+                    last_impedance = impedance_summary
             elif step_type == "discharge":
                 row = self._summarise_discharge(step)
                 if row is None:

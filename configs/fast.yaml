@@ -35,6 +35,11 @@ models:
     seed: 42
 
 evaluation:
+  # A three-candidate nested comparison keeps the smoke run honest about the
+  # design without paying for the full zoo.
+  nested_enabled: true
+  nested_candidates: [cohort_median_life, capacity_fade_extrapolation, ridge]
+  nested_select_by: mae
   metrics: [mae, rmse, mape, r2]
   mape_epsilon: 1.0
   alpha: 0.2

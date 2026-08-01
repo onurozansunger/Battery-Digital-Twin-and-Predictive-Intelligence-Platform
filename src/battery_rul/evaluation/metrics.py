@@ -22,11 +22,17 @@ in service past its safe window, while under-predicting only wastes capacity.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from battery_rul.utils.logging import get_logger
+
+#: Anything array-like this module can score. Callers pass NumPy arrays far more
+#: often than lists, and declaring `Sequence[float]` made every real call site a
+#: type error while accepting nothing extra at runtime.
+type Scores = Sequence[float] | np.ndarray | pd.Series
 
 logger = get_logger(__name__)
 
@@ -56,7 +62,7 @@ METRIC_DIRECTION: dict[str, str] = {
 }
 
 
-def _clean(y_true: Sequence[float], y_pred: Sequence[float]) -> tuple[np.ndarray, np.ndarray]:
+def _clean(y_true: Scores, y_pred: Scores) -> tuple[np.ndarray, np.ndarray]:
     """Drop rows either side cannot score (sequence models emit NaN warm-ups)."""
     y_true = np.asarray(y_true, dtype=float).ravel()
     y_pred = np.asarray(y_pred, dtype=float).ravel()
@@ -67,8 +73,8 @@ def _clean(y_true: Sequence[float], y_pred: Sequence[float]) -> tuple[np.ndarray
 
 
 def compute_metrics(
-    y_true: Sequence[float],
-    y_pred: Sequence[float],
+    y_true: Scores,
+    y_pred: Scores,
     *,
     mape_epsilon: float = 1.0,
     alpha: float = 0.20,
@@ -148,9 +154,7 @@ def per_battery_metrics(
     return out[[battery_col] + [c for c in out.columns if c != battery_col]]
 
 
-def prognostic_horizon(
-    y_true: Sequence[float], y_pred: Sequence[float], *, alpha: float = 0.20
-) -> float:
+def prognostic_horizon(y_true: Scores, y_pred: Scores, *, alpha: float = 0.20) -> float:
     """Cycles of advance warning before end of life.
 
     Walking backwards from EOL (RUL = 0), find the earliest point from which
@@ -176,8 +180,8 @@ def prognostic_horizon(
 
 
 def residual_summary(
-    y_true: Sequence[float],
-    y_pred: Sequence[float],
+    y_true: Scores,
+    y_pred: Scores,
     *,
     quantiles: Sequence[float] = (0.05, 0.25, 0.5, 0.75, 0.95),
 ) -> dict[str, float]:
@@ -199,8 +203,8 @@ def residual_summary(
 
 
 def bootstrap_metric_ci(
-    y_true: Sequence[float],
-    y_pred: Sequence[float],
+    y_true: Scores,
+    y_pred: Scores,
     *,
     metric: str = "rmse",
     n_samples: int = 1000,
@@ -208,7 +212,7 @@ def bootstrap_metric_ci(
     seed: int = 42,
     mape_epsilon: float = 1.0,
     alpha: float = 0.20,
-) -> dict[str, float]:
+) -> dict[str, Any]:
     """Percentile bootstrap confidence interval for one metric.
 
     With two or three held-out cells, a point estimate on its own invites

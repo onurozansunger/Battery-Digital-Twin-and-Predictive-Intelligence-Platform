@@ -15,25 +15,36 @@ PosixPath('data/processed')
 from __future__ import annotations
 
 import copy
+import json
 import os
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 __all__ = [
+    "ArtifactConfig",
+    "CalibrationConfig",
     "DataConfig",
+    "DataQualityConfig",
     "EvaluationConfig",
     "ExperimentConfig",
     "ExplainabilityConfig",
     "FeatureConfig",
     "ModelZooConfig",
+    "MultiTaskConfig",
     "PathsConfig",
+    "RecommendationConfig",
+    "RiskConfig",
+    "SOHConfig",
+    "ServiceConfig",
     "SplitConfig",
     "TargetConfig",
     "TrainingConfig",
     "TuningConfig",
+    "UncertaintyConfig",
+    "ValidationConfig",
     "load_config",
     "project_root",
 ]
@@ -213,6 +224,18 @@ class ValidationConfig(_Base):
     fail_fast: bool = Field(
         default=False, description="Raise on violation instead of quarantining rows."
     )
+    missingness_indicators: bool = Field(
+        default=True,
+        description="Emit a ``<column>_is_missing`` flag for every sensor column that "
+        "has at least one missing observation. Absence of a reading is itself "
+        "information (an EIS sweep that was never run, an aborted charge step), and "
+        "an imputed value hides it.",
+    )
+    indicator_columns: list[str] | None = Field(
+        default=None,
+        description="Restrict missingness indicators to these columns. None means "
+        "'every numeric column that has a missing value'.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -258,7 +281,16 @@ class FeatureConfig(_Base):
     min_periods_fraction: float = Field(default=1.0, gt=0.0, le=1.0)
     variance_threshold: float = Field(default=1e-10, ge=0.0)
     correlation_prune_threshold: float | None = Field(
-        default=0.98, description="Drop one of any feature pair above |rho|. None disables."
+        default=0.98,
+        description="Drop one of any feature pair above |rho|. None disables. Fitted "
+        "on the TRAINING partition only, inside FeaturePipeline — see Milestone 1.1.",
+    )
+    fallback_imputation: Literal["median", "mean", "zero"] = Field(
+        default="median",
+        description="Fleet-level fallback for a feature that has no observed value "
+        "anywhere in a cell's history. Learned from TRAINING rows only, persisted "
+        "with the fitted pipeline and replayed unchanged at validation, test and "
+        "serving time.",
     )
     scaler: Literal["standard", "robust", "minmax", "none"] = "robust"
     max_features: int | None = Field(
@@ -289,6 +321,13 @@ class TargetConfig(_Base):
     """
 
     name: str = "rul_cycles"
+    eol_persistence: int = Field(
+        default=3,
+        ge=1,
+        description="Complete consecutive observations at or below the end-of-life "
+        "threshold required for a crossing to count. A record that ends before "
+        "this many observations exist is right-censored, not confirmed end of life.",
+    )
     clip_negative: bool = True
     cap_at: int | None = Field(
         default=None,
@@ -454,6 +493,32 @@ class EvaluationConfig(_Base):
     learning_curve_fractions: list[float] = Field(
         default_factory=lambda: [0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1.0]
     )
+    nested_enabled: bool = Field(
+        default=True,
+        description="Run the nested leave-one-battery-out comparison. This is what "
+        "makes the headline metric an estimate of the whole procedure rather than "
+        "of an already-selected model.",
+    )
+    nested_candidates: list[str] = Field(
+        default_factory=lambda: [
+            "cohort_median_life",
+            "capacity_fade_extrapolation",
+            "soh_analogue",
+            "elastic_net",
+            "ridge",
+            "random_forest",
+            "xgboost",
+            "lightgbm",
+            "gru",
+            "transformer",
+        ],
+        description="Families compared under identical outer folds. Baselines are "
+        "not optional here: a learned model that cannot beat them has not earned "
+        "its complexity.",
+    )
+    nested_select_by: str = Field(
+        default="mae", description="Metric the inner selection loop optimises."
+    )
 
 
 class ExplainabilityConfig(_Base):
@@ -464,6 +529,258 @@ class ExplainabilityConfig(_Base):
     permutation_repeats: int = Field(default=15, ge=1)
     top_k_features: int = Field(default=25, ge=1)
     error_analysis_quantile: float = Field(default=0.90, gt=0.0, lt=1.0)
+
+
+# ---------------------------------------------------------------------------
+# Milestone 2 — digital twin
+# ---------------------------------------------------------------------------
+class SOHConfig(_Base):
+    """State-of-health definition and health banding.
+
+    The internal representation is a **fraction in [0, 1]** everywhere in the
+    codebase; percentages exist only in rendered text. See docs/SOH_DEFINITION.md.
+    """
+
+    reference_strategy: Literal["nominal", "first_cycle", "first_n_cycle_mean"] = Field(
+        default="first_n_cycle_mean",
+        description="Denominator of SOH. 'nominal' uses the manufacturer rating; "
+        "'first_cycle' the cell's own first valid measurement; 'first_n_cycle_mean' "
+        "the mean of its first N valid cycles (robust to one bad opening reading).",
+    )
+    reference_cycles: int = Field(default=5, ge=1)
+    target_name: str = "soh_target"
+    #: Health bands, expressed as fractions. Read as: class C applies when
+    #: ``lower <= SOH < upper`` of the band above it. Demonstration values.
+    healthy_min: float = Field(default=0.90, gt=0.0, le=1.5)
+    slightly_degraded_min: float = Field(default=0.80, gt=0.0, le=1.5)
+    warning_min: float = Field(default=0.70, gt=0.0, le=1.5)
+    plausible_min: float = Field(default=0.20, ge=0.0, description="Physical clip, lower.")
+    plausible_max: float = Field(default=1.20, gt=0.0, description="Physical clip, upper.")
+
+    @model_validator(mode="after")
+    def _ordered(self) -> SOHConfig:
+        if not (self.warning_min < self.slightly_degraded_min < self.healthy_min):
+            raise ValueError(
+                "SOH bands must satisfy warning_min < slightly_degraded_min < healthy_min, "
+                f"got {self.warning_min} / {self.slightly_degraded_min} / {self.healthy_min}"
+            )
+        if self.plausible_min >= self.plausible_max:
+            raise ValueError("soh.plausible_min must be below soh.plausible_max")
+        return self
+
+
+class RiskConfig(_Base):
+    """Future end-of-life risk target, model and decision threshold."""
+
+    horizon_cycles: int = Field(
+        default=30, ge=1, description="H in 'reaches end of life within the next H cycles'."
+    )
+    additional_horizons: list[int] = Field(default_factory=lambda: [20, 50])
+    target_name: str = "failure_within_horizon"
+    model: Literal["logistic_regression", "random_forest", "lightgbm", "xgboost"] = "lightgbm"
+    class_weight_balanced: bool = True
+    threshold: float | None = Field(
+        default=None,
+        description="Decision threshold. None means 'tune on the validation/calibration "
+        "partition by the configured objective'. Never tuned on test.",
+    )
+    threshold_objective: Literal["f1", "youden", "precision_at_recall"] = "f1"
+    min_recall: float = Field(default=0.80, gt=0.0, le=1.0)
+    #: Risk banding on the calibrated probability.
+    low_max: float = Field(default=0.20, gt=0.0, lt=1.0)
+    medium_max: float = Field(default=0.50, gt=0.0, lt=1.0)
+    high_max: float = Field(default=0.80, gt=0.0, lt=1.0)
+
+    @model_validator(mode="after")
+    def _ordered(self) -> RiskConfig:
+        if not (self.low_max < self.medium_max < self.high_max):
+            raise ValueError("risk bands must satisfy low_max < medium_max < high_max")
+        return self
+
+
+class MultiTaskConfig(_Base):
+    """Shared sequence encoder with RUL / SOH / risk heads."""
+
+    enabled: bool = True
+    encoder: Literal["transformer", "lstm", "gru"] = "transformer"
+    window: int = Field(default=20, ge=2)
+    stride: int = Field(default=1, ge=1)
+    d_model: int = Field(default=96, ge=8)
+    nhead: int = Field(default=4, ge=1)
+    num_layers: int = Field(default=2, ge=1)
+    dim_feedforward: int = Field(default=192, ge=8)
+    hidden_size: int = Field(default=96, ge=8)
+    dropout: float = Field(default=0.15, ge=0.0, lt=1.0)
+    head_hidden: int = Field(default=64, ge=4)
+    rul_loss: Literal["mae", "mse", "huber"] = "huber"
+    soh_loss: Literal["mae", "mse", "huber"] = "huber"
+    risk_loss: Literal["bce", "focal"] = "bce"
+    focal_gamma: float = Field(default=2.0, ge=0.0)
+    rul_weight: float = Field(default=1.0, ge=0.0)
+    soh_weight: float = Field(default=1.0, ge=0.0)
+    risk_weight: float = Field(default=0.5, ge=0.0)
+    #: RUL is scaled by this before the loss so the three tasks are commensurate.
+    rul_scale: float = Field(default=100.0, gt=0.0)
+    epochs: int = Field(default=120, ge=1)
+    batch_size: int = Field(default=32, ge=1)
+    learning_rate: float = Field(default=2e-3, gt=0.0)
+    weight_decay: float = Field(default=1e-4, ge=0.0)
+    grad_clip: float | None = 1.0
+    early_stopping_patience: int = Field(default=20, ge=1)
+    device: Literal["auto", "cpu", "cuda", "mps"] = "auto"
+    seed: int = 42
+
+    @model_validator(mode="after")
+    def _head_divides_dmodel(self) -> MultiTaskConfig:
+        if self.encoder == "transformer" and self.d_model % self.nhead:
+            raise ValueError(f"d_model={self.d_model} must be divisible by nhead={self.nhead}")
+        if self.rul_weight + self.soh_weight + self.risk_weight <= 0:
+            raise ValueError("At least one multitask loss weight must be positive")
+        return self
+
+
+class UncertaintyConfig(_Base):
+    """Prediction-interval construction for RUL (and optionally SOH)."""
+
+    method: Literal["split_conformal", "none"] = "split_conformal"
+    coverage: float = Field(default=0.90, gt=0.0, lt=1.0)
+    normalise_by_life_stage: bool = Field(
+        default=True,
+        description="Fit separate conformal quantiles per degradation-stage bucket. "
+        "RUL residuals are strongly heteroscedastic — wide early in life, tight near "
+        "end of life — so one global quantile is too loose where it matters most.",
+    )
+    stage_edges: list[float] = Field(
+        default_factory=lambda: [0.90, 0.80],
+        description="**State-of-health** cut points, descending, defining the "
+        "conditioning buckets: early (SOH >= first), mid (>= second), late (below). "
+        "SOH is used rather than life fraction on purpose — life fraction needs the "
+        "end-of-life cycle, which is a label, so conditioning on it would work in "
+        "evaluation and silently fall back to a single global quantile at serving "
+        "time, exactly where the interval matters.",
+    )
+    min_calibration_rows: int = Field(default=20, ge=5)
+
+
+class CalibrationConfig(_Base):
+    """Probability calibration for the failure-risk classifier."""
+
+    method: Literal["isotonic", "platt", "none"] = "isotonic"
+    min_calibration_rows: int = Field(default=30, ge=10)
+    n_bins: int = Field(default=10, ge=2, description="Reliability-diagram / ECE bins.")
+
+
+class DataQualityConfig(_Base):
+    """Thresholds for the input-quality gate applied at serving time."""
+
+    min_cycles_for_prediction: int = Field(default=15, ge=1)
+    min_cycles_good: int = Field(default=40, ge=1)
+    max_missing_fraction_acceptable: float = Field(default=0.30, gt=0.0, le=1.0)
+    max_missing_fraction_good: float = Field(default=0.05, ge=0.0, le=1.0)
+    max_cycle_gap: int = Field(default=25, ge=1)
+    good_min_score: float = Field(default=0.80, gt=0.0, le=1.0)
+    acceptable_min_score: float = Field(default=0.60, gt=0.0, le=1.0)
+    poor_min_score: float = Field(default=0.35, gt=0.0, le=1.0)
+    ood_z_threshold: float = Field(default=5.0, gt=0.0)
+
+    @model_validator(mode="after")
+    def _ordered(self) -> DataQualityConfig:
+        if not (self.poor_min_score < self.acceptable_min_score < self.good_min_score):
+            raise ValueError("quality score thresholds must be strictly increasing")
+        return self
+
+
+class RecommendationConfig(_Base):
+    """Deterministic rule thresholds for the decision-support layer.
+
+    These are engineering rules, not model outputs, and they live outside the
+    model on purpose: they must be auditable and changeable without retraining.
+    """
+
+    inspection_rul_cycles: int = Field(default=40, ge=1)
+    replacement_rul_cycles: int = Field(default=15, ge=1)
+    urgent_rul_cycles: int = Field(default=5, ge=1)
+    inspection_risk: float = Field(default=0.30, gt=0.0, lt=1.0)
+    replacement_risk: float = Field(default=0.60, gt=0.0, lt=1.0)
+    urgent_risk: float = Field(default=0.85, gt=0.0, lt=1.0)
+    temperature_trend_c_per_10_cycles: float = Field(default=0.5, gt=0.0)
+    resistance_trend_pct_per_10_cycles: float = Field(default=2.0, gt=0.0)
+    fade_trend_pct_per_10_cycles: float = Field(default=1.0, gt=0.0)
+    inspection_window_cycles: tuple[int, int] = (10, 20)
+    disclaimer: str = (
+        "Engineering decision support from a research prototype. Not a substitute "
+        "for battery-management-system protection and not validated for "
+        "safety-critical or autonomous use. Review by a qualified engineer is required."
+    )
+
+
+class ArtifactConfig(_Base):
+    """Where Milestone 2 model bundles live and how strictly they are policed."""
+
+    root: Path = Path("artifacts")
+    rul_dir: Path = Path("artifacts/rul")
+    soh_dir: Path = Path("artifacts/soh")
+    risk_dir: Path = Path("artifacts/risk")
+    multitask_dir: Path = Path("artifacts/multitask")
+    calibration_dir: Path = Path("artifacts/calibration")
+    bundle_dir: Path = Path("artifacts/bundles")
+    schema_version: str = "2.0"
+    strict_compatibility: bool = Field(
+        default=True,
+        description="Refuse to serve a bundle whose persisted training configuration "
+        "disagrees with the runtime configuration on any data-affecting field.",
+    )
+
+    #: Directory fields, resolved against ``paths.root`` by ExperimentConfig.
+    _DIR_FIELDS: ClassVar[tuple[str, ...]] = (
+        "root",
+        "rul_dir",
+        "soh_dir",
+        "risk_dir",
+        "multitask_dir",
+        "calibration_dir",
+        "bundle_dir",
+    )
+
+    def resolve_against(self, root: Path) -> None:
+        """Make every relative artifact path absolute under ``root``.
+
+        Called by :class:`ExperimentConfig` rather than by a validator here,
+        because the anchor is ``paths.root`` — which a test or a CI runner
+        overrides. Resolving against the repository root instead would silently
+        point a temp-directory experiment at the developer's real artifacts,
+        which is exactly the kind of cross-contamination the split discipline
+        exists to prevent.
+        """
+        for field_name in self._DIR_FIELDS:
+            value = Path(getattr(self, field_name))
+            if not value.is_absolute():
+                object.__setattr__(self, field_name, root / value)
+
+    def ensure(self) -> None:
+        for field_name in self.model_fields:
+            value = getattr(self, field_name)
+            if isinstance(value, Path):
+                value.mkdir(parents=True, exist_ok=True)
+
+
+class ServiceConfig(_Base):
+    """API and dashboard runtime settings."""
+
+    api_host: str = "127.0.0.1"
+    api_port: int = Field(default=8000, ge=1, le=65535)
+    api_title: str = "Battery Digital Twin API"
+    api_root_path: str = ""
+    max_history_cycles: int = Field(
+        default=5000, ge=1, description="Upper bound on rows accepted in one request."
+    )
+    dashboard_api_url: str = "http://127.0.0.1:8000"
+    dashboard_mode: Literal["service", "api"] = Field(
+        default="service",
+        description="'service' calls BatteryDigitalTwinService in-process; 'api' "
+        "goes through the HTTP client. Both use the same service layer code path.",
+    )
+    request_id_header: str = "X-Request-ID"
 
 
 class VizConfig(_Base):
@@ -497,6 +814,17 @@ class ExperimentConfig(_Base):
     explainability: ExplainabilityConfig = Field(default_factory=ExplainabilityConfig)
     viz: VizConfig = Field(default_factory=VizConfig)
 
+    # -- milestone 2 ------------------------------------------------------
+    soh: SOHConfig = Field(default_factory=SOHConfig)
+    risk: RiskConfig = Field(default_factory=RiskConfig)
+    multitask: MultiTaskConfig = Field(default_factory=MultiTaskConfig)
+    uncertainty: UncertaintyConfig = Field(default_factory=UncertaintyConfig)
+    calibration: CalibrationConfig = Field(default_factory=CalibrationConfig)
+    quality: DataQualityConfig = Field(default_factory=DataQualityConfig)
+    recommendations: RecommendationConfig = Field(default_factory=RecommendationConfig)
+    artifacts: ArtifactConfig = Field(default_factory=ArtifactConfig)
+    service: ServiceConfig = Field(default_factory=ServiceConfig)
+
     @model_validator(mode="after")
     def _propagate_seed(self) -> ExperimentConfig:
         """A single ``seed:`` at the root drives every stochastic component unless
@@ -506,7 +834,35 @@ class ExperimentConfig(_Base):
                 stage.seed = self.seed
         if self.models.training.seed == 42 and self.seed != 42:
             self.models.training.seed = self.seed
+        if self.multitask.seed == 42 and self.seed != 42:
+            self.multitask.seed = self.seed
+        self.artifacts.resolve_against(self.paths.root)
         return self
+
+    # -- data-affecting fingerprint ---------------------------------------
+    def data_affecting_dict(self) -> dict[str, Any]:
+        """The configuration subset that changes what the model actually learns.
+
+        Used to key interim caches and to check a persisted model bundle against
+        the runtime configuration. Deliberately excludes cosmetics (figure DPI,
+        report paths, thread counts): those must not invalidate a cache or block
+        a load, and including them would train reviewers to ignore the check.
+        """
+        return {
+            "data": self.data.model_dump(mode="json", exclude={"cache_interim"}),
+            "validation": self.validation.model_dump(mode="json"),
+            "features": self.features.model_dump(mode="json"),
+            "target": self.target.model_dump(mode="json"),
+            "soh": self.soh.model_dump(mode="json"),
+            "risk": self.risk.model_dump(mode="json", exclude={"threshold"}),
+        }
+
+    def data_fingerprint(self) -> str:
+        """Stable short hash of :meth:`data_affecting_dict`."""
+        import hashlib
+
+        payload = json.dumps(self.data_affecting_dict(), sort_keys=True, default=str)
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
     # -- convenience ------------------------------------------------------
     @property

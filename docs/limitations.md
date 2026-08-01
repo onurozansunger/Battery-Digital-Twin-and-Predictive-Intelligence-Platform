@@ -118,7 +118,10 @@ fleet scale.
 
 Ranked by expected value:
 
-1. **Uncertainty quantification** — conformal prediction over the champion.
+1. ~~**Uncertainty quantification** — conformal prediction over the champion.~~
+   **Done in Milestone 2**: split conformal, life-stage conditioned, with
+   empirical coverage reported per battery and per life stage. See
+   `docs/UNCERTAINTY_METHOD.md`.
    Cheap, distribution-free, and turns the output into something actionable.
 2. **More cells** — the Stanford/Toyota dataset (124 cells) would change what
    claims are supportable more than any modelling change.

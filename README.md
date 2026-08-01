@@ -1,21 +1,41 @@
 # Battery Digital Twin & Predictive Intelligence Platform
 
-**Milestone 1 — Remaining Useful Life (RUL) prediction for lithium-ion cells.**
+**Milestone 2 — an AI-powered digital twin for lithium-ion cells.**
 
-An end-to-end, production-style machine-learning pipeline that predicts how many
-discharge cycles a lithium-ion battery has left before it reaches end of life,
-built on the NASA Ames PCoE battery aging dataset.
+Given a cell and its cycle history, the platform estimates remaining useful life
+**with a prediction interval**, present state of health, a **calibrated**
+probability of reaching end of life within a configurable horizon, health and
+risk classes, the main degradation drivers, whether the input can support any of
+that, and a deterministic engineering recommendation — as one serialisable
+snapshot, served by an API and a dashboard that share a single inference path.
+
+Built on the NASA Ames PCoE battery aging dataset. Milestone 1 (RUL prediction)
+is intact and was **hardened first**: see
+[`docs/MILESTONE_1_1_HARDENING.md`](docs/MILESTONE_1_1_HARDENING.md).
 
 ```bash
 pip install -e ".[dev]"
-python scripts/download_data.py
-python scripts/run_pipeline.py --config configs/default.yaml
+python scripts/download_data.py                                    # ~209 MB
+python scripts/run_pipeline.py --config configs/default.yaml       # Milestone 1
+python -m battery_rul.pipelines.run_milestone_2 --config configs/default.yaml
+python scripts/example_snapshot.py                                 # a worked example
+python -m battery_rul.api.app                                      # API on :8000
+streamlit run src/battery_rul/dashboard/app.py                     # dashboard
 ```
+
+> **Research prototype for engineering decision support.** Not validated for
+> production deployment, not a substitute for battery-management-system
+> protection, not suitable for autonomous safety-critical control. The "failure
+> risk" label is derived from a capacity threshold — the source dataset contains
+> no observed safety failures. Read
+> [`docs/MILESTONE_2_LIMITATIONS.md`](docs/MILESTONE_2_LIMITATIONS.md) before
+> quoting anything here.
 
 ---
 
 ## Contents
 
+0. [Milestone 2 at a glance](#0-milestone-2-at-a-glance)
 1. [Business problem](#1-business-problem)
 2. [What this repository actually claims](#2-what-this-repository-actually-claims)
 3. [Dataset](#3-dataset)
@@ -31,8 +51,47 @@ python scripts/run_pipeline.py --config configs/default.yaml
 13. [Testing](#13-testing)
 14. [Limitations](#14-limitations)
 15. [Roadmap](#15-roadmap)
+16. [Milestone 2 — the digital twin](#16-milestone-2--the-digital-twin)
 
 ---
+
+## 0. Milestone 2 at a glance
+
+| | |
+|---|---|
+| **Outputs per cell** | RUL + prediction interval · SOH + health class · calibrated failure risk + risk class · degradation drivers · data-quality assessment · rule-based recommendation |
+| **Uncertainty** | split conformal, life-stage conditioned, 90 % target coverage — a *prediction* interval |
+| **Calibration** | isotonic, fitted on out-of-fold non-test rows; threshold tuned there too |
+| **Models** | independent SOH / risk / RUL bundles **and** a shared-encoder multi-task Transformer with three heads |
+| **Serving** | one `BatteryDigitalTwinService`; the FastAPI app and the Streamlit dashboard are both clients of it |
+| **Contracts** | every deployable bundle carries its feature schema, fingerprints and training configuration, and refuses to load under a mismatched runtime config |
+
+Full write-up: [`docs/MILESTONE_2_OVERVIEW.md`](docs/MILESTONE_2_OVERVIEW.md).
+
+An example snapshot (`scripts/example_snapshot.py`, real output on a real cell):
+
+```
+Battery ID: B0005
+Current cycle: 127  (observed)
+Estimated SOH: 77.2%  (predicted)
+Measured SOH: 75.7%  (derived)
+Estimated RUL: 24 cycles  (predicted)
+RUL interval: 2–47 cycles (90% target coverage,
+              split_conformal_by_life_stage; prediction interval, not a confidence interval)
+Failure risk within 30 cycles: 48.9%  (calibrated)
+Health class: warning
+Risk class: medium
+Data quality: ACCEPTABLE (score 0.75)
+Main degradation factors (model attributions, not causal claims):
+  - Running variability of constant-current charge fraction (increases_risk)
+  - Discharge-curve slope relative to its beginning-of-life value (decreases_risk)
+  - Running variability of measured discharge capacity (increases_risk)
+Recommendation: Immediate engineering review  [IMMEDIATE_ENGINEERING_REVIEW, priority urgent]
+```
+
+Numbers in that block come from the committed
+`reports/milestone_2/example_snapshot.json`; regenerate it and they will change
+with your run.
 
 ## 1. Business problem
 
@@ -60,17 +119,34 @@ The question this milestone answers is deliberately the hard one:
 
 ## 2. What this repository actually claims
 
-The headline number is **leave-one-battery-out cross-validated**, not a single
-split:
+The headline number is **nested** leave-one-battery-out: model-family selection
+runs inside every outer fold, so the pooled metric estimates *the whole
+procedure* rather than a model that was already chosen using data the metric also
+scores.
 
-| | MAE | RMSE | R² |
-|---|---|---|---|
-| **Leave-one-battery-out (5 cells, 400 scored rows)** | **8.06** | **9.93** | **0.850** |
-| Single battery-holdout (1 test cell) | 11.62 | 13.82 | 0.784 |
+| | n | MAE | RMSE | R² |
+|---|---|---|---|---|
+| **Nested LOBO — the procedure, selection included** | 476 | **12.51** | **16.33** | **0.676** |
+| Best single candidate (`random_forest`), commonly scoreable rows | 400 | 8.68 | 10.68 | 0.827 |
+| Best single candidate, its own scoreable rows | 495 | 10.01 | 13.65 | 0.803 |
 
-Errors are in **discharge cycles**. Per-fold MAE ranges 6.5 – 12.0 cycles
-(σ = 2.34), and *that spread is the real uncertainty on the headline*, not the
-bootstrap interval over rows.
+Errors are in **discharge cycles**. The nested figure is worse than the best
+single candidate, and that gap *is* the cost of model selection — it is not a
+number to optimise away. Selection frequency across the five outer folds:
+`random_forest` ×3, `transformer` ×1, `cohort_median_life` ×1.
+
+Baselines are in the same table on the same folds, because a learned model that
+cannot beat one has not earned its complexity. On commonly scoreable rows:
+a nearest-analogue SOH lookup reaches MAE 9.18, the cohort-median-life rule
+13.43, and ridge regression 19.68 — so gradient boosting earns its place, and
+ridge does not.
+
+> **The previously published "MAE 8.06 / R² 0.850" is withdrawn.** It predates
+> the Milestone 1.1 hardening: it was produced with pre-split feature pruning, an
+> end-of-life rule that accepted an unconfirmed two-cycle crossing at the end of a
+> record, and a champion selected on a one-cell validation partition. Do not quote
+> it beside the numbers above. See
+> [`docs/MILESTONE_1_1_HARDENING.md`](docs/MILESTONE_1_1_HARDENING.md).
 
 Cross-validation is used because after the data-quality gates the cohort is five
 cells — a single holdout would put **one** cell in test, and the metric would
@@ -440,31 +516,58 @@ battery-rul-platform/
 │   ├── raw/nasa/mat/           NASA .mat files (gitignored)
 │   ├── interim/                cached canonical cycle table
 │   └── processed/              modelling dataset + manifest
+├── artifacts/                  deployable bundles: rul · soh · risk · multitask
 ├── docs/
-│   ├── architecture.md         design, stage flow, leakage boundaries
-│   ├── dataset_card.md         provenance, cohort selection, quality issues
-│   ├── model_card.md           intended use, performance, caveats
-│   └── limitations.md          known limitations & future work
+│   ├── architecture.md                     Milestone 1 design and leakage boundaries
+│   ├── MILESTONE_1_1_HARDENING.md          findings, fixes, before/after metrics
+│   ├── MILESTONE_2_OVERVIEW.md             what Milestone 2 adds
+│   ├── DIGITAL_TWIN_ARCHITECTURE.md        layering, serving pipeline, provenance
+│   ├── SOH_DEFINITION.md                   references, bands, causality
+│   ├── FAILURE_RISK_DEFINITION.md          the derived label, and what it is not
+│   ├── UNCERTAINTY_METHOD.md               conformal construction and its assumption
+│   ├── RECOMMENDATION_ENGINE.md            rules, thresholds, what the layer cannot do
+│   ├── API_GUIDE.md · DASHBOARD_GUIDE.md   how to run and read them
+│   ├── MODEL_CARD_MULTITASK.md             the shared-encoder model
+│   ├── MILESTONE_2_EVALUATION.md           evaluation design and where the numbers are
+│   ├── MILESTONE_2_LIMITATIONS.md          read before quoting anything
+│   ├── MILESTONE_2_ACCEPTANCE_CHECKLIST.md
+│   ├── dataset_card.md · model_card.md · limitations.md
 ├── figures/                    eda · results · explainability
-├── models/                     champion + feature pipeline + full zoo
+├── models/                     Milestone 1 champion + feature pipeline + full zoo
 ├── notebooks/                  01 EDA · 02 features & target · 03 model comparison
-├── reports/                    metrics.json, evaluation_report.md, tables
-├── scripts/                    thin CLI wrappers, one per stage
+│                               (exploratory records; excluded from lint and type checks)
+├── reports/
+│   ├── metrics.json …          Milestone 1, incl. the nested comparison
+│   └── milestone_2/            metrics, evaluation report, per-row intervals, example snapshot
+├── scripts/                    thin CLI wrappers · example_snapshot · sanitise_reports
 ├── src/battery_rul/
-│   ├── config.py               typed, validated configuration
+│   ├── config.py               typed, validated configuration (every threshold lives here)
 │   ├── _compat.py              native library load ordering
 │   ├── cli.py
 │   ├── data/                   schema · base · nasa · synthetic · validation · loader
-│   ├── features/               target · engineering · pipeline · splitting · sequences
-│   ├── models/                 base · classical · neural · search_spaces
-│   ├── evaluation/             metrics · evaluator · reporting
-│   ├── explainability/
+│   ├── features/               target · engineering · pipeline · splitting · sequences · warmup
+│   ├── targets/                soh · risk                        ← Milestone 2
+│   ├── models/                 base · classical · neural · baselines · multitask · bundle
+│   ├── evaluation/             metrics · evaluator · nested · reporting · reporting_m2
+│   ├── uncertainty/            conformal                          ← Milestone 2
+│   ├── calibration/            probability                        ← Milestone 2
+│   ├── explainability/         explain · drivers
+│   ├── recommendations/        engine                             ← Milestone 2
+│   ├── digital_twin/           domain · quality · service         ← Milestone 2
+│   ├── api/                    app · schemas                      ← Milestone 2
+│   ├── dashboard/              app · data_adapter                 ← Milestone 2
 │   ├── visualization/          style · eda · results
 │   ├── pipelines/              prepare_data · tune · train · evaluate · predict · run_pipeline
+│   │                           milestone_2 (+ one alias module per documented command)
 │   └── utils/                  logging · seed · io · timing
-├── tests/                      151 tests
+├── tests/                      test_config · test_data · test_features · test_splitting
+│                               test_metrics · test_models · test_pipelines
+│                               test_hardening · test_targets_m2 · test_uncertainty_calibration
+│                               test_multitask · test_digital_twin · test_api
+├── .github/workflows/ci.yml    lint · type-check · test · smoke · hygiene
 ├── pyproject.toml
-├── requirements.txt
+├── requirements.txt            loose ranges
+├── requirements-lock.txt       fully pinned environment
 └── README.md
 ```
 
@@ -488,17 +591,38 @@ python scripts/train.py \
 ## 13. Testing
 
 ```bash
-pytest                    # 151 tests, ~30 s
-pytest --cov=battery_rul  # with coverage
-ruff check . && black --check .
+pytest                            # full suite
+pytest -m "not slow"              # skips the one test that parses real .mat files
+pytest --cov=battery_rul          # with coverage
+
+# The quality gates. Same scope here, in the Makefile and in CI.
+ruff check src tests scripts
+black --check src tests scripts
+mypy src tests scripts
 ```
+
+Notebooks are excluded from lint and type checks. That exclusion is declared in
+`pyproject.toml` (`tool.ruff.extend-exclude`, `tool.mypy.exclude`), not achieved
+by leaving them out of a command, so the README, the Makefile and CI cannot drift
+apart.
 
 Coverage spans data loading and schema coercion, the validation gate, target
 generation and EOL detection, feature engineering, **the causality guarantees**,
 all three splitting strategies, metrics, every model's fit/predict/persist cycle,
 the end-to-end pipeline including training/serving consistency, and regression
-guards for both data-quality bugs found while building this (the leading-artifact
-trim and the sustained-collapse truncation).
+guards for both data-quality bugs found while building Milestone 1 (the
+leading-artifact trim and the sustained-collapse truncation).
+
+Milestone 1.1 and 2 add:
+
+| File | What it pins down |
+|---|---|
+| `test_hardening.py` | planted-leakage tests for ingestion and preprocessing, EOL persistence (transient dip, exact P, incomplete end-of-record, recovery, configurability), warm-up parity, config fingerprints, cache keying |
+| `test_targets_m2.py` | SOH reference strategies and causality, bands, clipping; risk label, horizons, bands |
+| `test_uncertainty_calibration.py` | conformal coverage on exchangeable data, interval ordering, clipping, life-stage widths; isotonic/Platt improvement, threshold objectives, NaN-not-fabricated AUCs |
+| `test_multitask.py` | windowing (never crosses a cell), label alignment, three-head shapes, weighted-loss arithmetic, masked tasks, output ranges, disk round-trip, trained-window persistence |
+| `test_digital_twin.py` | snapshot serialisation and validation, data-quality checks, one test per recommendation rule, bundle validation and compatibility refusal |
+| `test_api.py` | service and API end-to-end against bundles trained inside the test session; error handling, schema stability, serving parity |
 
 The suite runs entirely on the synthetic generator, so it needs no dataset
 download; the one test that parses real NASA files is marked `slow` and skips
@@ -515,27 +639,160 @@ Summarised — the full treatment is **[`docs/limitations.md`](docs/limitations.
 * **Right-censored cells are excluded, not modelled.** In a real fleet most cells
   are healthy and censored — this discards exactly the population you would
   monitor. Survival analysis is the fix and the largest methodological gap.
-* **No uncertainty quantification.** The model emits a point estimate; a
-  maintenance decision wants an interval. Conformal prediction is the obvious
-  next step.
+* **Uncertainty is now implemented** (split conformal, Milestone 2) but its
+  coverage guarantee assumes exchangeability between calibration and served
+  cells, which distinct physical cells satisfy only approximately. Read the
+  per-battery and per-life-stage coverage, not the marginal number.
 * **One chemistry, one format, one rig.** LCO 18650, chamber-cycled, 2008-era
   instrumentation. Transfer to field data is unproven.
 * **Early-life RUL is close to unpredictable** and the metrics reflect that.
-* **Not a serving system.** Batch inference only — no API, container, registry or
-  drift monitoring.
+* **Serving exists but is not production infrastructure.** There is an API and a
+  dashboard; there is no authentication, container, model registry, experiment
+  tracking or drift monitoring. Do not expose the service publicly as it stands.
+* **The failure-risk label is derived, not observed.** The dataset contains no
+  safety events, so the model has never seen one and cannot predict one.
 
 ## 15. Roadmap
 
-Milestone 1 (this repository) covers RUL prediction only. Deliberately **not**
-implemented: the Digital Twin, fleet dashboard, failure-risk classification,
-maintenance recommendation, and MLOps monitoring.
+**Milestone 1 — RUL prediction.** Complete, and hardened by Milestone 1.1.
 
-**Milestone 2 — Battery Digital Twin.** A stateful per-cell object that ingests
-cycles as they arrive and maintains a live estimate of state of health, RUL, and
-a forward capacity-fade trajectory with uncertainty bands. The groundwork is
-already here: `configs/chronological.yaml` frames the forecasting question,
-`RULPredictor` scores incrementally, and the causal feature contract means a twin
-can be updated cycle by cycle without recomputing history.
+**Milestone 1.1 — hardening gate.** Complete. Split-safe causal imputation,
+train-only feature pruning, exact end-of-life persistence, nested model
+selection with baselines, training/serving warm-up parity, artifact and cache
+compatibility, and real quality gates.
+[`docs/MILESTONE_1_1_HARDENING.md`](docs/MILESTONE_1_1_HARDENING.md)
+
+**Milestone 2 — Battery Digital Twin.** Complete. See §16.
+
+**Milestone 3 — Fleet intelligence and production readiness.** Not started, and
+deliberately out of scope here: fleet-level aggregation and prioritisation,
+maintenance optimisation, data and prediction drift monitoring, a model registry
+with promotion gates, experiment tracking, containerisation, CI/CD deployment,
+authentication and multi-tenancy, and a Battery Passport export.
+
+## 16. Milestone 2 — the digital twin
+
+### What it produces
+
+One `BatteryTwinSnapshot` per cell, in which **every value carries a provenance
+tag** — `observed`, `derived`, `predicted`, `estimated` or `rule_based`. A
+dashboard that renders a measured capacity and a modelled remaining life in the
+same typeface invites the reader to trust them equally, and one of them has an
+interval around it.
+
+### Definitions
+
+| Quantity | Definition | Document |
+|---|---|---|
+| State of health | smoothed capacity ÷ reference, a **fraction in [0, 1]** everywhere internally | [`SOH_DEFINITION.md`](docs/SOH_DEFINITION.md) |
+| Failure risk | `RUL(t) ≤ H` — a **derived** label from the capacity threshold, not an observed safety event | [`FAILURE_RISK_DEFINITION.md`](docs/FAILURE_RISK_DEFINITION.md) |
+| Uncertainty | split conformal, life-stage conditioned; a **prediction** interval, not a confidence interval | [`UNCERTAINTY_METHOD.md`](docs/UNCERTAINTY_METHOD.md) |
+| Recommendation | deterministic rules over model outputs, fired on the interval's **lower bound** | [`RECOMMENDATION_ENGINE.md`](docs/RECOMMENDATION_ENGINE.md) |
+
+### Modelling
+
+Independent bundles per task (RUL, SOH, risk) **and** a shared-encoder
+multi-task Transformer with RUL / SOH / risk heads, each component loss logged
+separately. Both are evaluated; neither is assumed better, and coverage is
+reported alongside every sequence metric because sequence models cannot score a
+cell's first *window − 1* cycles.
+[`MODEL_CARD_MULTITASK.md`](docs/MODEL_CARD_MULTITASK.md)
+
+### Calibration discipline
+
+The probability calibrator, its decision threshold and the conformal estimator
+are all fitted on **out-of-fold predictions over non-test cells**. No test label
+enters any calibration fit, threshold search or selection decision.
+
+### Serving
+
+```bash
+python -m battery_rul.api.app                    # FastAPI, docs at /docs
+streamlit run src/battery_rul/dashboard/app.py   # 9-tab dashboard
+```
+
+Both are clients of one `BatteryDigitalTwinService`. Neither loads a model file,
+engineers a feature or applies a threshold on its own — that is what stops the
+dashboard from quietly disagreeing with the API.
+[`API_GUIDE.md`](docs/API_GUIDE.md) · [`DASHBOARD_GUIDE.md`](docs/DASHBOARD_GUIDE.md) ·
+[`DIGITAL_TWIN_ARCHITECTURE.md`](docs/DIGITAL_TWIN_ARCHITECTURE.md)
+
+### Individual pipeline stages
+
+```bash
+python -m battery_rul.pipelines.prepare_multitask_data --config configs/default.yaml
+python -m battery_rul.pipelines.train_soh              --config configs/default.yaml
+python -m battery_rul.pipelines.train_risk             --config configs/default.yaml
+python -m battery_rul.pipelines.train_multitask        --config configs/default.yaml
+python -m battery_rul.pipelines.calibrate_risk         --config configs/default.yaml
+python -m battery_rul.pipelines.calibrate_uncertainty  --config configs/default.yaml
+python -m battery_rul.pipelines.build_model_bundle     --config configs/default.yaml
+python -m battery_rul.pipelines.run_milestone_2        --config configs/default.yaml [--force]
+```
+
+`run_milestone_2` skips the expensive multi-task retrain when a valid artifact
+exists; `--force` rebuilds it. Every command works against
+`configs/synthetic.yaml` without the NASA archive — **metrics from that
+configuration describe the simulator, not real cells**, and are never published.
+
+### Results
+
+All figures below are read from
+[`reports/milestone_2/metrics.json`](reports/milestone_2/metrics.json), written
+by the run that produced them.
+
+**RUL prediction intervals** — 90 % target coverage, conditioned on measured SOH:
+
+| | n | empirical coverage | mean width (cycles) |
+|---|---|---|---|
+| Out-of-fold (4 non-test cells) | 373 | **0.917** | 47.0 |
+| Held-out test (1 cell) | 122 | 0.803 | 48.6 |
+
+| stage (by SOH) | n | coverage | mean width |
+|---|---|---|---|
+| early | 159 | 0.912 | 56.0 |
+| late | 70 | 0.929 | 44.0 |
+| mid | 144 | 0.917 | 38.4 |
+
+Out-of-fold coverage lands on target. The held-out cell **under-covers**
+(0.80 against 0.90) — which is the exchangeability
+caveat in `docs/UNCERTAINTY_METHOD.md` showing up in practice, on a single cell,
+and is reported rather than smoothed over.
+
+**State of health** — LightGBM, selected on validation:
+
+| | n | MAE | RMSE | R² | max abs. error |
+|---|---|---|---|---|---|
+| Out-of-fold | 373 | 0.0244 | 0.0320 | 0.829 | 0.0890 |
+| Held-out test | 122 | 0.0134 | 0.0200 | 0.938 | 0.0552 |
+
+SOH is a fraction, so an MAE of 0.0244 is
+2.4 percentage points of state of health.
+
+**Failure risk** — and the finding that matters most:
+
+| | n | cells | PR-AUC | PR-AUC of *cycle index alone* | beats it? |
+|---|---|---|---|---|---|
+| Out-of-fold, calibrated | 373 | 4 | 0.647 | **0.928** | **no** |
+| Held-out test, calibrated | 122 | 1 | 0.721 | **1.000** | **no** |
+
+Because the label is `RUL ≤ H`, a cell's positives are exactly its last H cycles —
+so **counting cycles ranks them perfectly**, and on a single-cell partition every
+AUC is degenerate. A "test ROC-AUC of 0.93" looks strong and is in
+fact *worse than a cycle counter*. The classifier does not beat that baseline on
+any partition here. That is a negative result, it is the honest reading, and the
+metric code now computes the baseline on the same rows and logs a warning when
+the model loses. The same applies to the multi-task risk head's near-perfect
+PR-AUC on one-cell partitions.
+
+Calibration does help where it is measurable: Brier
+0.278 → 0.092 on the
+held-out cell. Note that the *out-of-fold* post-calibration ECE is in-sample —
+the calibrator was fitted on those rows — and is flagged as such in the payload.
+
+Full report: [`reports/milestone_2/evaluation_report.md`](reports/milestone_2/evaluation_report.md).
+How to read it: [`MILESTONE_2_EVALUATION.md`](docs/MILESTONE_2_EVALUATION.md).
+Acceptance status: [`MILESTONE_2_ACCEPTANCE_CHECKLIST.md`](docs/MILESTONE_2_ACCEPTANCE_CHECKLIST.md).
 
 ---
 

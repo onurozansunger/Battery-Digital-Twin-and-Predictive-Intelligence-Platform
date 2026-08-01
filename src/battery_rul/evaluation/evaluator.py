@@ -190,9 +190,9 @@ def compare_models(
         "within_25_cycles",
         "prognostic_horizon",
     ]
-    rows = []
+    rows: list[dict[str, Any]] = []
     for name, result in results.items():
-        row = {"model": name}
+        row: dict[str, Any] = {"model": name}
         row.update({k: result.metrics.get(k, np.nan) for k in columns[1:]})
         row["n_unscored"] = result.n_unscored
         rows.append(row)

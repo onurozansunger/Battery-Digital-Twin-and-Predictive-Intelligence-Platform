@@ -56,6 +56,7 @@ class ValidationReport:
     issues: list[ValidationIssue] = field(default_factory=list)
     missing_fractions: dict[str, float] = field(default_factory=dict)
     imputed_cells: dict[str, int] = field(default_factory=dict)
+    missingness_indicators: list[str] = field(default_factory=list)
 
     @property
     def n_errors(self) -> int:
@@ -86,6 +87,7 @@ class ValidationReport:
                 k: round(v, 5) for k, v in self.missing_fractions.items() if v > 0
             },
             "imputed_cells": self.imputed_cells,
+            "missingness_indicators": self.missingness_indicators,
         }
 
     def summary(self) -> str:
@@ -118,9 +120,13 @@ def validate_cycles(
     --------------------------------
     * Out-of-bounds sensor readings -> NaN.
     * Implausible capacity jumps -> row dropped when ``drop_incomplete_cycles``.
-    * Remaining NaNs -> **causal** fill: forward-fill within battery, then the
-      battery's expanding median, then the global training median. Nothing is
-      ever back-filled from a future cycle.
+    * Remaining NaNs -> **causal, within-cell** fill: forward-fill, then the
+      cell's expanding median. Nothing is back-filled from a future cycle and
+      nothing is borrowed from another cell. Values with no in-cell observation
+      stay NaN here and are resolved by the train-fitted fallback in
+      :class:`~battery_rul.features.pipeline.FeaturePipeline`.
+    * A ``<column>_is_missing`` indicator is emitted for every column that had a
+      missing observation, when ``validation.missingness_indicators`` is set.
     """
     report = ValidationReport(
         n_rows_in=len(df),
@@ -239,8 +245,9 @@ def validate_cycles(
             )
         )
 
-    df, imputed = _causal_impute(df, numeric_cols)
+    df, imputed, indicators = _causal_impute(df, list(numeric_cols), cfg=validation_cfg)
     report.imputed_cells = imputed
+    report.missingness_indicators = indicators
 
     # -- 7. per-battery length --------------------------------------------
     counts = df.groupby("battery_id", sort=False).size()
@@ -292,32 +299,72 @@ def _nullify_out_of_range(
     return df, total
 
 
-def _causal_impute(df: pd.DataFrame, columns: list[str]) -> tuple[pd.DataFrame, dict[str, int]]:
-    """Fill NaNs without ever reading a future cycle.
+def _causal_impute(
+    df: pd.DataFrame, columns: list[str], *, cfg: ValidationConfig
+) -> tuple[pd.DataFrame, dict[str, int], list[str]]:
+    """Fill NaNs using only observations from the same cell at or before the row.
 
-    Order of preference per battery: forward-fill -> expanding median (past only)
-    -> the column's global median. The global median is a mild, documented
-    concession: it is computed over all *loaded* rows, and is only reached for
-    columns whose very first observation is missing.
+    Order of preference **within a battery**: forward-fill, then the expanding
+    (past-only) median. Both are strictly causal and strictly within-cell, so
+    nothing here can move information across an evaluation boundary.
+
+    What this function deliberately does *not* do
+    ---------------------------------------------
+    It no longer falls back to the column's median over the whole loaded table.
+    That statistic mixed every battery — including the ones held out for
+    validation and test — and was computed before any split existed, so a
+    held-out cell's readings could shift a training cell's imputed value. The
+    fleet-level fallback now lives in
+    :class:`~battery_rul.features.pipeline.FeaturePipeline`, is fitted on
+    training rows only, is re-fitted inside every cross-validation fold, and is
+    persisted so serving replays exactly the training-time value.
+
+    Rows whose value is still missing afterwards (a sensor never read for that
+    cell) are left as NaN on purpose and are flagged by a ``<column>_is_missing``
+    indicator, so the absence survives into the model as information rather than
+    being papered over here.
+
+    Returns
+    -------
+    (frame, n_imputed_per_column, indicator_column_names)
     """
     imputed: dict[str, int] = {}
+    indicators: list[str] = []
+    wanted = set(cfg.indicator_columns) if cfg.indicator_columns else None
+
     for col in columns:
-        if col not in df.columns:
+        if col not in df.columns or col.endswith("_is_missing"):
             continue
-        missing_before = int(df[col].isna().sum())
+        missing_mask = df[col].isna()
+        missing_before = int(missing_mask.sum())
         if missing_before == 0:
             continue
+
+        if cfg.missingness_indicators and (wanted is None or col in wanted):
+            name = f"{col}_is_missing"
+            df[name] = missing_mask.astype("float32")
+            indicators.append(name)
 
         grouped = df.groupby("battery_id", sort=False)[col]
         filled = grouped.ffill()
         expanding_median = grouped.transform(lambda s: s.expanding(min_periods=1).median())
-        filled = filled.fillna(expanding_median)
-        filled = filled.fillna(df[col].median())
-        df[col] = filled.fillna(0.0)
+        df[col] = filled.fillna(expanding_median)
 
-        imputed[col] = missing_before
+        imputed[col] = missing_before - int(df[col].isna().sum())
+
+    residual = {c: int(df[c].isna().sum()) for c in columns if c in df.columns}
+    residual = {c: n for c, n in residual.items() if n}
     if imputed:
         logger.info(
-            "Causally imputed %d cells across %d columns", sum(imputed.values()), len(imputed)
+            "Causally imputed %d cells across %d columns (within-cell, past-only)",
+            sum(imputed.values()),
+            len(imputed),
         )
-    return df, imputed
+    if residual:
+        logger.info(
+            "%d column(s) retain missing values with no in-cell observation; the "
+            "train-fitted fallback in FeaturePipeline will handle them: %s",
+            len(residual),
+            residual,
+        )
+    return df, imputed, indicators

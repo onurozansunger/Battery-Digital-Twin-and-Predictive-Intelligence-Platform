@@ -1,0 +1,111 @@
+# Milestone 2 — Battery Digital Twin
+
+## What changed
+
+Milestone 1 predicted remaining useful life. Milestone 2 turns that into a
+digital twin: for a cell and its history, the platform now estimates remaining
+life **with a prediction interval**, present state of health, a **calibrated**
+probability of reaching end of life within a configurable horizon, a health and
+risk classification, the main degradation drivers, an assessment of whether the
+input can support any of that, and a deterministic engineering recommendation —
+all in one serialisable snapshot, served by an API and a dashboard that share a
+single inference path.
+
+Milestone 2 was gated on **Milestone 1.1**, a hardening pass that fixed five
+methodological defects in the Milestone 1 pipeline before any new model was
+trained. See `docs/MILESTONE_1_1_HARDENING.md`.
+
+## Added in Milestone 2
+
+| Area | Module |
+|---|---|
+| SOH target, reference strategies, health bands | `targets/soh.py` |
+| Failure-risk target, horizons, risk bands | `targets/risk.py` |
+| Multi-task sequence model (shared encoder, 3 heads) | `models/multitask.py` |
+| Split conformal prediction intervals | `uncertainty/conformal.py` |
+| Probability calibration + threshold tuning | `calibration/probability.py` |
+| Digital-twin domain model | `digital_twin/domain.py` |
+| Data-quality assessment | `digital_twin/quality.py` |
+| Orchestration service | `digital_twin/service.py` |
+| Per-prediction degradation drivers | `explainability/drivers.py` |
+| Deterministic recommendation rules | `recommendations/engine.py` |
+| Deployable model bundles + compatibility gate | `models/bundle.py` |
+| FastAPI application | `api/` |
+| Streamlit dashboard | `dashboard/` |
+| Milestone 2 pipelines | `pipelines/milestone_2.py` + aliases |
+
+## The three targets
+
+| Target | Column | Definition |
+|---|---|---|
+| Remaining useful life | `rul_cycles` | cycles until the confirmed end-of-life crossing (Milestone 1, hardened) |
+| State of health | `soh_target` | smoothed capacity ÷ reference, as a fraction in [0, 1] |
+| Failure risk | `failure_within_horizon` | `RUL(t) ≤ H`, H = 30 by default |
+
+Full definitions: `docs/SOH_DEFINITION.md`, `docs/FAILURE_RISK_DEFINITION.md`.
+
+## Two levels of modelling
+
+**Independent baselines** — one model per task, each selected on validation and
+evaluated out-of-fold: elastic net / random forest / LightGBM for SOH, a
+LightGBM classifier with class weighting for risk, and the family the nested
+comparison selected for RUL.
+
+**Multi-task sequence model** — a shared Transformer encoder (LSTM/GRU
+available) with three heads, trained on one weighted loss whose components are
+logged separately. Rationale and architecture: `docs/MODEL_CARD_MULTITASK.md`.
+
+Both are evaluated; neither is assumed better. Coverage is reported alongside
+every sequence metric because sequence models cannot score a cell's first
+*window − 1* cycles.
+
+## Calibration discipline
+
+Both the probability calibrator and the conformal estimator are fitted on
+**out-of-fold predictions over non-test cells**, produced by
+leave-one-battery-out within train + validation. No test label enters any
+calibration fit, any threshold search or any selection decision. The reasoning
+is in `docs/UNCERTAINTY_METHOD.md`.
+
+## Reproduction
+
+```bash
+pip install -e ".[dev]"                                        # or: pip install -r requirements-lock.txt
+python scripts/download_data.py                                # ~209 MB
+python scripts/run_pipeline.py --config configs/default.yaml   # Milestone 1 (+ nested comparison)
+python -m battery_rul.pipelines.run_milestone_2 --config configs/default.yaml
+python scripts/example_snapshot.py                             # writes an example snapshot
+python -m battery_rul.api.app                                  # API on 127.0.0.1:8000
+streamlit run src/battery_rul/dashboard/app.py                 # dashboard
+```
+
+Individual stages:
+
+```bash
+python -m battery_rul.pipelines.prepare_multitask_data --config configs/default.yaml
+python -m battery_rul.pipelines.train_soh              --config configs/default.yaml
+python -m battery_rul.pipelines.train_risk             --config configs/default.yaml
+python -m battery_rul.pipelines.train_multitask        --config configs/default.yaml
+python -m battery_rul.pipelines.calibrate_risk         --config configs/default.yaml
+python -m battery_rul.pipelines.calibrate_uncertainty  --config configs/default.yaml
+python -m battery_rul.pipelines.build_model_bundle     --config configs/default.yaml
+```
+
+`run_milestone_2` skips the expensive multi-task retrain when a valid artifact
+exists; pass `--force` to rebuild it.
+
+Without the NASA archive, every command above works against
+`configs/synthetic.yaml`. **Metrics from that configuration describe the
+simulator, not real cells**, and are never published.
+
+## Results
+
+`reports/milestone_2/evaluation_report.md` and
+`reports/milestone_2/metrics.json`, both regenerated by the run that produced
+them. `docs/MILESTONE_2_EVALUATION.md` explains how to read them.
+
+## Out of scope at this milestone
+
+Fleet intelligence, maintenance prioritisation, drift monitoring, a model
+registry, experiment tracking, Battery Passport, containerisation, CI/CD
+deployment, authentication and multi-tenancy. Those are Milestone 3.

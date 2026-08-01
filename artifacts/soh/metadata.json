@@ -1,0 +1,3314 @@
+{
+  "model_name": "lightgbm",
+  "model_version": "1.0.0",
+  "task": "soh_regression",
+  "schema_version": "2.0",
+  "created_at_utc": "2026-08-01T08:46:28.671140+00:00",
+  "git_revision": "82ef951",
+  "data_fingerprint": "02cb461f289b4d40",
+  "preprocessing_fingerprint": "faccdc56bbc1b3dd",
+  "dataset_fingerprint": "02cb461f289b4d40",
+  "feature_names": [
+    "discharge_duration_s",
+    "current_mean_a",
+    "capacity_ah_rmax_3",
+    "capacity_ah_rmax_5",
+    "capacity_ah_rmax_10",
+    "capacity_ah_rmax_20",
+    "capacity_ah_lag_1",
+    "capacity_ah_lag_2",
+    "capacity_ah_lag_3",
+    "capacity_ah_slope_20",
+    "capacity_ah_delta_from_initial",
+    "capacity_ah_cumstd",
+    "soh_rmin_10",
+    "soh_rdev_10",
+    "soh_rmin_20",
+    "soh_rdev_20",
+    "soh_pct_10",
+    "soh_slope_10",
+    "soh_slope_20",
+    "soh_delta_from_initial",
+    "soh_cummin",
+    "soh_cumstd",
+    "discharge_duration_s_rmax_3",
+    "discharge_duration_s_rmax_5",
+    "discharge_duration_s_rmin_10",
+    "discharge_duration_s_rmax_10",
+    "discharge_duration_s_rmean_20",
+    "discharge_duration_s_rmin_20",
+    "discharge_duration_s_rmax_20",
+    "discharge_duration_s_lag_1",
+    "discharge_duration_s_lag_2",
+    "discharge_duration_s_lag_3",
+    "discharge_duration_s_lag_5",
+    "discharge_duration_s_lag_10",
+    "discharge_duration_s_delta_from_initial",
+    "discharge_duration_s_cummin",
+    "discharge_duration_s_cumstd",
+    "charge_duration_s_rmax_10",
+    "charge_duration_s_rmax_20",
+    "charge_duration_s_cummean",
+    "voltage_mean_v_rmax_20",
+    "voltage_mean_v_delta_from_initial",
+    "voltage_std_v_rmin_10",
+    "voltage_std_v_rmin_20",
+    "voltage_slope_v_per_s_ratio_to_initial",
+    "voltage_slope_v_per_s_delta_from_initial",
+    "current_mean_a_rmin_3",
+    "current_mean_a_rmean_5",
+    "current_mean_a_rmin_5",
+    "current_mean_a_rmax_5",
+    "current_mean_a_rmean_10",
+    "current_mean_a_rmin_10",
+    "current_mean_a_rmax_10",
+    "current_mean_a_rmean_20",
+    "current_mean_a_rmin_20",
+    "current_mean_a_rmax_20",
+    "current_mean_a_ewm_5",
+    "current_mean_a_ewm_15",
+    "current_mean_a_lag_1",
+    "current_mean_a_lag_2",
+    "current_mean_a_lag_3",
+    "current_mean_a_lag_5",
+    "current_mean_a_cummean",
+    "current_mean_a_cummax",
+    "current_mean_a_cumstd",
+    "temperature_mean_c_rrange_20",
+    "temperature_mean_c_cumstd",
+    "temperature_max_c_rstd_10",
+    "internal_resistance_ohm_rmax_20",
+    "internal_resistance_ohm_pct_10",
+    "energy_throughput_wh_rmax_3",
+    "energy_throughput_wh_rmax_5",
+    "energy_throughput_wh_lag_2",
+    "energy_throughput_wh_delta_from_initial",
+    "energy_throughput_wh_cummean",
+    "energy_throughput_wh_cumstd",
+    "cc_ct_ratio_rmean_10",
+    "cc_ct_ratio_rmean_20",
+    "resistance_capacity_product",
+    "capacity_per_ohm"
+  ],
+  "sequence_length": null,
+  "first_scoreable_cycle": 6,
+  "warmup_policy": {
+    "drop_warmup_cycles": 5,
+    "sequence_window": null,
+    "first_scoreable_cycle": 6,
+    "min_history_cycles": 6
+  },
+  "target_definition": {
+    "name": "rul_cycles",
+    "eol_threshold": 0.7,
+    "eol_reference": "nominal",
+    "eol_persistence": 3,
+    "log_transform": false,
+    "cap_at": null,
+    "clip_negative": true,
+    "soh_reference_strategy": "first_n_cycle_mean",
+    "soh_reference_cycles": 5,
+    "failure_horizon_cycles": 30
+  },
+  "training_config": {
+    "data": {
+      "source": "nasa",
+      "subdir": "nasa",
+      "batteries": null,
+      "exclude_batteries": [],
+      "min_cycles": 30,
+      "nominal_capacity_ah": 2.0,
+      "eol_threshold": 0.7,
+      "eol_reference": "nominal",
+      "capacity_smoothing_window": 5,
+      "trim_leading_outliers": true,
+      "leading_outlier_ratio": 0.9,
+      "leading_outlier_lookahead": 10,
+      "min_start_soh": 0.8,
+      "min_fade_fraction": 0.02,
+      "truncate_at_collapse": true,
+      "collapse_fraction": 0.25,
+      "collapse_persistence": 5,
+      "drop_incomplete_cycles": true,
+      "allow_synthetic_fallback": true
+    },
+    "validation": {
+      "max_missing_fraction": 0.05,
+      "max_capacity_jump": 0.35,
+      "voltage_bounds_v": [
+        0.0,
+        5.0
+      ],
+      "temperature_bounds_c": [
+        -40.0,
+        100.0
+      ],
+      "require_monotonic_cycle_index": true,
+      "fail_fast": false,
+      "missingness_indicators": true,
+      "indicator_columns": null
+    },
+    "features": {
+      "rolling_windows": [
+        3,
+        5,
+        10,
+        20
+      ],
+      "lags": [
+        1,
+        2,
+        3,
+        5,
+        10
+      ],
+      "slope_windows": [
+        5,
+        10,
+        20
+      ],
+      "ewm_halflives": [
+        5,
+        15
+      ],
+      "base_signals": [
+        "capacity_ah",
+        "soh",
+        "discharge_duration_s",
+        "charge_duration_s",
+        "voltage_mean_v",
+        "voltage_min_v",
+        "voltage_std_v",
+        "voltage_slope_v_per_s",
+        "current_mean_a",
+        "temperature_mean_c",
+        "temperature_max_c",
+        "internal_resistance_ohm",
+        "energy_throughput_wh",
+        "cc_ct_ratio"
+      ],
+      "include_cycle_index": true,
+      "include_cumulative": true,
+      "drop_warmup_cycles": 5,
+      "min_periods_fraction": 1.0,
+      "variance_threshold": 1e-10,
+      "correlation_prune_threshold": 0.98,
+      "fallback_imputation": "median",
+      "scaler": "robust",
+      "max_features": 80,
+      "selection_method": "tree_importance"
+    },
+    "target": {
+      "name": "rul_cycles",
+      "eol_persistence": 3,
+      "clip_negative": true,
+      "cap_at": null,
+      "log_transform": false,
+      "drop_post_eol": true,
+      "require_eol_reached": true,
+      "min_labelled_cycles": 25
+    },
+    "soh": {
+      "reference_strategy": "first_n_cycle_mean",
+      "reference_cycles": 5,
+      "target_name": "soh_target",
+      "healthy_min": 0.9,
+      "slightly_degraded_min": 0.8,
+      "warning_min": 0.7,
+      "plausible_min": 0.2,
+      "plausible_max": 1.2
+    },
+    "risk": {
+      "horizon_cycles": 30,
+      "additional_horizons": [
+        20,
+        50
+      ],
+      "target_name": "failure_within_horizon",
+      "model": "lightgbm",
+      "class_weight_balanced": true,
+      "threshold_objective": "f1",
+      "min_recall": 0.8,
+      "low_max": 0.2,
+      "medium_max": 0.5,
+      "high_max": 0.8
+    }
+  },
+  "thresholds": {
+    "healthy_min": 0.9,
+    "slightly_degraded_min": 0.8,
+    "warning_min": 0.7,
+    "feature_reference_ranges": {
+      "ambient_temperature_c": [
+        24.0,
+        24.0
+      ],
+      "capacity_ah": [
+        1.351581335067749,
+        1.8851401805877686
+      ],
+      "capacity_smooth_ah": [
+        1.3767448663711548,
+        1.832700252532959
+      ],
+      "soh": [
+        0.6883724331855774,
+        0.9163501262664795
+      ],
+      "discharge_duration_s": [
+        2821.531005859375,
+        3595.281005859375
+      ],
+      "voltage_mean_v": [
+        3.305027484893799,
+        3.5475142002105713
+      ],
+      "voltage_min_v": [
+        1.7538588047027588,
+        2.4985039234161377
+      ],
+      "voltage_max_v": [
+        4.171109199523926,
+        4.2972612380981445
+      ],
+      "voltage_std_v": [
+        0.23152309656143188,
+        0.39908161759376526
+      ],
+      "voltage_slope_v_per_s": [
+        -0.00027828008751384914,
+        0.00028295497759245336
+      ],
+      "voltage_knee_v": [
+        2.52634859085083,
+        4.2972612380981445
+      ],
+      "voltage_drop_v": [
+        0.4852197766304016,
+        1.0762810707092285
+      ],
+      "current_mean_a": [
+        -2.0080249309539795,
+        -1.729077935218811
+      ],
+      "current_std_a": [
+        0.3649633228778839,
+        2.011756181716919
+      ],
+      "temperature_mean_c": [
+        30.102703094482422,
+        43.008934020996094
+      ],
+      "temperature_max_c": [
+        36.37208938598633,
+        61.22071075439453
+      ],
+      "temperature_rise_c": [
+        13.319111824035645,
+        33.728633880615234
+      ],
+      "energy_throughput_wh": [
+        4.502429485321045,
+        6.552347183227539
+      ],
+      "time_to_min_voltage_s": [
+        1337.43701171875,
+        3311.5
+      ],
+      "dvdt_mean_v_per_s": [
+        -0.0003140690678264946,
+        -0.00015285493282135576
+      ],
+      "dvdt_min_v_per_s": [
+        -0.057144712656736374,
+        -0.015705281868577003
+      ],
+      "n_samples_discharge": [
+        219.0,
+        351.0
+      ],
+      "charge_duration_s": [
+        1855.656005859375,
+        10813.296875
+      ],
+      "charge_cc_duration_s": [
+        2.890000104904175,
+        6.859000205993652
+      ],
+      "charge_cv_duration_s": [
+        1850.9530029296875,
+        10806.640625
+      ],
+      "cc_ct_ratio": [
+        0.00026747261290438473,
+        0.0025344137102365494
+      ],
+      "charge_voltage_mean_v": [
+        4.125915050506592,
+        4.196601867675781
+      ],
+      "charge_current_mean_a": [
+        0.04014838486909866,
+        1.129453182220459
+      ],
+      "charge_temperature_max_c": [
+        23.113204956054688,
+        36.18665313720703
+      ],
+      "charge_energy_wh": [
+        0.1337408572435379,
+        7.516656398773193
+      ],
+      "coulombic_efficiency": [
+        0.8783441781997681,
+        52.18436050415039
+      ],
+      "internal_resistance_ohm": [
+        0.05911226198077202,
+        0.1267251819372177
+      ],
+      "charge_transfer_resistance_ohm": [
+        0.08381129801273346,
+        0.14788025617599487
+      ],
+      "reference_capacity_ah": [
+        2.0,
+        2.0
+      ],
+      "capacity_fade_ah": [
+        0.022304296493530273,
+        0.458149790763855
+      ],
+      "equivalent_full_cycles": [
+        4.748599529266357,
+        82.00765991210938
+      ],
+      "charge_duration_s_is_missing": [
+        0.0,
+        0.0
+      ],
+      "charge_cc_duration_s_is_missing": [
+        0.0,
+        0.0
+      ],
+      "charge_cv_duration_s_is_missing": [
+        0.0,
+        0.0
+      ],
+      "cc_ct_ratio_is_missing": [
+        0.0,
+        0.0
+      ],
+      "charge_voltage_mean_v_is_missing": [
+        0.0,
+        0.0
+      ],
+      "charge_current_mean_a_is_missing": [
+        0.0,
+        0.0
+      ],
+      "charge_temperature_max_c_is_missing": [
+        0.0,
+        0.0
+      ],
+      "charge_energy_wh_is_missing": [
+        0.0,
+        0.0
+      ],
+      "coulombic_efficiency_is_missing": [
+        0.0,
+        0.0
+      ],
+      "internal_resistance_ohm_is_missing": [
+        0.0,
+        0.0
+      ],
+      "charge_transfer_resistance_ohm_is_missing": [
+        0.0,
+        0.0
+      ],
+      "capacity_ah_rmean_3": [
+        1.3607732057571411,
+        1.8306342363357544
+      ],
+      "capacity_ah_rstd_3": [
+        0.002049552509561181,
+        0.1708964705467224
+      ],
+      "capacity_ah_rmin_3": [
+        1.351581335067749,
+        1.828528881072998
+      ],
+      "capacity_ah_rmax_3": [
+        1.3767448663711548,
+        1.8851401805877686
+      ],
+      "capacity_ah_rrange_3": [
+        0.003967881202697754,
+        0.31241393089294434
+      ],
+      "capacity_ah_rdev_3": [
+        -0.11594092845916748,
+        0.19622774422168732
+      ],
+      "capacity_ah_rmean_5": [
+        1.3957085609436035,
+        1.8349400758743286
+      ],
+      "capacity_ah_rstd_5": [
+        0.0057980637066066265,
+        0.15463675558567047
+      ],
+      "capacity_ah_rmin_5": [
+        1.351581335067749,
+        1.828528881072998
+      ],
+      "capacity_ah_rmax_5": [
+        1.4084460735321045,
+        1.8851401805877686
+      ],
+      "capacity_ah_rrange_5": [
+        0.01466667652130127,
+        0.4164808988571167
+      ],
+      "capacity_ah_rdev_5": [
+        -0.10201382637023926,
+        0.25783056020736694
+      ],
+      "capacity_ah_rmean_10": [
+        1.4033702611923218,
+        1.8293473720550537
+      ],
+      "capacity_ah_rstd_10": [
+        0.008633988909423351,
+        0.12038683891296387
+      ],
+      "capacity_ah_rmin_10": [
+        1.351581335067749,
+        1.8042980432510376
+      ],
+      "capacity_ah_rmax_10": [
+        1.4370006322860718,
+        1.8851401805877686
+      ],
+      "capacity_ah_rrange_10": [
+        0.025575757026672363,
+        0.4164808988571167
+      ],
+      "capacity_ah_rdev_10": [
+        -0.09873728454113007,
+        0.3114497661590576
+      ],
+      "capacity_ah_rmean_20": [
+        1.4174373149871826,
+        1.802145004272461
+      ],
+      "capacity_ah_rstd_20": [
+        0.01909136213362217,
+        0.09737928956747055
+      ],
+      "capacity_ah_rmin_20": [
+        1.351581335067749,
+        1.7376646995544434
+      ],
+      "capacity_ah_rmax_20": [
+        1.4540256261825562,
+        1.8851401805877686
+      ],
+      "capacity_ah_rrange_20": [
+        0.06091964244842529,
+        0.4578934907913208
+      ],
+      "capacity_ah_rdev_20": [
+        -0.1319762021303177,
+        0.34232595562934875
+      ],
+      "capacity_ah_ewm_5": [
+        1.409379482269287,
+        1.8444833755493164
+      ],
+      "capacity_ah_ewm_15": [
+        1.4548128843307495,
+        1.8507966995239258
+      ],
+      "capacity_ah_lag_1": [
+        1.351581335067749,
+        1.8851401805877686
+      ],
+      "capacity_ah_diff_1": [
+        -0.2266484498977661,
+        0.31241393089294434
+      ],
+      "capacity_ah_pct_1": [
+        -0.12451117485761642,
+        0.20718586444854736
+      ],
+      "capacity_ah_lag_2": [
+        1.353993535041809,
+        1.8851401805877686
+      ],
+      "capacity_ah_diff_2": [
+        -0.2872356176376343,
+        0.2762693166732788
+      ],
+      "capacity_ah_pct_2": [
+        -0.1577952355146408,
+        0.17892664670944214
+      ],
+      "capacity_ah_lag_3": [
+        1.353993535041809,
+        1.8851401805877686
+      ],
+      "capacity_ah_diff_3": [
+        -0.33409178256988525,
+        0.28398871421813965
+      ],
+      "capacity_ah_pct_3": [
+        -0.18353605270385742,
+        0.1848502904176712
+      ],
+      "capacity_ah_lag_5": [
+        1.353993535041809,
+        1.8851401805877686
+      ],
+      "capacity_ah_diff_5": [
+        -0.300087571144104,
+        0.3967306613922119
+      ],
+      "capacity_ah_pct_5": [
+        -0.16485555469989777,
+        0.2786860764026642
+      ],
+      "capacity_ah_lag_10": [
+        1.353993535041809,
+        1.8851401805877686
+      ],
+      "capacity_ah_diff_10": [
+        -0.37097978591918945,
+        0.4084959030151367
+      ],
+      "capacity_ah_pct_10": [
+        -0.203800767660141,
+        0.2893419563770294
+      ],
+      "capacity_ah_slope_5": [
+        -0.07421918213367462,
+        0.08045365661382675
+      ],
+      "capacity_ah_slope_10": [
+        -0.0285105612128973,
+        0.0265678558498621
+      ],
+      "capacity_ah_slope_20": [
+        -0.01199080515652895,
+        0.009580006822943687
+      ],
+      "capacity_ah_ratio_to_initial": [
+        0.7489817142486572,
+        1.1003817319869995
+      ],
+      "capacity_ah_delta_from_initial": [
+        -0.4656400680541992,
+        0.17197084426879883
+      ],
+      "capacity_ah_cummean": [
+        1.4735060930252075,
+        1.8382841348648071
+      ],
+      "capacity_ah_cummin": [
+        1.351581335067749,
+        1.828528881072998
+      ],
+      "capacity_ah_cummax": [
+        1.66232168674469,
+        1.8851401805877686
+      ],
+      "capacity_ah_cumstd": [
+        0.009896424598991871,
+        0.1363607496023178
+      ],
+      "soh_rmean_3": [
+        0.7005574107170105,
+        0.9189501404762268
+      ],
+      "soh_rstd_3": [
+        0.0,
+        0.03574371337890625
+      ],
+      "soh_rmin_3": [
+        0.6883724331855774,
+        0.9163501262664795
+      ],
+      "soh_rmax_3": [
+        0.700567364692688,
+        0.9206993579864502
+      ],
+      "soh_rrange_3": [
+        0.0,
+        0.06702953577041626
+      ],
+      "soh_rdev_3": [
+        -0.040688175708055496,
+        0.026469191536307335
+      ],
+      "soh_rmean_5": [
+        0.7014834880828857,
+        0.920599639415741
+      ],
+      "soh_rstd_5": [
+        0.0,
+        0.03636245056986809
+      ],
+      "soh_rmin_5": [
+        0.6883724331855774,
+        0.9163501262664795
+      ],
+      "soh_rmax_5": [
+        0.7051777839660645,
+        0.9245500564575195
+      ],
+      "soh_rrange_5": [
+        0.0,
+        0.07920855283737183
+      ],
+      "soh_rdev_5": [
+        -0.05487842485308647,
+        0.030166327953338623
+      ],
+      "soh_rmean_10": [
+        0.7043108940124512,
+        0.9181302785873413
+      ],
+      "soh_rstd_10": [
+        0.00211366917937994,
+        0.04345126450061798
+      ],
+      "soh_rmin_10": [
+        0.6883724331855774,
+        0.9106006026268005
+      ],
+      "soh_rmax_10": [
+        0.7115188241004944,
+        0.9275022745132446
+      ],
+      "soh_rrange_10": [
+        0.006754755973815918,
+        0.10391706228256226
+      ],
+      "soh_rdev_10": [
+        -0.057270340621471405,
+        0.03378703445196152
+      ],
+      "soh_rmean_20": [
+        0.7118603587150574,
+        0.9062002301216125
+      ],
+      "soh_rstd_20": [
+        0.005741618108004332,
+        0.043859440833330154
+      ],
+      "soh_rmin_20": [
+        0.6883724331855774,
+        0.8768152594566345
+      ],
+      "soh_rmax_20": [
+        0.7333379983901978,
+        0.9275022745132446
+      ],
+      "soh_rrange_20": [
+        0.01970851421356201,
+        0.11510878801345825
+      ],
+      "soh_rdev_20": [
+        -0.0440986230969429,
+        0.03873839229345322
+      ],
+      "soh_ewm_5": [
+        0.7076764702796936,
+        0.9237995743751526
+      ],
+      "soh_ewm_15": [
+        0.7308698296546936,
+        0.9260435700416565
+      ],
+      "soh_lag_1": [
+        0.700567364692688,
+        0.9198009371757507
+      ],
+      "soh_diff_1": [
+        -0.05503499507904053,
+        0.03970378637313843
+      ],
+      "soh_pct_1": [
+        -0.06893418729305267,
+        0.049125704914331436
+      ],
+      "soh_lag_2": [
+        0.700567364692688,
+        0.9206993579864502
+      ],
+      "soh_diff_2": [
+        -0.06702953577041626,
+        0.03970378637313843
+      ],
+      "soh_pct_2": [
+        -0.08271527290344238,
+        0.049125704914331436
+      ],
+      "soh_lag_3": [
+        0.700567364692688,
+        0.9215977787971497
+      ],
+      "soh_diff_3": [
+        -0.07311904430389404,
+        0.03970378637313843
+      ],
+      "soh_pct_3": [
+        -0.08955682814121246,
+        0.049125704914331436
+      ],
+      "soh_lag_5": [
+        0.700567364692688,
+        0.9275022745132446
+      ],
+      "soh_diff_5": [
+        -0.08351713418960571,
+        0.03970378637313843
+      ],
+      "soh_pct_5": [
+        -0.10132790356874466,
+        0.049125704914331436
+      ],
+      "soh_lag_10": [
+        0.7048691511154175,
+        0.9275022745132446
+      ],
+      "soh_diff_10": [
+        -0.10822564363479614,
+        0.062242746353149414
+      ],
+      "soh_pct_10": [
+        -0.13021023571491241,
+        0.08769354969263077
+      ],
+      "soh_slope_5": [
+        -0.021428782492876053,
+        0.011911136098206043
+      ],
+      "soh_slope_10": [
+        -0.013696282170712948,
+        0.006496193818747997
+      ],
+      "soh_slope_20": [
+        -0.006217074580490589,
+        0.0034869674127548933
+      ],
+      "soh_ratio_to_initial": [
+        0.7530195713043213,
+        0.9879761338233948
+      ],
+      "soh_delta_from_initial": [
+        -0.2290748953819275,
+        -0.011152148246765137
+      ],
+      "soh_cummean": [
+        0.7388418912887573,
+        0.9217500686645508
+      ],
+      "soh_cummin": [
+        0.6883724331855774,
+        0.9163501262664795
+      ],
+      "soh_cummax": [
+        0.831160843372345,
+        0.9275022745132446
+      ],
+      "soh_cumstd": [
+        0.0038733314722776413,
+        0.06794677674770355
+      ],
+      "discharge_duration_s_rmean_3": [
+        2827.10400390625,
+        3411.37548828125
+      ],
+      "discharge_duration_s_rstd_3": [
+        0.7500492930412292,
+        233.66368103027344
+      ],
+      "discharge_duration_s_rmin_3": [
+        2821.531005859375,
+        3404.718994140625
+      ],
+      "discharge_duration_s_rmax_3": [
+        2832.702880859375,
+        3595.281005859375
+      ],
+      "discharge_duration_s_rrange_3": [
+        1.5,
+        411.764892578125
+      ],
+      "discharge_duration_s_rdev_3": [
+        -142.0829315185547,
+        265.0206604003906
+      ],
+      "discharge_duration_s_rmean_5": [
+        2833.496826171875,
+        3413.997314453125
+      ],
+      "discharge_duration_s_rstd_5": [
+        3.7635772228240967,
+        186.07791137695312
+      ],
+      "discharge_duration_s_rmin_5": [
+        2821.531005859375,
+        3404.718994140625
+      ],
+      "discharge_duration_s_rmax_5": [
+        2846.639892578125,
+        3595.281005859375
+      ],
+      "discharge_duration_s_rrange_5": [
+        8.0,
+        440.031005859375
+      ],
+      "discharge_duration_s_rdev_5": [
+        -90.94331359863281,
+        331.32159423828125
+      ],
+      "discharge_duration_s_rmean_10": [
+        2855.395263671875,
+        3407.76904296875
+      ],
+      "discharge_duration_s_rstd_10": [
+        5.973840236663818,
+        131.8748321533203
+      ],
+      "discharge_duration_s_rmin_10": [
+        2821.531005859375,
+        3380.406005859375
+      ],
+      "discharge_duration_s_rmax_10": [
+        2893.375,
+        3595.281005859375
+      ],
+      "discharge_duration_s_rrange_10": [
+        17.951904296875,
+        440.031005859375
+      ],
+      "discharge_duration_s_rdev_10": [
+        -70.0704574584961,
+        373.00439453125
+      ],
+      "discharge_duration_s_rmean_20": [
+        2880.6787109375,
+        3381.58837890625
+      ],
+      "discharge_duration_s_rstd_20": [
+        13.346837997436523,
+        97.09265899658203
+      ],
+      "discharge_duration_s_rmin_20": [
+        2821.531005859375,
+        3312.843994140625
+      ],
+      "discharge_duration_s_rmax_20": [
+        2942.531005859375,
+        3595.281005859375
+      ],
+      "discharge_duration_s_rrange_20": [
+        52.2041015625,
+        461.203125
+      ],
+      "discharge_duration_s_rdev_20": [
+        -122.00920104980469,
+        384.5013122558594
+      ],
+      "discharge_duration_s_ewm_5": [
+        2867.13525390625,
+        3424.200439453125
+      ],
+      "discharge_duration_s_ewm_15": [
+        2967.212158203125,
+        3430.5439453125
+      ],
+      "discharge_duration_s_lag_1": [
+        2827.077880859375,
+        3595.281005859375
+      ],
+      "discharge_duration_s_diff_1": [
+        -397.281005859375,
+        399.26611328125
+      ],
+      "discharge_duration_s_pct_1": [
+        -0.11050068587064743,
+        0.12492623925209045
+      ],
+      "discharge_duration_s_lag_2": [
+        2832.702880859375,
+        3595.281005859375
+      ],
+      "discharge_duration_s_diff_2": [
+        -411.764892578125,
+        395.7958984375
+      ],
+      "discharge_duration_s_pct_2": [
+        -0.11452926695346832,
+        0.12370612472295761
+      ],
+      "discharge_duration_s_lag_3": [
+        2839.531982421875,
+        3595.281005859375
+      ],
+      "discharge_duration_s_diff_3": [
+        -411.48388671875,
+        421.514892578125
+      ],
+      "discharge_duration_s_pct_3": [
+        -0.114451102912426,
+        0.13281221687793732
+      ],
+      "discharge_duration_s_lag_5": [
+        2864.110107421875,
+        3595.281005859375
+      ],
+      "discharge_duration_s_diff_5": [
+        -405.2958984375,
+        429.922119140625
+      ],
+      "discharge_duration_s_pct_5": [
+        -0.11272996664047241,
+        0.13582096993923187
+      ],
+      "discharge_duration_s_lag_10": [
+        2884.406005859375,
+        3595.281005859375
+      ],
+      "discharge_duration_s_diff_10": [
+        -430.60888671875,
+        415.125
+      ],
+      "discharge_duration_s_pct_10": [
+        -0.1197705790400505,
+        0.1305360496044159
+      ],
+      "discharge_duration_s_slope_5": [
+        -82.17326354980469,
+        90.2310791015625
+      ],
+      "discharge_duration_s_slope_10": [
+        -24.409950256347656,
+        23.245708465576172
+      ],
+      "discharge_duration_s_slope_20": [
+        -12.18178653717041,
+        4.030550003051758
+      ],
+      "discharge_duration_s_ratio_to_initial": [
+        0.8214324712753296,
+        1.1112459897994995
+      ],
+      "discharge_duration_s_delta_from_initial": [
+        -613.360107421875,
+        359.9208984375
+      ],
+      "discharge_duration_s_cummean": [
+        3154.474853515625,
+        3417.4794921875
+      ],
+      "discharge_duration_s_cummin": [
+        2821.531005859375,
+        3404.718994140625
+      ],
+      "discharge_duration_s_cummax": [
+        3236.125,
+        3595.281005859375
+      ],
+      "discharge_duration_s_cumstd": [
+        5.795335292816162,
+        185.04705810546875
+      ],
+      "charge_duration_s_rmean_3": [
+        7130.8642578125,
+        10811.8642578125
+      ],
+      "charge_duration_s_rstd_3": [
+        0.34918949007987976,
+        4846.30859375
+      ],
+      "charge_duration_s_rmin_3": [
+        1855.656005859375,
+        10810.546875
+      ],
+      "charge_duration_s_rmax_3": [
+        10145.0,
+        10813.296875
+      ],
+      "charge_duration_s_rrange_3": [
+        0.671875,
+        8498.7802734375
+      ],
+      "charge_duration_s_rdev_3": [
+        -5275.2080078125,
+        2764.479248046875
+      ],
+      "charge_duration_s_rmean_5": [
+        8145.365234375,
+        10807.7529296875
+      ],
+      "charge_duration_s_rstd_5": [
+        0.626456081867218,
+        3746.2021484375
+      ],
+      "charge_duration_s_rmin_5": [
+        1855.656005859375,
+        10806.640625
+      ],
+      "charge_duration_s_rmax_5": [
+        10311.7177734375,
+        10813.296875
+      ],
+      "charge_duration_s_rrange_5": [
+        1.5302734375,
+        8498.7802734375
+      ],
+      "charge_duration_s_rdev_5": [
+        -6325.740234375,
+        1995.5408935546875
+      ],
+      "charge_duration_s_rmean_10": [
+        9206.708984375,
+        10807.5419921875
+      ],
+      "charge_duration_s_rstd_10": [
+        0.7750602960586548,
+        2684.54931640625
+      ],
+      "charge_duration_s_rmin_10": [
+        1855.656005859375,
+        10805.78125
+      ],
+      "charge_duration_s_rmax_10": [
+        10354.4365234375,
+        10813.296875
+      ],
+      "charge_duration_s_rrange_10": [
+        2.421875,
+        8794.578125
+      ],
+      "charge_duration_s_rdev_10": [
+        -7363.98291015625,
+        1405.4173583984375
+      ],
+      "charge_duration_s_rmean_20": [
+        9488.8271484375,
+        10797.447265625
+      ],
+      "charge_duration_s_rstd_20": [
+        31.111276626586914,
+        2265.2099609375
+      ],
+      "charge_duration_s_rmin_20": [
+        1855.656005859375,
+        10680.515625
+      ],
+      "charge_duration_s_rmax_20": [
+        10650.234375,
+        10813.296875
+      ],
+      "charge_duration_s_rrange_20": [
+        128.578125,
+        8954.796875
+      ],
+      "charge_duration_s_rdev_20": [
+        -7742.49755859375,
+        1120.736083984375
+      ],
+      "charge_duration_s_ewm_5": [
+        8879.779296875,
+        10807.4970703125
+      ],
+      "charge_duration_s_ewm_15": [
+        8676.318359375,
+        10807.275390625
+      ],
+      "charge_duration_s_lag_1": [
+        1855.656005859375,
+        10813.296875
+      ],
+      "charge_duration_s_diff_1": [
+        -8498.7802734375,
+        8285.25
+      ],
+      "charge_duration_s_pct_1": [
+        -0.8207863569259644,
+        4.464863300323486
+      ],
+      "charge_duration_s_lag_2": [
+        1855.656005859375,
+        10813.296875
+      ],
+      "charge_duration_s_diff_2": [
+        -7326.84375,
+        8289.34375
+      ],
+      "charge_duration_s_pct_2": [
+        -0.7979138493537903,
+        4.467069149017334
+      ],
+      "charge_duration_s_lag_3": [
+        1855.656005859375,
+        10813.296875
+      ],
+      "charge_duration_s_diff_3": [
+        -7337.671875,
+        8423.796875
+      ],
+      "charge_duration_s_pct_3": [
+        -0.7981518507003784,
+        4.539525032043457
+      ],
+      "charge_duration_s_lag_5": [
+        1855.656005859375,
+        10813.296875
+      ],
+      "charge_duration_s_diff_5": [
+        -8492.953125,
+        8794.578125
+      ],
+      "charge_duration_s_pct_5": [
+        -0.8206854462623596,
+        4.7393364906311035
+      ],
+      "charge_duration_s_lag_10": [
+        1855.656005859375,
+        10813.296875
+      ],
+      "charge_duration_s_diff_10": [
+        -6001.79638671875,
+        8941.265625
+      ],
+      "charge_duration_s_pct_10": [
+        -0.5950974225997925,
+        4.818385601043701
+      ],
+      "charge_duration_s_slope_5": [
+        -1576.97021484375,
+        1707.84228515625
+      ],
+      "charge_duration_s_slope_10": [
+        -500.81170654296875,
+        484.6861572265625
+      ],
+      "charge_duration_s_slope_20": [
+        -158.82540893554688,
+        129.64671325683594
+      ],
+      "charge_duration_s_ratio_to_initial": [
+        0.2284490466117859,
+        1.3308703899383545
+      ],
+      "charge_duration_s_delta_from_initial": [
+        -6267.1884765625,
+        2687.60888671875
+      ],
+      "charge_duration_s_cummean": [
+        10246.5361328125,
+        10807.4853515625
+      ],
+      "charge_duration_s_cummin": [
+        1855.656005859375,
+        10805.78125
+      ],
+      "charge_duration_s_cummax": [
+        10806.59375,
+        10813.296875
+      ],
+      "charge_duration_s_cumstd": [
+        0.7996842265129089,
+        1468.099365234375
+      ],
+      "voltage_mean_v_rmean_3": [
+        3.339745283126831,
+        3.5458102226257324
+      ],
+      "voltage_mean_v_rstd_3": [
+        5.961751958238892e-05,
+        0.056505702435970306
+      ],
+      "voltage_mean_v_rmin_3": [
+        3.305027484893799,
+        3.5448124408721924
+      ],
+      "voltage_mean_v_rmax_3": [
+        3.349933385848999,
+        3.5475142002105713
+      ],
+      "voltage_mean_v_rrange_3": [
+        0.00011920928955078125,
+        0.1027066707611084
+      ],
+      "voltage_mean_v_rdev_3": [
+        -0.06496373564004898,
+        0.034111183136701584
+      ],
+      "voltage_mean_v_rmean_5": [
+        3.325225591659546,
+        3.544818639755249
+      ],
+      "voltage_mean_v_rstd_5": [
+        0.0006195219466462731,
+        0.04463035613298416
+      ],
+      "voltage_mean_v_rmin_5": [
+        3.2871463298797607,
+        3.54313325881958
+      ],
+      "voltage_mean_v_rmax_5": [
+        3.349933385848999,
+        3.5475142002105713
+      ],
+      "voltage_mean_v_rrange_5": [
+        0.0015499591827392578,
+        0.1094350814819336
+      ],
+      "voltage_mean_v_rdev_5": [
+        -0.07829980552196503,
+        0.025088977068662643
+      ],
+      "voltage_mean_v_rmean_10": [
+        3.327941417694092,
+        3.5442302227020264
+      ],
+      "voltage_mean_v_rstd_10": [
+        0.0013867458328604698,
+        0.048138976097106934
+      ],
+      "voltage_mean_v_rmin_10": [
+        3.2093350887298584,
+        3.5413172245025635
+      ],
+      "voltage_mean_v_rmax_10": [
+        3.3635995388031006,
+        3.5475142002105713
+      ],
+      "voltage_mean_v_rrange_10": [
+        0.003957033157348633,
+        0.15613913536071777
+      ],
+      "voltage_mean_v_rdev_10": [
+        -0.092473603785038,
+        0.037532854825258255
+      ],
+      "voltage_mean_v_rmean_20": [
+        3.346989154815674,
+        3.5410268306732178
+      ],
+      "voltage_mean_v_rstd_20": [
+        0.003060803981497884,
+        0.03977511450648308
+      ],
+      "voltage_mean_v_rmin_20": [
+        3.2093350887298584,
+        3.532662868499756
+      ],
+      "voltage_mean_v_rmax_20": [
+        3.3644871711730957,
+        3.5475142002105713
+      ],
+      "voltage_mean_v_rrange_20": [
+        0.010644197463989258,
+        0.17145705223083496
+      ],
+      "voltage_mean_v_rdev_20": [
+        -0.09787610918283463,
+        0.02718505822122097
+      ],
+      "voltage_mean_v_ewm_5": [
+        3.269186019897461,
+        3.5410852432250977
+      ],
+      "voltage_mean_v_ewm_15": [
+        3.233511209487915,
+        3.5356686115264893
+      ],
+      "voltage_mean_v_lag_1": [
+        3.305027484893799,
+        3.5475142002105713
+      ],
+      "voltage_mean_v_diff_1": [
+        -0.1027066707611084,
+        0.0594174861907959
+      ],
+      "voltage_mean_v_pct_1": [
+        -0.03013928420841694,
+        0.017855985090136528
+      ],
+      "voltage_mean_v_lag_2": [
+        3.305027484893799,
+        3.5475142002105713
+      ],
+      "voltage_mean_v_diff_2": [
+        -0.09218454360961914,
+        0.07379865646362305
+      ],
+      "voltage_mean_v_pct_2": [
+        -0.027135351672768593,
+        0.022329211235046387
+      ],
+      "voltage_mean_v_lag_3": [
+        3.305027484893799,
+        3.5475142002105713
+      ],
+      "voltage_mean_v_diff_3": [
+        -0.0871727466583252,
+        0.08549070358276367
+      ],
+      "voltage_mean_v_pct_3": [
+        -0.025697994977235794,
+        0.02586686611175537
+      ],
+      "voltage_mean_v_lag_5": [
+        3.2093350887298584,
+        3.5475142002105713
+      ],
+      "voltage_mean_v_diff_5": [
+        -0.11090326309204102,
+        0.14059829711914062
+      ],
+      "voltage_mean_v_pct_5": [
+        -0.03246648609638214,
+        0.04380916804075241
+      ],
+      "voltage_mean_v_lag_10": [
+        3.2093350887298584,
+        3.5475142002105713
+      ],
+      "voltage_mean_v_diff_10": [
+        -0.10364174842834473,
+        0.15699219703674316
+      ],
+      "voltage_mean_v_pct_10": [
+        -0.03040534071624279,
+        0.04891736060380936
+      ],
+      "voltage_mean_v_slope_5": [
+        -0.02033362351357937,
+        0.020522594451904297
+      ],
+      "voltage_mean_v_slope_10": [
+        -0.00827451515942812,
+        0.013470112346112728
+      ],
+      "voltage_mean_v_slope_20": [
+        -0.0024904299061745405,
+        0.004456961527466774
+      ],
+      "voltage_mean_v_ratio_to_initial": [
+        0.9802303910255432,
+        1.0551906824111938
+      ],
+      "voltage_mean_v_delta_from_initial": [
+        -0.06973814964294434,
+        0.1771254539489746
+      ],
+      "voltage_mean_v_cummean": [
+        3.305910587310791,
+        3.5415194034576416
+      ],
+      "voltage_mean_v_cummin": [
+        3.2093350887298584,
+        3.5275461673736572
+      ],
+      "voltage_mean_v_cummax": [
+        3.349933385848999,
+        3.5475142002105713
+      ],
+      "voltage_mean_v_cumstd": [
+        0.00464366190135479,
+        0.051892176270484924
+      ],
+      "voltage_min_v_rmean_3": [
+        1.7890719175338745,
+        2.471740961074829
+      ],
+      "voltage_min_v_rstd_3": [
+        0.003089025616645813,
+        0.11331431567668915
+      ],
+      "voltage_min_v_rmin_3": [
+        1.7538588047027588,
+        2.4341986179351807
+      ],
+      "voltage_min_v_rmax_3": [
+        1.8292747735977173,
+        2.4985039234161377
+      ],
+      "voltage_min_v_rrange_3": [
+        0.006176948547363281,
+        0.22405338287353516
+      ],
+      "voltage_min_v_rdev_3": [
+        -0.12122102826833725,
+        0.12186121940612793
+      ],
+      "voltage_min_v_rmean_5": [
+        1.8194936513900757,
+        2.4616057872772217
+      ],
+      "voltage_min_v_rstd_5": [
+        0.011507843621075153,
+        0.089264877140522
+      ],
+      "voltage_min_v_rmin_5": [
+        1.7538588047027588,
+        2.433717727661133
+      ],
+      "voltage_min_v_rmax_5": [
+        1.8780478239059448,
+        2.4985039234161377
+      ],
+      "voltage_min_v_rrange_5": [
+        0.029072046279907227,
+        0.22405338287353516
+      ],
+      "voltage_min_v_rdev_5": [
+        -0.10410237312316895,
+        0.13844570517539978
+      ],
+      "voltage_min_v_rmean_10": [
+        1.8263667821884155,
+        2.439568042755127
+      ],
+      "voltage_min_v_rstd_10": [
+        0.014280146919190884,
+        0.07599685341119766
+      ],
+      "voltage_min_v_rmin_10": [
+        1.7538588047027588,
+        2.372853994369507
+      ],
+      "voltage_min_v_rmax_10": [
+        1.929297685623169,
+        2.4985039234161377
+      ],
+      "voltage_min_v_rrange_10": [
+        0.04852890968322754,
+        0.22405338287353516
+      ],
+      "voltage_min_v_rdev_10": [
+        -0.11093346774578094,
+        0.1399369090795517
+      ],
+      "voltage_min_v_rmean_20": [
+        1.8400347232818604,
+        2.4317781925201416
+      ],
+      "voltage_min_v_rstd_20": [
+        0.02639838680624962,
+        0.07493571937084198
+      ],
+      "voltage_min_v_rmin_20": [
+        1.7538588047027588,
+        2.358732223510742
+      ],
+      "voltage_min_v_rmax_20": [
+        1.9534409046173096,
+        2.4985039234161377
+      ],
+      "voltage_min_v_rrange_20": [
+        0.08795332908630371,
+        0.24104619026184082
+      ],
+      "voltage_min_v_rdev_20": [
+        -0.12078282982110977,
+        0.13256993889808655
+      ],
+      "voltage_min_v_ewm_5": [
+        1.8323829174041748,
+        2.439800262451172
+      ],
+      "voltage_min_v_ewm_15": [
+        1.862152338027954,
+        2.4574079513549805
+      ],
+      "voltage_min_v_lag_1": [
+        1.7538588047027588,
+        2.4985039234161377
+      ],
+      "voltage_min_v_diff_1": [
+        -0.17916738986968994,
+        0.22405338287353516
+      ],
+      "voltage_min_v_pct_1": [
+        -0.08974002301692963,
+        0.12774881720542908
+      ],
+      "voltage_min_v_lag_2": [
+        1.7538588047027588,
+        2.4985039234161377
+      ],
+      "voltage_min_v_diff_2": [
+        -0.1970827579498291,
+        0.18903613090515137
+      ],
+      "voltage_min_v_pct_2": [
+        -0.09863017499446869,
+        0.09404334425926208
+      ],
+      "voltage_min_v_lag_3": [
+        1.7538588047027588,
+        2.4985039234161377
+      ],
+      "voltage_min_v_diff_3": [
+        -0.18085670471191406,
+        0.19539940357208252
+      ],
+      "voltage_min_v_pct_3": [
+        -0.07281610369682312,
+        0.10848792642354965
+      ],
+      "voltage_min_v_lag_5": [
+        1.7571531534194946,
+        2.4985039234161377
+      ],
+      "voltage_min_v_diff_5": [
+        -0.20119237899780273,
+        0.17479074001312256
+      ],
+      "voltage_min_v_pct_5": [
+        -0.10077173262834549,
+        0.0958593338727951
+      ],
+      "voltage_min_v_lag_10": [
+        1.7571531534194946,
+        2.4985039234161377
+      ],
+      "voltage_min_v_diff_10": [
+        -0.20287573337554932,
+        0.1777963638305664
+      ],
+      "voltage_min_v_pct_10": [
+        -0.10152927786111832,
+        0.09493614733219147
+      ],
+      "voltage_min_v_slope_5": [
+        -0.03352992609143257,
+        0.042838167399168015
+      ],
+      "voltage_min_v_slope_10": [
+        -0.016005106270313263,
+        0.011786031536757946
+      ],
+      "voltage_min_v_slope_20": [
+        -0.0056083365343511105,
+        0.0035869854036718607
+      ],
+      "voltage_min_v_ratio_to_initial": [
+        0.9148730635643005,
+        1.0423294305801392
+      ],
+      "voltage_min_v_delta_from_initial": [
+        -0.17434310913085938,
+        0.08114778995513916
+      ],
+      "voltage_min_v_cummean": [
+        1.9010601043701172,
+        2.4264326095581055
+      ],
+      "voltage_min_v_cummin": [
+        1.7538588047027588,
+        2.3716771602630615
+      ],
+      "voltage_min_v_cummax": [
+        1.9889951944351196,
+        2.4985039234161377
+      ],
+      "voltage_min_v_cumstd": [
+        0.023333432152867317,
+        0.05929914861917496
+      ],
+      "voltage_std_v_rmean_3": [
+        0.2333495020866394,
+        0.3935043513774872
+      ],
+      "voltage_std_v_rstd_3": [
+        0.0003592591092456132,
+        0.037174027413129807
+      ],
+      "voltage_std_v_rmin_3": [
+        0.23152309656143188,
+        0.3855210542678833
+      ],
+      "voltage_std_v_rmax_3": [
+        0.2363654375076294,
+        0.39908161759376526
+      ],
+      "voltage_std_v_rrange_3": [
+        0.000661209225654602,
+        0.06542450189590454
+      ],
+      "voltage_std_v_rdev_3": [
+        -0.04290729761123657,
+        0.02737714909017086
+      ],
+      "voltage_std_v_rmean_5": [
+        0.2358638495206833,
+        0.3894987404346466
+      ],
+      "voltage_std_v_rstd_5": [
+        0.001585198100656271,
+        0.028944017365574837
+      ],
+      "voltage_std_v_rmin_5": [
+        0.23152309656143188,
+        0.38122567534446716
+      ],
+      "voltage_std_v_rmax_5": [
+        0.23900388181209564,
+        0.39908161759376526
+      ],
+      "voltage_std_v_rrange_5": [
+        0.0038233548402786255,
+        0.07127529382705688
+      ],
+      "voltage_std_v_rdev_5": [
+        -0.04616444557905197,
+        0.025799065828323364
+      ],
+      "voltage_std_v_rmean_10": [
+        0.23644955456256866,
+        0.38756242394447327
+      ],
+      "voltage_std_v_rstd_10": [
+        0.0025919254403561354,
+        0.02893870137631893
+      ],
+      "voltage_std_v_rmin_10": [
+        0.23152309656143188,
+        0.37813615798950195
+      ],
+      "voltage_std_v_rmax_10": [
+        0.24107515811920166,
+        0.39908161759376526
+      ],
+      "voltage_std_v_rrange_10": [
+        0.008296146988868713,
+        0.07762360572814941
+      ],
+      "voltage_std_v_rdev_10": [
+        -0.054699286818504333,
+        0.02676180936396122
+      ],
+      "voltage_std_v_rmean_20": [
+        0.23687158524990082,
+        0.3855241537094116
+      ],
+      "voltage_std_v_rstd_20": [
+        0.0031503764912486076,
+        0.022062402218580246
+      ],
+      "voltage_std_v_rmin_20": [
+        0.23152309656143188,
+        0.3738756477832794
+      ],
+      "voltage_std_v_rmax_20": [
+        0.24166852235794067,
+        0.39908161759376526
+      ],
+      "voltage_std_v_rrange_20": [
+        0.010145425796508789,
+        0.08167162537574768
+      ],
+      "voltage_std_v_rdev_20": [
+        -0.06196117401123047,
+        0.023719532415270805
+      ],
+      "voltage_std_v_ewm_5": [
+        0.23584841191768646,
+        0.38692665100097656
+      ],
+      "voltage_std_v_ewm_15": [
+        0.23597490787506104,
+        0.37476688623428345
+      ],
+      "voltage_std_v_lag_1": [
+        0.23152309656143188,
+        0.3959104120731354
+      ],
+      "voltage_std_v_diff_1": [
+        -0.06542450189590454,
+        0.04399007558822632
+      ],
+      "voltage_std_v_pct_1": [
+        -0.182246595621109,
+        0.15559659898281097
+      ],
+      "voltage_std_v_lag_2": [
+        0.23152309656143188,
+        0.3919573426246643
+      ],
+      "voltage_std_v_diff_2": [
+        -0.06329739093780518,
+        0.06306076049804688
+      ],
+      "voltage_std_v_pct_2": [
+        -0.1773722916841507,
+        0.22305122017860413
+      ],
+      "voltage_std_v_lag_3": [
+        0.23152309656143188,
+        0.3919573426246643
+      ],
+      "voltage_std_v_diff_3": [
+        -0.0533430278301239,
+        0.06759852170944214
+      ],
+      "voltage_std_v_pct_3": [
+        -0.15614904463291168,
+        0.23910166323184967
+      ],
+      "voltage_std_v_lag_5": [
+        0.23152309656143188,
+        0.3919573426246643
+      ],
+      "voltage_std_v_diff_5": [
+        -0.0661785900592804,
+        0.0682525634765625
+      ],
+      "voltage_std_v_pct_5": [
+        -0.18967926502227783,
+        0.23458300530910492
+      ],
+      "voltage_std_v_lag_10": [
+        0.23152309656143188,
+        0.38946449756622314
+      ],
+      "voltage_std_v_diff_10": [
+        -0.0774349570274353,
+        0.07264059782028198
+      ],
+      "voltage_std_v_pct_10": [
+        -0.2150053083896637,
+        0.25560495257377625
+      ],
+      "voltage_std_v_slope_5": [
+        -0.014028417877852917,
+        0.016069645062088966
+      ],
+      "voltage_std_v_slope_10": [
+        -0.004736336413770914,
+        0.008874445222318172
+      ],
+      "voltage_std_v_slope_20": [
+        -0.0018865313613787293,
+        0.0023899327497929335
+      ],
+      "voltage_std_v_ratio_to_initial": [
+        0.8587777614593506,
+        1.2727501392364502
+      ],
+      "voltage_std_v_delta_from_initial": [
+        -0.04718688130378723,
+        0.07935738563537598
+      ],
+      "voltage_std_v_cummean": [
+        0.236570343375206,
+        0.34943488240242004
+      ],
+      "voltage_std_v_cummin": [
+        0.23152309656143188,
+        0.3341320753097534
+      ],
+      "voltage_std_v_cummax": [
+        0.2411075234413147,
+        0.39908161759376526
+      ],
+      "voltage_std_v_cumstd": [
+        0.0019819329027086496,
+        0.029258547350764275
+      ],
+      "voltage_slope_v_per_s_rmean_3": [
+        -0.00027575981221161783,
+        0.0002805521071422845
+      ],
+      "voltage_slope_v_per_s_rstd_3": [
+        3.3425084211557987e-07,
+        5.6778095313347876e-05
+      ],
+      "voltage_slope_v_per_s_rmin_3": [
+        -0.00027828008751384914,
+        0.00027713883901014924
+      ],
+      "voltage_slope_v_per_s_rmax_3": [
+        -0.00027448590844869614,
+        0.00028295497759245336
+      ],
+      "voltage_slope_v_per_s_rrange_3": [
+        6.142217898741364e-07,
+        0.00010297967673977837
+      ],
+      "voltage_slope_v_per_s_rdev_3": [
+        -6.545840733451769e-05,
+        4.274685852578841e-05
+      ],
+      "voltage_slope_v_per_s_rmean_5": [
+        -0.0002741843636613339,
+        0.0002726687816902995
+      ],
+      "voltage_slope_v_per_s_rstd_5": [
+        6.073827307773172e-07,
+        4.698313568951562e-05
+      ],
+      "voltage_slope_v_per_s_rmin_5": [
+        -0.00027828008751384914,
+        0.0002617031568661332
+      ],
+      "voltage_slope_v_per_s_rmax_5": [
+        -0.00027119749574922025,
+        0.00028295497759245336
+      ],
+      "voltage_slope_v_per_s_rrange_5": [
+        1.4891120372340083e-06,
+        0.00011680553870974109
+      ],
+      "voltage_slope_v_per_s_rdev_5": [
+        -8.279386383946985e-05,
+        3.1695672078058124e-05
+      ],
+      "voltage_slope_v_per_s_rmean_10": [
+        -0.00027055246755480766,
+        0.00027095063705928624
+      ],
+      "voltage_slope_v_per_s_rstd_10": [
+        9.760012744663982e-07,
+        3.526835280354135e-05
+      ],
+      "voltage_slope_v_per_s_rmin_10": [
+        -0.00027828008751384914,
+        0.0002593651588540524
+      ],
+      "voltage_slope_v_per_s_rmax_10": [
+        -0.00025479355826973915,
+        0.00028295497759245336
+      ],
+      "voltage_slope_v_per_s_rrange_10": [
+        2.971966750919819e-06,
+        0.00011711975821526721
+      ],
+      "voltage_slope_v_per_s_rdev_10": [
+        -9.567267261445522e-05,
+        2.2653999621979892e-05
+      ],
+      "voltage_slope_v_per_s_rmean_20": [
+        -0.0002668056986294687,
+        0.0002675944415386766
+      ],
+      "voltage_slope_v_per_s_rstd_20": [
+        2.318603037565481e-06,
+        2.7385380235500634e-05
+      ],
+      "voltage_slope_v_per_s_rmin_20": [
+        -0.00027828008751384914,
+        0.00025696452939882874
+      ],
+      "voltage_slope_v_per_s_rmax_20": [
+        -0.0002544013550505042,
+        0.00028295497759245336
+      ],
+      "voltage_slope_v_per_s_rrange_20": [
+        9.30267560761422e-06,
+        0.00012764084385707974
+      ],
+      "voltage_slope_v_per_s_rdev_20": [
+        -0.00010287659097230062,
+        3.0018585675861686e-05
+      ],
+      "voltage_slope_v_per_s_ewm_5": [
+        -0.0002692866837605834,
+        0.0002695879666134715
+      ],
+      "voltage_slope_v_per_s_ewm_15": [
+        -0.0002592869277577847,
+        0.00025309313787147403
+      ],
+      "voltage_slope_v_per_s_lag_1": [
+        -0.00027828008751384914,
+        0.00028295497759245336
+      ],
+      "voltage_slope_v_per_s_diff_1": [
+        -0.00010137343633687124,
+        7.77187742642127e-05
+      ],
+      "voltage_slope_v_per_s_pct_1": [
+        -0.47125208377838135,
+        0.683292031288147
+      ],
+      "voltage_slope_v_per_s_lag_2": [
+        -0.00027828008751384914,
+        0.00027713883901014924
+      ],
+      "voltage_slope_v_per_s_diff_2": [
+        -9.500179294263944e-05,
+        0.00010297967673977837
+      ],
+      "voltage_slope_v_per_s_pct_2": [
+        -0.45511266589164734,
+        0.9053822159767151
+      ],
+      "voltage_slope_v_per_s_lag_3": [
+        -0.00027828008751384914,
+        0.00027486946783028543
+      ],
+      "voltage_slope_v_per_s_diff_3": [
+        -0.00010078853665618226,
+        0.00011013756011379883
+      ],
+      "voltage_slope_v_per_s_pct_3": [
+        -0.46981048583984375,
+        0.9683132767677307
+      ],
+      "voltage_slope_v_per_s_lag_5": [
+        -0.0002726537059061229,
+        0.00027486946783028543
+      ],
+      "voltage_slope_v_per_s_diff_5": [
+        -0.00011396058107493445,
+        0.00010311655205441639
+      ],
+      "voltage_slope_v_per_s_pct_5": [
+        -0.5004807114601135,
+        0.9065855741500854
+      ],
+      "voltage_slope_v_per_s_lag_10": [
+        -0.0002726537059061229,
+        0.00027177418814972043
+      ],
+      "voltage_slope_v_per_s_diff_10": [
+        -0.00011556316894711927,
+        0.00011549743794603273
+      ],
+      "voltage_slope_v_per_s_pct_10": [
+        -0.5039718151092529,
+        1.0154365301132202
+      ],
+      "voltage_slope_v_per_s_slope_5": [
+        -2.330261850147508e-05,
+        2.4881250283215195e-05
+      ],
+      "voltage_slope_v_per_s_slope_10": [
+        -6.77222396916477e-06,
+        8.17244108475279e-06
+      ],
+      "voltage_slope_v_per_s_slope_20": [
+        -2.0999787011533044e-06,
+        3.4525514820415992e-06
+      ],
+      "voltage_slope_v_per_s_ratio_to_initial": [
+        0.5297297239303589,
+        1.4794288873672485
+      ],
+      "voltage_slope_v_per_s_delta_from_initial": [
+        -9.814462828217074e-05,
+        8.01645073806867e-05
+      ],
+      "voltage_slope_v_per_s_cummean": [
+        -0.00024259956262540072,
+        0.00021991637186147273
+      ],
+      "voltage_slope_v_per_s_cummin": [
+        -0.00027828008751384914,
+        0.00019853474805131555
+      ],
+      "voltage_slope_v_per_s_cummax": [
+        -0.00021809255122207105,
+        0.00028295497759245336
+      ],
+      "voltage_slope_v_per_s_cumstd": [
+        1.7272371906074113e-06,
+        3.578078030841425e-05
+      ],
+      "current_mean_a_rmean_3": [
+        -1.9905980825424194,
+        -1.7352877855300903
+      ],
+      "current_mean_a_rstd_3": [
+        0.0002279680920764804,
+        0.08898648619651794
+      ],
+      "current_mean_a_rmin_3": [
+        -2.0080249309539795,
+        -1.7476952075958252
+      ],
+      "current_mean_a_rmax_3": [
+        -1.9821032285690308,
+        -1.729077935218811
+      ],
+      "current_mean_a_rrange_3": [
+        0.00040650367736816406,
+        0.16096127033233643
+      ],
+      "current_mean_a_rdev_3": [
+        -0.10240066051483154,
+        0.04328107833862305
+      ],
+      "current_mean_a_rmean_5": [
+        -2.002214193344116,
+        -1.7541189193725586
+      ],
+      "current_mean_a_rstd_5": [
+        0.001014987239614129,
+        0.07149535417556763
+      ],
+      "current_mean_a_rmin_5": [
+        -2.031933546066284,
+        -1.7819342613220215
+      ],
+      "current_mean_a_rmax_5": [
+        -1.9821032285690308,
+        -1.729077935218811
+      ],
+      "current_mean_a_rrange_5": [
+        0.0025529861450195312,
+        0.1947261095046997
+      ],
+      "current_mean_a_rdev_5": [
+        -0.1094779521226883,
+        0.05649988725781441
+      ],
+      "current_mean_a_rmean_10": [
+        -1.9986225366592407,
+        -1.7681984901428223
+      ],
+      "current_mean_a_rstd_10": [
+        0.004633930046111345,
+        0.06570597738027573
+      ],
+      "current_mean_a_rmin_10": [
+        -2.0813918113708496,
+        -1.8008157014846802
+      ],
+      "current_mean_a_rmax_10": [
+        -1.9682317972183228,
+        -1.729077935218811
+      ],
+      "current_mean_a_rrange_10": [
+        0.012421965599060059,
+        0.1947261095046997
+      ],
+      "current_mean_a_rdev_10": [
+        -0.1395372450351715,
+        0.06136295944452286
+      ],
+      "current_mean_a_rmean_20": [
+        -1.983667016029358,
+        -1.7756540775299072
+      ],
+      "current_mean_a_rstd_20": [
+        0.008187845349311829,
+        0.05590493977069855
+      ],
+      "current_mean_a_rmin_20": [
+        -2.0813918113708496,
+        -1.816712498664856
+      ],
+      "current_mean_a_rmax_20": [
+        -1.9466373920440674,
+        -1.729077935218811
+      ],
+      "current_mean_a_rrange_20": [
+        0.029714584350585938,
+        0.2091466188430786
+      ],
+      "current_mean_a_rdev_20": [
+        -0.15442463755607605,
+        0.07819347083568573
+      ],
+      "current_mean_a_ewm_5": [
+        -2.0402941703796387,
+        -1.7707403898239136
+      ],
+      "current_mean_a_ewm_15": [
+        -2.064845323562622,
+        -1.796959400177002
+      ],
+      "current_mean_a_lag_1": [
+        -2.0080249309539795,
+        -1.729077935218811
+      ],
+      "current_mean_a_diff_1": [
+        -0.16096127033233643,
+        0.07341718673706055
+      ],
+      "current_mean_a_pct_1": [
+        -0.03780041262507439,
+        0.09036315232515335
+      ],
+      "current_mean_a_lag_2": [
+        -2.0080249309539795,
+        -1.7381443977355957
+      ],
+      "current_mean_a_diff_2": [
+        -0.1462407112121582,
+        0.10163021087646484
+      ],
+      "current_mean_a_pct_2": [
+        -0.052326492965221405,
+        0.08142616599798203
+      ],
+      "current_mean_a_lag_3": [
+        -2.0080249309539795,
+        -1.7381443977355957
+      ],
+      "current_mean_a_diff_3": [
+        -0.13748395442962646,
+        0.12964177131652832
+      ],
+      "current_mean_a_pct_3": [
+        -0.06674885004758835,
+        0.07617901265621185
+      ],
+      "current_mean_a_lag_5": [
+        -2.0813918113708496,
+        -1.7381443977355957
+      ],
+      "current_mean_a_diff_5": [
+        -0.19281494617462158,
+        0.1324481964111328
+      ],
+      "current_mean_a_pct_5": [
+        -0.06819379329681396,
+        0.10962498188018799
+      ],
+      "current_mean_a_lag_10": [
+        -2.0813918113708496,
+        -1.7381443977355957
+      ],
+      "current_mean_a_diff_10": [
+        -0.1872119903564453,
+        0.16644108295440674
+      ],
+      "current_mean_a_pct_10": [
+        -0.08569575846195221,
+        0.10610143095254898
+      ],
+      "current_mean_a_slope_5": [
+        -0.03456179052591324,
+        0.031861089169979095
+      ],
+      "current_mean_a_slope_10": [
+        -0.01636151410639286,
+        0.0163253303617239
+      ],
+      "current_mean_a_slope_20": [
+        -0.00665772520005703,
+        0.008730274625122547
+      ],
+      "current_mean_a_ratio_to_initial": [
+        0.8679049611091614,
+        0.9927630424499512
+      ],
+      "current_mean_a_delta_from_initial": [
+        0.014142274856567383,
+        0.2749415636062622
+      ],
+      "current_mean_a_cummean": [
+        -2.0154104232788086,
+        -1.81618332862854
+      ],
+      "current_mean_a_cummin": [
+        -2.0813918113708496,
+        -1.9541761875152588
+      ],
+      "current_mean_a_cummax": [
+        -1.9821032285690308,
+        -1.729077935218811
+      ],
+      "current_mean_a_cumstd": [
+        0.00564151257276535,
+        0.05954678729176521
+      ],
+      "temperature_mean_c_rmean_3": [
+        30.18723487854004,
+        41.09785079956055
+      ],
+      "temperature_mean_c_rstd_3": [
+        0.006801411975175142,
+        1.7651572227478027
+      ],
+      "temperature_mean_c_rmin_3": [
+        30.102703094482422,
+        40.11248016357422
+      ],
+      "temperature_mean_c_rmax_3": [
+        30.224287033081055,
+        43.008934020996094
+      ],
+      "temperature_mean_c_rrange_3": [
+        0.013593673706054688,
+        3.406707763671875
+      ],
+      "temperature_mean_c_rdev_3": [
+        -1.4581871032714844,
+        1.9706649780273438
+      ],
+      "temperature_mean_c_rmean_5": [
+        30.18311882019043,
+        40.68486022949219
+      ],
+      "temperature_mean_c_rstd_5": [
+        0.032035015523433685,
+        1.8341373205184937
+      ],
+      "temperature_mean_c_rmin_5": [
+        30.102703094482422,
+        39.60222625732422
+      ],
+      "temperature_mean_c_rmax_5": [
+        30.251184463500977,
+        43.008934020996094
+      ],
+      "temperature_mean_c_rrange_5": [
+        0.08950042724609375,
+        5.008842468261719
+      ],
+      "temperature_mean_c_rdev_5": [
+        -1.245714545249939,
+        2.8530478477478027
+      ],
+      "temperature_mean_c_rmean_10": [
+        30.524940490722656,
+        40.3331184387207
+      ],
+      "temperature_mean_c_rstd_10": [
+        0.08883306384086609,
+        1.4998747110366821
+      ],
+      "temperature_mean_c_rmin_10": [
+        30.102703094482422,
+        39.16680145263672
+      ],
+      "temperature_mean_c_rmax_10": [
+        30.977447509765625,
+        43.008934020996094
+      ],
+      "temperature_mean_c_rrange_10": [
+        0.24460792541503906,
+        5.174041748046875
+      ],
+      "temperature_mean_c_rdev_10": [
+        -1.1928813457489014,
+        3.4314866065979004
+      ],
+      "temperature_mean_c_rmean_20": [
+        30.782854080200195,
+        40.03773880004883
+      ],
+      "temperature_mean_c_rstd_20": [
+        0.11995662748813629,
+        1.3573817014694214
+      ],
+      "temperature_mean_c_rmin_20": [
+        30.102703094482422,
+        38.511497497558594
+      ],
+      "temperature_mean_c_rmax_20": [
+        31.172639846801758,
+        43.008934020996094
+      ],
+      "temperature_mean_c_rrange_20": [
+        0.44645118713378906,
+        5.300270080566406
+      ],
+      "temperature_mean_c_rdev_20": [
+        -1.3618433475494385,
+        4.175836563110352
+      ],
+      "temperature_mean_c_ewm_5": [
+        30.624792098999023,
+        39.99021911621094
+      ],
+      "temperature_mean_c_ewm_15": [
+        30.913894653320312,
+        39.4929313659668
+      ],
+      "temperature_mean_c_lag_1": [
+        30.102703094482422,
+        43.008934020996094
+      ],
+      "temperature_mean_c_diff_1": [
+        -2.3639793395996094,
+        3.406707763671875
+      ],
+      "temperature_mean_c_pct_1": [
+        -0.05536946654319763,
+        0.08602313697338104
+      ],
+      "temperature_mean_c_lag_2": [
+        30.102703094482422,
+        43.008934020996094
+      ],
+      "temperature_mean_c_diff_2": [
+        -3.3692703247070312,
+        2.590068817138672
+      ],
+      "temperature_mean_c_pct_2": [
+        -0.07833884656429291,
+        0.06933463364839554
+      ],
+      "temperature_mean_c_lag_3": [
+        30.102703094482422,
+        43.008934020996094
+      ],
+      "temperature_mean_c_diff_3": [
+        -3.842132568359375,
+        3.344402313232422
+      ],
+      "temperature_mean_c_pct_3": [
+        -0.08933336287736893,
+        0.08431719988584518
+      ],
+      "temperature_mean_c_lag_5": [
+        30.102703094482422,
+        43.008934020996094
+      ],
+      "temperature_mean_c_diff_5": [
+        -2.940776824951172,
+        4.7118682861328125
+      ],
+      "temperature_mean_c_pct_5": [
+        -0.07363627851009369,
+        0.12303470820188522
+      ],
+      "temperature_mean_c_lag_10": [
+        30.102703094482422,
+        43.008934020996094
+      ],
+      "temperature_mean_c_diff_10": [
+        -3.1566238403320312,
+        5.138568878173828
+      ],
+      "temperature_mean_c_pct_10": [
+        -0.07339460402727127,
+        0.1356883943080902
+      ],
+      "temperature_mean_c_slope_5": [
+        -0.7850925326347351,
+        0.9955379366874695
+      ],
+      "temperature_mean_c_slope_10": [
+        -0.21538430452346802,
+        0.3092668950557709
+      ],
+      "temperature_mean_c_slope_20": [
+        -0.0871812254190445,
+        0.16384640336036682
+      ],
+      "temperature_mean_c_ratio_to_initial": [
+        0.9075860977172852,
+        1.0997662544250488
+      ],
+      "temperature_mean_c_delta_from_initial": [
+        -3.6906890869140625,
+        3.901592254638672
+      ],
+      "temperature_mean_c_cummean": [
+        30.97003746032715,
+        38.948055267333984
+      ],
+      "temperature_mean_c_cummin": [
+        30.102703094482422,
+        37.652774810791016
+      ],
+      "temperature_mean_c_cummax": [
+        32.02311325073242,
+        43.008934020996094
+      ],
+      "temperature_mean_c_cumstd": [
+        0.382718950510025,
+        1.1979752779006958
+      ],
+      "temperature_max_c_rmean_3": [
+        36.4581413269043,
+        59.03253936767578
+      ],
+      "temperature_max_c_rstd_3": [
+        0.010753562673926353,
+        2.427680492401123
+      ],
+      "temperature_max_c_rmin_3": [
+        36.37208938598633,
+        57.990970611572266
+      ],
+      "temperature_max_c_rmax_3": [
+        36.526084899902344,
+        61.22071075439453
+      ],
+      "temperature_max_c_rrange_3": [
+        0.019336700439453125,
+        4.574237823486328
+      ],
+      "temperature_max_c_rdev_3": [
+        -1.440521240234375,
+        2.7571258544921875
+      ],
+      "temperature_max_c_rmean_5": [
+        36.45855712890625,
+        58.450828552246094
+      ],
+      "temperature_max_c_rstd_5": [
+        0.019821785390377045,
+        2.1427042484283447
+      ],
+      "temperature_max_c_rmin_5": [
+        36.37208938598633,
+        57.59062957763672
+      ],
+      "temperature_max_c_rmax_5": [
+        36.54114532470703,
+        61.22071075439453
+      ],
+      "temperature_max_c_rrange_5": [
+        0.049892425537109375,
+        5.495525360107422
+      ],
+      "temperature_max_c_rdev_5": [
+        -0.9235221743583679,
+        3.660053253173828
+      ],
+      "temperature_max_c_rmean_10": [
+        36.78535079956055,
+        58.16773986816406
+      ],
+      "temperature_max_c_rstd_10": [
+        0.11962248384952545,
+        1.62687087059021
+      ],
+      "temperature_max_c_rmin_10": [
+        36.37208938598633,
+        57.28443145751953
+      ],
+      "temperature_max_c_rmax_10": [
+        37.325111389160156,
+        61.22071075439453
+      ],
+      "temperature_max_c_rrange_10": [
+        0.3618965148925781,
+        5.5091552734375
+      ],
+      "temperature_max_c_rdev_10": [
+        -0.9365497827529907,
+        4.2921881675720215
+      ],
+      "temperature_max_c_rmean_20": [
+        37.05036544799805,
+        57.97995376586914
+      ],
+      "temperature_max_c_rstd_20": [
+        0.17723649740219116,
+        1.3649579286575317
+      ],
+      "temperature_max_c_rmin_20": [
+        36.37208938598633,
+        57.056434631347656
+      ],
+      "temperature_max_c_rmax_20": [
+        37.48126220703125,
+        61.22071075439453
+      ],
+      "temperature_max_c_rrange_20": [
+        0.5916557312011719,
+        5.712181091308594
+      ],
+      "temperature_max_c_rdev_20": [
+        -0.9805051684379578,
+        4.8821563720703125
+      ],
+      "temperature_max_c_ewm_5": [
+        36.8741569519043,
+        57.79526901245117
+      ],
+      "temperature_max_c_ewm_15": [
+        37.2755126953125,
+        57.200565338134766
+      ],
+      "temperature_max_c_lag_1": [
+        36.37208938598633,
+        61.22071075439453
+      ],
+      "temperature_max_c_diff_1": [
+        -2.935821533203125,
+        4.574237823486328
+      ],
+      "temperature_max_c_pct_1": [
+        -0.04795471206307411,
+        0.08075062185525894
+      ],
+      "temperature_max_c_lag_2": [
+        36.37208938598633,
+        61.22071075439453
+      ],
+      "temperature_max_c_diff_2": [
+        -3.628692626953125,
+        3.6971397399902344
+      ],
+      "temperature_max_c_pct_2": [
+        -0.05927230417728424,
+        0.06427173316478729
+      ],
+      "temperature_max_c_lag_3": [
+        36.37208938598633,
+        61.22071075439453
+      ],
+      "temperature_max_c_diff_3": [
+        -3.936279296875,
+        4.533363342285156
+      ],
+      "temperature_max_c_pct_3": [
+        -0.06429652869701385,
+        0.07997134327888489
+      ],
+      "temperature_max_c_lag_5": [
+        36.37208938598633,
+        61.22071075439453
+      ],
+      "temperature_max_c_diff_5": [
+        -3.205951690673828,
+        5.5091552734375
+      ],
+      "temperature_max_c_pct_5": [
+        -0.052367109805345535,
+        0.0988871231675148
+      ],
+      "temperature_max_c_lag_10": [
+        36.37208938598633,
+        61.22071075439453
+      ],
+      "temperature_max_c_diff_10": [
+        -3.3768539428710938,
+        5.182727813720703
+      ],
+      "temperature_max_c_pct_10": [
+        -0.05515868589282036,
+        0.09248597919940948
+      ],
+      "temperature_max_c_slope_5": [
+        -0.7697700262069702,
+        1.095017671585083
+      ],
+      "temperature_max_c_slope_10": [
+        -0.2461545765399933,
+        0.3247455358505249
+      ],
+      "temperature_max_c_slope_20": [
+        -0.08165118843317032,
+        0.15756919980049133
+      ],
+      "temperature_max_c_ratio_to_initial": [
+        0.9314424991607666,
+        1.1395007371902466
+      ],
+      "temperature_max_c_delta_from_initial": [
+        -3.7152328491210938,
+        7.494804382324219
+      ],
+      "temperature_max_c_cummean": [
+        37.24692916870117,
+        56.23366165161133
+      ],
+      "temperature_max_c_cummin": [
+        36.37208938598633,
+        53.72590637207031
+      ],
+      "temperature_max_c_cummax": [
+        38.211036682128906,
+        61.22071075439453
+      ],
+      "temperature_max_c_cumstd": [
+        0.17978434264659882,
+        1.7351239919662476
+      ],
+      "internal_resistance_ohm_rmean_3": [
+        0.05911226198077202,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_rstd_3": [
+        0.0,
+        0.013918609358370304
+      ],
+      "internal_resistance_ohm_rmin_3": [
+        0.05911226198077202,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_rmax_3": [
+        0.05911226198077202,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_rrange_3": [
+        0.0,
+        0.024107739329338074
+      ],
+      "internal_resistance_ohm_rdev_3": [
+        -0.008035913109779358,
+        0.0021827295422554016
+      ],
+      "internal_resistance_ohm_rmean_5": [
+        0.059500787407159805,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_rstd_5": [
+        0.0,
+        0.013204352930188179
+      ],
+      "internal_resistance_ohm_rmin_5": [
+        0.05911226198077202,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_rmax_5": [
+        0.061009299010038376,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_rrange_5": [
+        0.0,
+        0.024107739329338074
+      ],
+      "internal_resistance_ohm_rdev_5": [
+        -0.01446464378386736,
+        0.0026192753575742245
+      ],
+      "internal_resistance_ohm_rmean_10": [
+        0.060219019651412964,
+        0.1262279748916626
+      ],
+      "internal_resistance_ohm_rstd_10": [
+        4.301810258766636e-05,
+        0.013737550936639309
+      ],
+      "internal_resistance_ohm_rmin_10": [
+        0.05911226198077202,
+        0.12573076784610748
+      ],
+      "internal_resistance_ohm_rmax_10": [
+        0.06105488911271095,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_rrange_10": [
+        8.162111043930054e-05,
+        0.03457317501306534
+      ],
+      "internal_resistance_ohm_rdev_10": [
+        -0.019061988219618797,
+        0.0029697187710553408
+      ],
+      "internal_resistance_ohm_rmean_20": [
+        0.06064430996775627,
+        0.12528587877750397
+      ],
+      "internal_resistance_ohm_rstd_20": [
+        0.00030188862001523376,
+        0.013684317469596863
+      ],
+      "internal_resistance_ohm_rmin_20": [
+        0.05911226198077202,
+        0.12354251742362976
+      ],
+      "internal_resistance_ohm_rmax_20": [
+        0.06246407702565193,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_rrange_20": [
+        0.00141921266913414,
+        0.035964034497737885
+      ],
+      "internal_resistance_ohm_rdev_20": [
+        -0.009599579498171806,
+        0.004624641500413418
+      ],
+      "internal_resistance_ohm_ewm_5": [
+        0.06068313121795654,
+        0.1256045699119568
+      ],
+      "internal_resistance_ohm_ewm_15": [
+        0.06188923493027687,
+        0.12470535188913345
+      ],
+      "internal_resistance_ohm_lag_1": [
+        0.05911226198077202,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_diff_1": [
+        -0.010465435683727264,
+        0.0035443902015686035
+      ],
+      "internal_resistance_ohm_pct_1": [
+        -0.11811544746160507,
+        0.05493726581335068
+      ],
+      "internal_resistance_ohm_lag_2": [
+        0.05911226198077202,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_diff_2": [
+        -0.024107739329338074,
+        0.0035443902015686035
+      ],
+      "internal_resistance_ohm_pct_2": [
+        -0.21388950943946838,
+        0.05493726581335068
+      ],
+      "internal_resistance_ohm_lag_3": [
+        0.05911226198077202,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_diff_3": [
+        -0.024107739329338074,
+        0.0035443902015686035
+      ],
+      "internal_resistance_ohm_pct_3": [
+        -0.21388950943946838,
+        0.05493726581335068
+      ],
+      "internal_resistance_ohm_lag_5": [
+        0.05911226198077202,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_diff_5": [
+        -0.024107739329338074,
+        0.003606058657169342
+      ],
+      "internal_resistance_ohm_pct_5": [
+        -0.21388950943946838,
+        0.04492459446191788
+      ],
+      "internal_resistance_ohm_lag_10": [
+        0.05911226198077202,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_diff_10": [
+        -0.03457317501306534,
+        0.005010880529880524
+      ],
+      "internal_resistance_ohm_pct_10": [
+        -0.30674129724502563,
+        0.06351213157176971
+      ],
+      "internal_resistance_ohm_slope_5": [
+        -0.00723232189193368,
+        0.0009547993540763855
+      ],
+      "internal_resistance_ohm_slope_10": [
+        -0.004083087667822838,
+        0.00048093710211105645
+      ],
+      "internal_resistance_ohm_slope_20": [
+        -0.0019588752184063196,
+        0.0003959679161198437
+      ],
+      "internal_resistance_ohm_ratio_to_initial": [
+        0.6670446991920471,
+        1.0217286348342896
+      ],
+      "internal_resistance_ohm_delta_from_initial": [
+        -0.03752778470516205,
+        0.0026950091123580933
+      ],
+      "internal_resistance_ohm_cummean": [
+        0.06104259192943573,
+        0.12342188507318497
+      ],
+      "internal_resistance_ohm_cummin": [
+        0.05911226198077202,
+        0.1203804612159729
+      ],
+      "internal_resistance_ohm_cummax": [
+        0.06515815109014511,
+        0.1267251819372177
+      ],
+      "internal_resistance_ohm_cumstd": [
+        0.0011903049889951944,
+        0.014530922286212444
+      ],
+      "energy_throughput_wh_rmean_3": [
+        4.515020370483398,
+        6.552020072937012
+      ],
+      "energy_throughput_wh_rstd_3": [
+        0.0032447746489197016,
+        0.5813952088356018
+      ],
+      "energy_throughput_wh_rmin_3": [
+        4.502429485321045,
+        6.542093276977539
+      ],
+      "energy_throughput_wh_rmax_3": [
+        4.522873878479004,
+        6.561620235443115
+      ],
+      "energy_throughput_wh_rrange_3": [
+        0.006453037261962891,
+        1.059218406677246
+      ],
+      "energy_throughput_wh_rdev_3": [
+        -0.3631550371646881,
+        0.6680944561958313
+      ],
+      "energy_throughput_wh_rmean_5": [
+        4.564172267913818,
+        6.561760902404785
+      ],
+      "energy_throughput_wh_rstd_5": [
+        0.01297704130411148,
+        0.49794766306877136
+      ],
+      "energy_throughput_wh_rmin_5": [
+        4.502429485321045,
+        6.542093276977539
+      ],
+      "energy_throughput_wh_rmax_5": [
+        4.653802394866943,
+        6.580582141876221
+      ],
+      "energy_throughput_wh_rrange_5": [
+        0.027284622192382812,
+        1.2959189414978027
+      ],
+      "energy_throughput_wh_rdev_5": [
+        -0.2778405249118805,
+        0.8567870259284973
+      ],
+      "energy_throughput_wh_rmean_10": [
+        4.581272125244141,
+        6.5404863357543945
+      ],
+      "energy_throughput_wh_rstd_10": [
+        0.023427635431289673,
+        0.3771415054798126
+      ],
+      "energy_throughput_wh_rmin_10": [
+        4.502429485321045,
+        6.464328289031982
+      ],
+      "energy_throughput_wh_rmax_10": [
+        4.66309928894043,
+        6.605961799621582
+      ],
+      "energy_throughput_wh_rrange_10": [
+        0.06114006042480469,
+        1.2959189414978027
+      ],
+      "energy_throughput_wh_rdev_10": [
+        -0.27425479888916016,
+        1.0181777477264404
+      ],
+      "energy_throughput_wh_rmean_20": [
+        4.621232509613037,
+        6.444380760192871
+      ],
+      "energy_throughput_wh_rstd_20": [
+        0.05519740656018257,
+        0.30110764503479004
+      ],
+      "energy_throughput_wh_rmin_20": [
+        4.502429485321045,
+        6.215980529785156
+      ],
+      "energy_throughput_wh_rmax_20": [
+        4.705540657043457,
+        6.605961799621582
+      ],
+      "energy_throughput_wh_rrange_20": [
+        0.19051122665405273,
+        1.3903508186340332
+      ],
+      "energy_throughput_wh_rdev_20": [
+        -0.35011276602745056,
+        1.089842438697815
+      ],
+      "energy_throughput_wh_ewm_5": [
+        4.60009765625,
+        6.582984924316406
+      ],
+      "energy_throughput_wh_ewm_15": [
+        4.748086929321289,
+        6.596717834472656
+      ],
+      "energy_throughput_wh_lag_1": [
+        4.502429485321045,
+        6.561620235443115
+      ],
+      "energy_throughput_wh_diff_1": [
+        -0.8145956993103027,
+        1.059218406677246
+      ],
+      "energy_throughput_wh_pct_1": [
+        -0.13128146529197693,
+        0.21540813148021698
+      ],
+      "energy_throughput_wh_lag_2": [
+        4.519757270812988,
+        6.561620235443115
+      ],
+      "energy_throughput_wh_diff_2": [
+        -0.9370331764221191,
+        0.9450650215148926
+      ],
+      "energy_throughput_wh_pct_2": [
+        -0.15678676962852478,
+        0.1878328025341034
+      ],
+      "energy_throughput_wh_lag_3": [
+        4.556224822998047,
+        6.572161674499512
+      ],
+      "energy_throughput_wh_diff_3": [
+        -1.0425138473510742,
+        0.9837327003479004
+      ],
+      "energy_throughput_wh_pct_3": [
+        -0.1744360625743866,
+        0.19703228771686554
+      ],
+      "energy_throughput_wh_lag_5": [
+        4.556224822998047,
+        6.605961799621582
+      ],
+      "energy_throughput_wh_diff_5": [
+        -0.9963712692260742,
+        1.2671737670898438
+      ],
+      "energy_throughput_wh_pct_5": [
+        -0.1667153686285019,
+        0.2690785825252533
+      ],
+      "energy_throughput_wh_lag_10": [
+        4.556224822998047,
+        6.605961799621582
+      ],
+      "energy_throughput_wh_diff_10": [
+        -1.1936869621276855,
+        1.2517437934875488
+      ],
+      "energy_throughput_wh_pct_10": [
+        -0.19973072409629822,
+        0.2649340331554413
+      ],
+      "energy_throughput_wh_slope_5": [
+        -0.2322092056274414,
+        0.25163522362709045
+      ],
+      "energy_throughput_wh_slope_10": [
+        -0.08858736604452133,
+        0.07928256690502167
+      ],
+      "energy_throughput_wh_slope_20": [
+        -0.037566039711236954,
+        0.025056591257452965
+      ],
+      "energy_throughput_wh_ratio_to_initial": [
+        0.735004723072052,
+        1.1556212902069092
+      ],
+      "energy_throughput_wh_delta_from_initial": [
+        -1.7505488395690918,
+        0.8419055938720703
+      ],
+      "energy_throughput_wh_cummean": [
+        4.888548374176025,
+        6.569127559661865
+      ],
+      "energy_throughput_wh_cummin": [
+        4.502429485321045,
+        6.542093276977539
+      ],
+      "energy_throughput_wh_cummax": [
+        5.398177146911621,
+        6.605961799621582
+      ],
+      "energy_throughput_wh_cumstd": [
+        0.02265377715229988,
+        0.5195577144622803
+      ],
+      "cc_ct_ratio_rmean_3": [
+        0.0002655365678947419,
+        0.001155463745817542
+      ],
+      "cc_ct_ratio_rstd_3": [
+        5.552471407099802e-07,
+        0.0012027076445519924
+      ],
+      "cc_ct_ratio_rmin_3": [
+        0.00026456068735569715,
+        0.0006339327082969248
+      ],
+      "cc_ct_ratio_rmax_3": [
+        0.00026747261290438473,
+        0.0025344137102365494
+      ],
+      "cc_ct_ratio_rrange_3": [
+        1.0207295417785645e-06,
+        0.002098368713632226
+      ],
+      "cc_ct_ratio_rdev_3": [
+        -0.0006903084577061236,
+        0.0013797449646517634
+      ],
+      "cc_ct_ratio_rmean_5": [
+        0.00026199102285318077,
+        0.000884758890606463
+      ],
+      "cc_ct_ratio_rstd_5": [
+        1.905974386318121e-06,
+        0.000928563647903502
+      ],
+      "cc_ct_ratio_rmin_5": [
+        0.0002472975756973028,
+        0.0006315269274637103
+      ],
+      "cc_ct_ratio_rmax_5": [
+        0.00026747261290438473,
+        0.0025344137102365494
+      ],
+      "cc_ct_ratio_rrange_5": [
+        4.240602720528841e-06,
+        0.0021029659546911716
+      ],
+      "cc_ct_ratio_rdev_5": [
+        -0.00041793673881329596,
+        0.001656729611568153
+      ],
+      "cc_ct_ratio_rmean_10": [
+        0.00027028427575714886,
+        0.0006742330151610076
+      ],
+      "cc_ct_ratio_rstd_10": [
+        5.608467745332746e-06,
+        0.0006630610441789031
+      ],
+      "cc_ct_ratio_rmin_10": [
+        0.0002444309648126364,
+        0.0006113474373705685
+      ],
+      "cc_ct_ratio_rmax_10": [
+        0.0002963712904602289,
+        0.0025344137102365494
+      ],
+      "cc_ct_ratio_rrange_10": [
+        1.7727783415466547e-05,
+        0.0021216473542153835
+      ],
+      "cc_ct_ratio_rdev_10": [
+        -0.0002211430692113936,
+        0.0018852266948670149
+      ],
+      "cc_ct_ratio_rmean_20": [
+        0.0002941722050309181,
+        0.0006120842299424112
+      ],
+      "cc_ct_ratio_rstd_20": [
+        1.2064051588822622e-05,
+        0.0004771000239998102
+      ],
+      "cc_ct_ratio_rmin_20": [
+        0.0002444309648126364,
+        0.000584681867621839
+      ],
+      "cc_ct_ratio_rmax_20": [
+        0.00033831046312116086,
+        0.0025344137102365494
+      ],
+      "cc_ct_ratio_rrange_20": [
+        3.9152451790869236e-05,
+        0.0021216473542153835
+      ],
+      "cc_ct_ratio_rdev_20": [
+        -0.00012676460028160363,
+        0.0019675877410918474
+      ],
+      "cc_ct_ratio_ewm_5": [
+        0.00025439189630560577,
+        0.0007277267868630588
+      ],
+      "cc_ct_ratio_ewm_15": [
+        0.0002483513380866498,
+        0.0005804882966913283
+      ],
+      "cc_ct_ratio_lag_1": [
+        0.00026456068735569715,
+        0.0025344137102365494
+      ],
+      "cc_ct_ratio_diff_1": [
+        -0.002067591529339552,
+        0.002098368713632226
+      ],
+      "cc_ct_ratio_pct_1": [
+        -0.8158066272735596,
+        4.8122758865356445
+      ],
+      "cc_ct_ratio_lag_2": [
+        0.00026456068735569715,
+        0.0025344137102365494
+      ],
+      "cc_ct_ratio_diff_2": [
+        -0.00206925836391747,
+        0.002040866296738386
+      ],
+      "cc_ct_ratio_pct_2": [
+        -0.816464364528656,
+        4.135095596313477
+      ],
+      "cc_ct_ratio_lag_3": [
+        0.00026030890876427293,
+        0.0025344137102365494
+      ],
+      "cc_ct_ratio_diff_3": [
+        -0.0020693112164735794,
+        0.002041447442024946
+      ],
+      "cc_ct_ratio_pct_3": [
+        -0.8164851665496826,
+        4.141150951385498
+      ],
+      "cc_ct_ratio_lag_5": [
+        0.0002444309648126364,
+        0.0025344137102365494
+      ],
+      "cc_ct_ratio_diff_5": [
+        -0.0020855034235864878,
+        0.0021041142754256725
+      ],
+      "cc_ct_ratio_pct_5": [
+        -0.8228740692138672,
+        4.8898844718933105
+      ],
+      "cc_ct_ratio_lag_10": [
+        0.0002444309648126364,
+        0.0025344137102365494
+      ],
+      "cc_ct_ratio_diff_10": [
+        -0.0020755792502313852,
+        0.0015935389092192054
+      ],
+      "cc_ct_ratio_pct_10": [
+        -0.8189583420753479,
+        1.6936779022216797
+      ],
+      "cc_ct_ratio_slope_5": [
+        -0.00041383004281669855,
+        0.00041490106377750635
+      ],
+      "cc_ct_ratio_slope_10": [
+        -0.00011203975736862049,
+        0.00012012014485662803
+      ],
+      "cc_ct_ratio_slope_20": [
+        -2.6796420570462942e-05,
+        3.100659159827046e-05
+      ],
+      "cc_ct_ratio_ratio_to_initial": [
+        0.8276717066764832,
+        7.842532157897949
+      ],
+      "cc_ct_ratio_delta_from_initial": [
+        -5.5690063163638115e-05,
+        0.002211251063272357
+      ],
+      "cc_ct_ratio_cummean": [
+        0.000259862223174423,
+        0.0004857578605879098
+      ],
+      "cc_ct_ratio_cummin": [
+        0.0002444309648126364,
+        0.00027333939215168357
+      ],
+      "cc_ct_ratio_cummax": [
+        0.00027041902649216354,
+        0.0025344137102365494
+      ],
+      "cc_ct_ratio_cumstd": [
+        1.12446923594689e-05,
+        0.0003042561875190586
+      ],
+      "cycle_index_f": [
+        6.0,
+        106.0
+      ],
+      "log_cycle_index": [
+        1.945910096168518,
+        4.672828674316406
+      ],
+      "inv_cycle_index": [
+        0.009433962404727936,
+        0.1666666716337204
+      ],
+      "cum_energy_wh": [
+        31.447904586791992,
+        567.9049682617188
+      ],
+      "cum_discharge_time_h": [
+        5.381805896759033,
+        92.88175964355469
+      ],
+      "resistance_capacity_product": [
+        0.08984128385782242,
+        0.19296346604824066
+      ],
+      "capacity_per_ohm": [
+        10.983721733093262,
+        30.809194564819336
+      ],
+      "temperature_excess_c": [
+        12.372089385986328,
+        37.22071075439453
+      ],
+      "discharge_charge_time_ratio": [
+        0.2676924765110016,
+        1.7449941635131836
+      ]
+    }
+  },
+  "metrics": {
+    "out_of_fold": {
+      "n": 373,
+      "mae": 0.024428528331925173,
+      "rmse": 0.03204334301804523,
+      "mse": 0.001026775831772108,
+      "median_ae": 0.020016664155904862,
+      "max_error": 0.08900950647355554,
+      "mape": 2.4428528331925174,
+      "smape": 2.4428528331925174,
+      "r2": 0.8289548011183508,
+      "bias": 0.0031168646955152643,
+      "std_residual": 0.031891393607711135,
+      "alpha_lambda": 1.0,
+      "within_10_cycles": 1.0,
+      "within_25_cycles": 1.0,
+      "max_absolute_error": 0.08900950647355554
+    },
+    "test": {
+      "n": 122,
+      "mae": 0.013381143439742706,
+      "rmse": 0.020036893105347134,
+      "mse": 0.0004014770853151075,
+      "median_ae": 0.007613944344008694,
+      "max_error": 0.055180164766473805,
+      "mape": 1.3381143439742706,
+      "smape": 1.3381143439742706,
+      "r2": 0.937511222633237,
+      "bias": -0.007199851180883163,
+      "std_residual": 0.018698642418321254,
+      "alpha_lambda": 1.0,
+      "within_10_cycles": 1.0,
+      "within_25_cycles": 1.0
+    }
+  },
+  "dependencies": {
+    "numpy": "2.3.1",
+    "pandas": "2.3.2",
+    "sklearn": "1.8.0",
+    "xgboost": "3.3.0",
+    "lightgbm": "4.7.0",
+    "catboost": "1.2.10",
+    "torch": "2.11.0",
+    "optuna": "4.9.0"
+  },
+  "notes": "SOH is a fraction in [0, 1]. Reference strategy is in target_definition."
+}

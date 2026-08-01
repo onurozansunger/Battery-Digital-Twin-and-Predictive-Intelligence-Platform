@@ -273,5 +273,21 @@ def test_nasa_loader_parses_real_files(nasa_available: bool, repo_root):
     # Physical sanity of the parsed traces.
     assert frame["capacity_ah"].between(0.5, 2.5).all()
     assert frame["voltage_min_v"].between(1.0, 4.5).all()
-    assert frame["internal_resistance_ohm"].between(0.0, 1.0).all()
     assert frame["capacity_smooth_ah"].iloc[-1] < frame["capacity_smooth_ah"].iloc[0]
+
+    # Impedance is forward-filled from the last EIS sweep at or before each cycle,
+    # so B0005's opening cycles — which precede the rig's first sweep — have no
+    # value at all. That gap is deliberate since Milestone 1.1: it used to be
+    # filled by a median over the whole loaded dataset, which crossed the
+    # evaluation boundary. The values that do exist must be physical, and the
+    # missing ones must be a leading run, never a hole in the middle.
+    resistance = frame["internal_resistance_ohm"]
+    observed = resistance.dropna()
+    assert not observed.empty
+    assert observed.between(0.0, 1.0).all()
+
+    missing = resistance.isna().to_numpy()
+    if missing.any():
+        first_observed = int(np.argmax(~missing))
+        assert missing[:first_observed].all(), "missing impedance is not a leading run"
+        assert not missing[first_observed:].any(), "impedance goes missing again mid-record"

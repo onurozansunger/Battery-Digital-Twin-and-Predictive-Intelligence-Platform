@@ -246,7 +246,9 @@ class LightGBMModel(SklearnModel):
         import lightgbm as lgb
 
         self.estimator = self._build()
-        callbacks = [lgb.log_evaluation(period=0)]
+        # LightGBM's callbacks are distinct types with no common base in its
+        # stubs, so the list is annotated rather than inferred from its first item.
+        callbacks: list[Any] = [lgb.log_evaluation(period=0)]
         fit_kwargs: dict[str, Any] = {}
         if val is not None and not val.is_empty:
             callbacks.append(lgb.early_stopping(stopping_rounds=80, verbose=False))

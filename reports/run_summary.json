@@ -1,11 +1,11 @@
 {
-  "champion": "transformer",
-  "test_mae": 11.622,
-  "test_rmse": 13.823,
-  "test_r2": 0.7839,
-  "test_mape": 62.373,
+  "champion": "gru",
+  "test_mae": 11.693,
+  "test_rmse": 14.736,
+  "test_r2": 0.7543,
+  "test_mape": 78.405,
   "n_models_trained": 9,
   "n_figures": 43,
-  "report": "/Users/ozanbabac5/Desktop/Battery Digital Twin & Predictive Intelligence Platform/reports/evaluation_report.md",
-  "total_seconds": 123.8
+  "report": "<project_root>/reports/evaluation_report.md",
+  "total_seconds": 1064.8
 }

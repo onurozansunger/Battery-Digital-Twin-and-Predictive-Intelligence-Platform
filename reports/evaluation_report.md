@@ -1,20 +1,20 @@
 # Evaluation Report — battery_rul_v1
 
-_Generated 2026-07-31 20:41 UTC_
+_Generated 2026-08-01 08:37 UTC_
 
 > NASA li-ion remaining-useful-life baseline. Battery-holdout split, causal feature engineering, nine models compared, champion selected on validation.
 
 ## 1. Headline result
 
-**transformer** is the champion model, selected by `rmse` on the **validation** partition and reported here on the untouched **test** partition.
+**gru** is the champion model, selected by `rmse` on the **validation** partition and reported here on the untouched **test** partition.
 
-- **MAE** — 11.62 cycles
-- **RMSE** — 13.82 cycles (95 % CI 12.19–15.42)
-- **R²** — 0.784
-- **MAPE** — 62.4 % (denominator floored at 1 cycle)
-- **α-λ accuracy (α=20%)** — 39.8% of predictions inside the relative error cone
+- **MAE** — 11.69 cycles
+- **RMSE** — 14.74 cycles (95 % CI 12.75–16.70)
+- **R²** — 0.754
+- **MAPE** — 78.4 % (denominator floored at 1 cycle)
+- **α-λ accuracy (α=20%)** — 44.7% of predictions inside the relative error cone
 - **Predictions within 10 cycles** — 48.5%
-- **Bias** — -1.19 cycles (conservative)
+- **Bias** — -1.48 cycles (conservative)
 - **Prognostic horizon** — not reached: predictions never settle inside the ±20% relative cone and stay there. The cone tightens to a couple of cycles near end of life, which is a demanding bar at this error level.
 
 ## 2. Experimental setup
@@ -72,7 +72,7 @@ No random row-level splitting is used anywhere in this project. Consecutive cycl
 ### 2.4 Features
 
 - Generated: **709** causal features from 14 base signals
-- After unsupervised pruning: **392**
+- After unsupervised pruning: **756**
 - After supervised top-K selection (train partition only): **80**
 - Scaler: `robust`
 - Warm-up rows dropped: **25**
@@ -81,27 +81,22 @@ Every feature at cycle *k* is a function of cycles ≤ *k* of the same cell. Thi
 
 ## 3. Data quality
 
-- Rows in: **2280** → out: **1605**
-- Cells in: **26** → out: **16**
-
-| check | severity | message |
-| --- | --- | --- |
-| capacity_jump | warning | 7 cycles move capacity by more than 0.70 Ah in one step (rig glitch) |
-| cohort_gates | info | Excluded 10 cell(s): B0031 (fades only 0.0% (< 2.0%)); B0038 (starts at 0.55 SoH (< 0.8)); B0039 (starts at 0.24 SoH (< 0.8)); B0040 (starts at 0.40 SoH (< 0.8)); B0041 (starts at 0.03 SoH (< 0.8)); B0045 (starts at 0.54 SoH (< 0.8)); B0053 (starts at 0.53 SoH (< 0.8)); B0054 (starts at 0.58 SoH (< 0.8)); B0055 (starts at 0.66 SoH (< 0.8)); B0056 (starts at 0.67 SoH (< 0.8)) |
+- Rows in: **1605** → out: **1605**
+- Cells in: **16** → out: **16**
 
 ## 4. Model comparison (test partition)
 
 | rank | model | n | mae | rmse | mape | smape | r2 | median_ae | max_error | bias | alpha_lambda | within_10_cycles | within_25_cycles | prognostic_horizon | n_unscored |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | ridge | 122 | 10.8324 | 13.1938 | 96.3736 | 31.3107 | 0.8596 | 8.8119 | 24.8518 | 3.6039 | 0.5902 | 0.5492 | 1.0000 | — | 0 |
-| 2 | transformer | 103 | 11.6218 | 13.8230 | 62.3728 | 33.2496 | 0.7839 | 10.0415 | 28.4106 | -1.1937 | 0.3981 | 0.4854 | 0.8835 | — | 19 |
-| 3 | gru | 103 | 15.1018 | 16.8616 | 110.9498 | 42.1779 | 0.6784 | 17.1571 | 30.9465 | 3.4151 | 0.3495 | 0.2718 | 0.8932 | — | 19 |
-| 4 | random_forest | 122 | 19.1949 | 23.5063 | 139.0120 | 41.8598 | 0.5545 | 17.4770 | 51.2586 | -5.1479 | 0.3607 | 0.3279 | 0.6557 | — | 0 |
-| 5 | lightgbm | 122 | 20.7673 | 23.6170 | 129.2976 | 45.1058 | 0.5503 | 19.9472 | 44.0809 | -4.3400 | 0.2377 | 0.2131 | 0.6885 | — | 0 |
-| 6 | lstm | 103 | 19.4587 | 23.6505 | 53.2679 | 46.6317 | 0.3673 | 18.7201 | 49.3845 | -6.3232 | 0.2427 | 0.2913 | 0.7379 | 0 | 19 |
-| 7 | xgboost | 122 | 21.2152 | 24.2447 | 135.5327 | 45.8236 | 0.5261 | 21.3969 | 46.8821 | -4.5488 | 0.2459 | 0.2213 | 0.6721 | — | 0 |
-| 8 | catboost | 122 | 21.8494 | 27.1882 | 161.8206 | 45.6278 | 0.4040 | 19.2482 | 60.2177 | -6.2127 | 0.3443 | 0.3361 | 0.5656 | — | 0 |
-| 9 | linear_regression | 122 | 31.1265 | 33.7961 | 68.1172 | 121.2681 | 0.0791 | 31.2931 | 53.0000 | -31.1265 | 0.0082 | 0.0902 | 0.3197 | 0 | 0 |
+| 1 | transformer | 103 | 12.3701 | 13.9545 | 62.6938 | 35.5091 | 0.7797 | 11.7318 | 30.0885 | 2.0941 | 0.3689 | 0.3689 | 0.9223 | — | 19 |
+| 2 | gru | 103 | 11.6925 | 14.7362 | 78.4050 | 33.8933 | 0.7543 | 10.0437 | 35.4693 | -1.4810 | 0.4466 | 0.4854 | 0.8738 | — | 19 |
+| 3 | lightgbm | 122 | 12.5683 | 17.0717 | 24.2361 | 22.2010 | 0.7650 | 11.4147 | 46.8038 | -10.5812 | 0.5574 | 0.4836 | 0.8689 | — | 0 |
+| 4 | ridge | 122 | 13.8966 | 17.5713 | 92.5482 | 33.7024 | 0.7511 | 11.9709 | 43.8250 | -3.1016 | 0.4836 | 0.4426 | 0.8607 | — | 0 |
+| 5 | xgboost | 122 | 13.0358 | 17.9528 | 23.3106 | 22.1666 | 0.7401 | 11.6956 | 49.1791 | -11.7592 | 0.5656 | 0.4672 | 0.8689 | — | 0 |
+| 6 | random_forest | 122 | 16.0464 | 20.4775 | 96.5946 | 35.7823 | 0.6619 | 13.0123 | 51.4235 | -7.5321 | 0.4590 | 0.3934 | 0.7951 | — | 0 |
+| 7 | linear_regression | 122 | 19.8847 | 21.9848 | 52.8044 | 91.0555 | 0.6103 | 18.2881 | 36.6366 | -19.8847 | 0.3197 | 0.1148 | 0.6803 | 0 | 0 |
+| 8 | lstm | 103 | 19.9980 | 22.6810 | 156.6691 | 50.2725 | 0.4181 | 22.2987 | 41.0423 | 2.2653 | 0.2621 | 0.2330 | 0.6019 | — | 19 |
+| 9 | catboost | 122 | 19.6466 | 24.6615 | 139.4160 | 42.2342 | 0.5096 | 16.1479 | 58.5149 | -6.4909 | 0.3852 | 0.3525 | 0.6393 | — | 0 |
 
 `n_unscored` counts rows the model could not score. Sequence models need a full window of history, so the first *w−1* cycles of every test cell are unscoreable by construction — they are reported, never silently dropped.
 
@@ -111,31 +106,31 @@ The table above compares models on different row counts, and the rows the sequen
 
 | rank | model | n | mae | rmse | mape | r2 | bias | alpha_lambda | within_10_cycles |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | ridge | 103 | 9.1862 | 11.3476 | 110.9273 | 0.8543 | 7.9130 | 0.5728 | 0.6311 |
-| 2 | transformer | 103 | 11.6218 | 13.8230 | 62.3728 | 0.7839 | -1.1937 | 0.3981 | 0.4854 |
-| 3 | gru | 103 | 15.1018 | 16.8616 | 110.9498 | 0.6784 | 3.4151 | 0.3495 | 0.2718 |
-| 4 | random_forest | 103 | 15.1483 | 18.3390 | 157.9083 | 0.6195 | 1.4900 | 0.4272 | 0.3883 |
-| 5 | lightgbm | 103 | 17.5996 | 19.7851 | 146.8908 | 0.5572 | 1.8580 | 0.2816 | 0.2524 |
-| 6 | xgboost | 103 | 17.8983 | 20.2115 | 154.0777 | 0.5379 | 1.8425 | 0.2913 | 0.2621 |
-| 7 | catboost | 103 | 17.1650 | 21.2902 | 183.9289 | 0.4872 | 1.3562 | 0.4078 | 0.3981 |
-| 8 | lstm | 103 | 19.4587 | 23.6505 | 53.2679 | 0.3673 | -6.3232 | 0.2427 | 0.2913 |
-| 9 | linear_regression | 103 | 31.5050 | 34.4897 | 75.9315 | -0.3456 | -31.5050 | 0.0097 | 0.1068 |
+| 1 | lightgbm | 103 | 8.6979 | 11.2101 | 23.2308 | 0.8578 | -6.3442 | 0.6602 | 0.5728 |
+| 2 | xgboost | 103 | 9.0497 | 12.0746 | 21.9606 | 0.8351 | -7.5376 | 0.6699 | 0.5534 |
+| 3 | ridge | 103 | 10.2761 | 12.2636 | 104.1383 | 0.8299 | 2.5102 | 0.5728 | 0.5243 |
+| 4 | random_forest | 103 | 11.6315 | 13.8770 | 107.8690 | 0.7822 | -1.5467 | 0.5437 | 0.4660 |
+| 5 | transformer | 103 | 12.3701 | 13.9545 | 62.6938 | 0.7797 | 2.0941 | 0.3689 | 0.3689 |
+| 6 | gru | 103 | 11.6925 | 14.7362 | 78.4050 | 0.7543 | -1.4810 | 0.4466 | 0.4854 |
+| 7 | catboost | 103 | 15.0356 | 18.4814 | 157.8215 | 0.6136 | 0.5469 | 0.4563 | 0.4175 |
+| 8 | lstm | 103 | 19.9980 | 22.6810 | 156.6691 | 0.4181 | 2.2653 | 0.2621 | 0.2330 |
+| 9 | linear_regression | 103 | 21.1652 | 23.2428 | 60.4272 | 0.3889 | -21.1652 | 0.1942 | 0.1068 |
 
 ### 4.2 Leave-one-battery-out cross-validation
 
 The cohort is 5 cells, so the single holdout above puts **one** cell in the test partition — one sample. Leave-one-battery-out holds out each cell in turn, re-fitting the feature pipeline inside every fold, and pools the out-of-fold predictions. It uses every row for evaluation instead of a fifth of them, and the spread across folds is a far more honest uncertainty statement than a bootstrap over correlated rows.
 
-**Pooled (transformer):** MAE 8.06 · RMSE 9.93 · R² 0.850 · bias -1.84 cycles
+**Pooled (gru):** MAE 11.84 · RMSE 13.94 · R² 0.705 · bias -3.47 cycles
 
-**Spread across folds:** MAE σ = 2.34, RMSE σ = 2.45 cycles. Read that as the real uncertainty on the headline number.
+**Spread across folds:** MAE σ = 3.60, RMSE σ = 3.95 cycles. Read that as the real uncertainty on the headline number.
 
 | battery_id | n | mae | rmse | mape | r2 | bias | alpha_lambda |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| B0005 | 103 | 6.6578 | 8.8548 | 22.8916 | 0.9113 | -4.6418 | 0.8252 |
-| B0006 | 87 | 6.5184 | 8.1956 | 32.2549 | 0.8935 | -2.4022 | 0.6092 |
-| B0018 | 75 | 8.4739 | 9.7658 | 82.5105 | 0.7965 | 8.4569 | 0.3733 |
-| B0033 | 82 | 11.9864 | 13.7122 | 74.0944 | 0.6644 | -8.3727 | 0.1951 |
-| B0034 | 53 | 6.6583 | 7.4569 | 84.7309 | 0.7624 | 0.0850 | 0.3396 |
+| B0005 | 103 | 11.8453 | 13.8859 | 28.6421 | 0.7819 | -11.8287 | 0.2913 |
+| B0006 | 87 | 10.6097 | 11.7014 | 41.2732 | 0.7829 | 0.2631 | 0.5172 |
+| B0018 | 75 | 11.4381 | 11.6601 | 91.5323 | 0.7099 | 11.4381 | 0.3467 |
+| B0033 | 82 | 16.7982 | 19.5644 | 41.5883 | 0.3168 | -16.7315 | 0.0122 |
+| B0034 | 53 | 6.7335 | 9.1053 | 107.2801 | 0.6457 | 6.0584 | 0.4906 |
 
 ## 5. Per-cell breakdown
 
@@ -145,81 +140,81 @@ With only a handful of held-out cells, the aggregate number can hide a cell the 
 
 | battery_id | n | mae | rmse | median_ae | max_error | mape | smape | r2 | bias | std_residual | alpha_lambda | within_10_cycles | within_25_cycles | prognostic_horizon |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| B0005 | 122 | 21.8494 | 27.1882 | 19.2482 | 60.2177 | 161.8206 | 45.6278 | 0.4040 | -6.2127 | 26.4688 | 0.3443 | 0.3361 | 0.5656 | — |
+| B0005 | 122 | 19.6466 | 24.6615 | 16.1479 | 58.5149 | 139.4160 | 42.2342 | 0.5096 | -6.4909 | 23.7920 | 0.3852 | 0.3525 | 0.6393 | — |
 
 ### gru
 
 | battery_id | n | mae | rmse | median_ae | max_error | mape | smape | r2 | bias | std_residual | alpha_lambda | within_10_cycles | within_25_cycles | prognostic_horizon |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| B0005 | 103 | 15.1018 | 16.8616 | 17.1571 | 30.9465 | 110.9498 | 42.1779 | 0.6784 | 3.4151 | 16.5121 | 0.3495 | 0.2718 | 0.8932 | — |
+| B0005 | 103 | 11.6925 | 14.7362 | 10.0437 | 35.4693 | 78.4050 | 33.8933 | 0.7543 | -1.4810 | 14.6616 | 0.4466 | 0.4854 | 0.8738 | — |
 
 ### lightgbm
 
 | battery_id | n | mae | rmse | median_ae | max_error | mape | smape | r2 | bias | std_residual | alpha_lambda | within_10_cycles | within_25_cycles | prognostic_horizon |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| B0005 | 122 | 20.7673 | 23.6170 | 19.9472 | 44.0809 | 129.2976 | 45.1058 | 0.5503 | -4.3400 | 23.2148 | 0.2377 | 0.2131 | 0.6885 | — |
+| B0005 | 122 | 12.5683 | 17.0717 | 11.4147 | 46.8038 | 24.2361 | 22.2010 | 0.7650 | -10.5812 | 13.3971 | 0.5574 | 0.4836 | 0.8689 | — |
 
 ### linear_regression
 
 | battery_id | n | mae | rmse | median_ae | max_error | mape | smape | r2 | bias | std_residual | alpha_lambda | within_10_cycles | within_25_cycles | prognostic_horizon |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| B0005 | 122 | 31.1265 | 33.7961 | 31.2931 | 53 | 68.1172 | 121.2681 | 0.0791 | -31.1265 | 13.1648 | 0.0082 | 0.0902 | 0.3197 | 0 |
+| B0005 | 122 | 19.8847 | 21.9848 | 18.2881 | 36.6366 | 52.8044 | 91.0555 | 0.6103 | -19.8847 | 9.3771 | 0.3197 | 0.1148 | 0.6803 | 0 |
 
 ### lstm
 
 | battery_id | n | mae | rmse | median_ae | max_error | mape | smape | r2 | bias | std_residual | alpha_lambda | within_10_cycles | within_25_cycles | prognostic_horizon |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| B0005 | 103 | 19.4587 | 23.6505 | 18.7201 | 49.3845 | 53.2679 | 46.6317 | 0.3673 | -6.3232 | 22.7895 | 0.2427 | 0.2913 | 0.7379 | 0 |
+| B0005 | 103 | 19.9980 | 22.6810 | 22.2987 | 41.0423 | 156.6691 | 50.2725 | 0.4181 | 2.2653 | 22.5675 | 0.2621 | 0.2330 | 0.6019 | — |
 
 ### random_forest
 
 | battery_id | n | mae | rmse | median_ae | max_error | mape | smape | r2 | bias | std_residual | alpha_lambda | within_10_cycles | within_25_cycles | prognostic_horizon |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| B0005 | 122 | 19.1949 | 23.5063 | 17.4770 | 51.2586 | 139.0120 | 41.8598 | 0.5545 | -5.1479 | 22.9356 | 0.3607 | 0.3279 | 0.6557 | — |
+| B0005 | 122 | 16.0464 | 20.4775 | 13.0123 | 51.4235 | 96.5946 | 35.7823 | 0.6619 | -7.5321 | 19.0419 | 0.4590 | 0.3934 | 0.7951 | — |
 
 ### ridge
 
 | battery_id | n | mae | rmse | median_ae | max_error | mape | smape | r2 | bias | std_residual | alpha_lambda | within_10_cycles | within_25_cycles | prognostic_horizon |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| B0005 | 122 | 10.8324 | 13.1938 | 8.8119 | 24.8518 | 96.3736 | 31.3107 | 0.8596 | 3.6039 | 12.6921 | 0.5902 | 0.5492 | 1 | — |
+| B0005 | 122 | 13.8966 | 17.5713 | 11.9709 | 43.8250 | 92.5482 | 33.7024 | 0.7511 | -3.1016 | 17.2954 | 0.4836 | 0.4426 | 0.8607 | — |
 
 ### transformer
 
 | battery_id | n | mae | rmse | median_ae | max_error | mape | smape | r2 | bias | std_residual | alpha_lambda | within_10_cycles | within_25_cycles | prognostic_horizon |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| B0005 | 103 | 11.6218 | 13.8230 | 10.0415 | 28.4106 | 62.3728 | 33.2496 | 0.7839 | -1.1937 | 13.7714 | 0.3981 | 0.4854 | 0.8835 | — |
+| B0005 | 103 | 12.3701 | 13.9545 | 11.7318 | 30.0885 | 62.6938 | 35.5091 | 0.7797 | 2.0941 | 13.7964 | 0.3689 | 0.3689 | 0.9223 | — |
 
 ### xgboost
 
 | battery_id | n | mae | rmse | median_ae | max_error | mape | smape | r2 | bias | std_residual | alpha_lambda | within_10_cycles | within_25_cycles | prognostic_horizon |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| B0005 | 122 | 21.2152 | 24.2447 | 21.3969 | 46.8821 | 135.5327 | 45.8236 | 0.5261 | -4.5488 | 23.8142 | 0.2459 | 0.2213 | 0.6721 | — |
+| B0005 | 122 | 13.0358 | 17.9528 | 11.6956 | 49.1791 | 23.3106 | 22.1666 | 0.7401 | -11.7592 | 13.5656 | 0.5656 | 0.4672 | 0.8689 | — |
 
 ## 6. Residual analysis — champion
 
 | statistic | value |
 | --- | --- |
-| kurtosis | -0.8046 |
-| mean | -1.1937 |
-| q05 | -27.1385 |
-| q25 | -12.8180 |
-| q50 | 6.1702 |
-| q75 | 9.9198 |
-| q95 | 10.9973 |
-| residual_rul_corr | -0.9101 |
-| skew | -0.9009 |
-| std | 13.7714 |
+| kurtosis | -0.3611 |
+| mean | -1.4810 |
+| q05 | -31.3449 |
+| q25 | -12.1248 |
+| q50 | 3.3690 |
+| q75 | 10.0050 |
+| q95 | 13.5792 |
+| residual_rul_corr | -0.9324 |
+| skew | -0.9595 |
+| std | 14.6616 |
 
-Residuals correlate with true RUL at ρ = -0.910: the model under-predicts at high RUL. This is the expected signature of regression-to-the-mean on a bounded target and is the main reason early-life predictions should be treated as a range, not a number.
+Residuals correlate with true RUL at ρ = -0.932: the model under-predicts at high RUL. This is the expected signature of regression-to-the-mean on a bounded target and is the main reason early-life predictions should be treated as a range, not a number.
 
 ## 7. Learning curve — champion
 
 | fraction | n_train_rows | n_train_batteries | train_rmse | test_rmse | train_mae | test_mae | train_r2 | test_r2 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0.2500 | 70 | 1 | 1.1438 | 20.1470 | 0.8565 | 17.6630 | 0.9940 | 0.5408 |
-| 0.5000 | 145 | 2 | 0.6998 | 18.0330 | 0.5703 | 16.0960 | 0.9980 | 0.6321 |
-| 0.7500 | 195 | 2 | 0.8136 | 14.2863 | 0.5926 | 11.5355 | 0.9987 | 0.7691 |
-| 1.0000 | 267 | 3 | 0.3799 | 13.5114 | 0.2915 | 12.3359 | 0.9997 | 0.7935 |
+| 0.2500 | 70 | 1 | 1.4495 | 12.3191 | 1.0906 | 7.6888 | 0.9903 | 0.8283 |
+| 0.5000 | 145 | 2 | 0.7660 | 13.8182 | 0.5741 | 11.8081 | 0.9976 | 0.7840 |
+| 0.7500 | 195 | 2 | 0.5813 | 14.1793 | 0.4510 | 12.1949 | 0.9993 | 0.7726 |
+| 1.0000 | 267 | 3 | 0.5058 | 14.2030 | 0.3071 | 12.5921 | 0.9995 | 0.7718 |
 
 Training data is subsampled **by cell**, keeping the earliest cycles, so each point remains a valid temporal split.
 
@@ -233,10 +228,10 @@ Training data is subsampled **by cell**, keeping the earliest cycles, so each po
 - `figures/eda/06_correlation_matrix.png` — 06 correlation matrix
 - `figures/eda/07_battery_comparison.png` — 07 battery comparison
 - `figures/eda/08_target_distribution.png` — 08 target distribution
-- `figures/explainability/error_by_rul_band_transformer.png` — error by rul band transformer
-- `figures/explainability/feature_importance_transformer.png` — feature importance transformer
-- `figures/explainability/signal_family_importance_transformer.png` — signal family importance transformer
-- `figures/results/learning_curve_transformer.png` — learning curve transformer
+- `figures/explainability/error_by_rul_band_gru.png` — error by rul band gru
+- `figures/explainability/feature_importance_gru.png` — feature importance gru
+- `figures/explainability/signal_family_importance_gru.png` — signal family importance gru
+- `figures/results/learning_curve_gru.png` — learning curve gru
 - `figures/results/model_comparison.png` — model comparison
 - `figures/results/pred_vs_truth_catboost.png` — pred vs truth catboost
 - `figures/results/pred_vs_truth_gru.png` — pred vs truth gru
@@ -280,10 +275,10 @@ Training data is subsampled **by cell**, keeping the earliest cycles, so each po
 
 ```json
 {
-  "generated_at": "2026-07-31T20:41:30.937265+00:00",
+  "generated_at": "2026-08-01T08:37:50.044390+00:00",
   "python": "3.13.5",
   "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
-  "git_revision": "da858c9",
+  "git_revision": "82ef951",
   "packages": {
     "numpy": "2.3.1",
     "pandas": "2.3.2",
@@ -301,19 +296,20 @@ Training data is subsampled **by cell**, keeping the earliest cycles, so each po
 
 | stage | seconds |
 | --- | --- |
-| build_partitions | 0.2080 |
-| cross_validate | 68.9230 |
-| eda_figures | 1.1810 |
-| explainability | 4.1960 |
-| fit:catboost | 0.8760 |
-| fit:gru | 5.3330 |
-| fit:lightgbm | 1.2600 |
+| build_partitions | 0.3830 |
+| cross_validate | 147.1870 |
+| eda_figures | 1.1820 |
+| explainability | 6.8520 |
+| fit:catboost | 0.7410 |
+| fit:gru | 4.9350 |
+| fit:lightgbm | 3.0270 |
 | fit:linear_regression | 0.0010 |
-| fit:lstm | 1.9890 |
-| fit:random_forest | 0.1830 |
+| fit:lstm | 1.4460 |
+| fit:random_forest | 0.1690 |
 | fit:ridge | 0.0010 |
-| fit:transformer | 5.2000 |
-| fit:xgboost | 0.2130 |
-| learning_curve | 26.4470 |
-| result_figures | 3.5320 |
+| fit:transformer | 5.0730 |
+| fit:xgboost | 0.5340 |
+| learning_curve | 40.8220 |
+| nested_comparison | 846.7060 |
+| result_figures | 3.4930 |
 

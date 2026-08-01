@@ -1,5 +1,6 @@
 # Battery RUL platform — common tasks.
-.PHONY: help install data prepare train tune evaluate predict all fast smoke test lint format clean clean-data
+.PHONY: help install data prepare train tune evaluate predict all fast smoke test test-fast lint type format clean clean-data \
+	milestone2 snapshot api dashboard lock sanitise
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -40,13 +41,34 @@ test:  ## Run the test suite
 test-fast:  ## Tests, skipping the real-data parse test
 	pytest -m "not slow"
 
-lint:  ## Static checks
+lint:  ## Static checks (same scope as CI)
 	ruff check src tests scripts
 	black --check src tests scripts
+
+type:  ## Static type check (same scope as CI)
+	mypy src tests scripts
 
 format:  ## Auto-format
 	ruff check --fix src tests scripts
 	black src tests scripts
+
+milestone2:  ## Milestone 2 — targets, models, calibration, bundles, report
+	python -m battery_rul.pipelines.run_milestone_2 --config configs/default.yaml
+
+snapshot:  ## Write an example digital-twin snapshot
+	python scripts/example_snapshot.py --config configs/default.yaml
+
+api:  ## Serve the FastAPI application
+	python -m battery_rul.api.app
+
+dashboard:  ## Serve the Streamlit dashboard
+	streamlit run src/battery_rul/dashboard/app.py
+
+sanitise:  ## Strip absolute machine paths from committed artifacts
+	python scripts/sanitise_reports.py
+
+lock:  ## Regenerate the pinned environment
+	pip freeze --exclude-editable > requirements-lock.txt
 
 clean:  ## Remove caches and build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
@@ -54,4 +76,4 @@ clean:  ## Remove caches and build artifacts
 
 clean-data:  ## Remove derived data and run artifacts (keeps data/raw)
 	rm -rf data/interim/*.parquet data/processed/* models/zoo models/*.pkl
-	rm -rf reports/* figures/*
+	rm -rf reports/* figures/* artifacts/*

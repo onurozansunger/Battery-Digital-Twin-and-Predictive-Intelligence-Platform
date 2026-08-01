@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 import numpy as np
 import torch
@@ -121,7 +121,8 @@ class _PositionalEncoding(nn.Module):
         self.register_buffer("pe", pe.unsqueeze(0), persistent=False)
 
     def forward(self, x: Tensor) -> Tensor:
-        return x + self.pe[:, : x.size(1), :]
+        pe = cast(Tensor, self.pe)
+        return x + pe[:, : x.size(1), :]
 
 
 class _TransformerEncoder(nn.Module):

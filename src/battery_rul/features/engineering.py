@@ -181,10 +181,15 @@ def _build_for_battery(
             out[f"{prefix}_slope_{window}"] = _trailing_slope(series, window)
 
         # --- normalisation against the cell's own initial state ---------------
+        # The columns are emitted unconditionally, NaN where the reference is
+        # unusable. Emitting them only for some cells would make the generated
+        # column set depend on the cell, and a serving battery whose opening
+        # reading is missing would then be rejected by the fitted pipeline for
+        # want of a column training happened to have.
         initial = series.iloc[0]
-        if np.isfinite(initial) and abs(initial) > 1e-12:
-            out[f"{prefix}_ratio_to_initial"] = series / initial
-            out[f"{prefix}_delta_from_initial"] = series - initial
+        usable = bool(np.isfinite(initial) and abs(initial) > 1e-12)
+        out[f"{prefix}_ratio_to_initial"] = series / initial if usable else series * np.nan
+        out[f"{prefix}_delta_from_initial"] = series - initial if usable else series * np.nan
 
         # --- expanding (past-only) statistics ---------------------------------
         if cfg.include_cumulative:
@@ -236,7 +241,7 @@ def build_features(
     cfg: FeatureConfig,
     *,
     keep_columns: Sequence[str] | None = None,
-    prune: bool = True,
+    prune: bool = False,
 ) -> tuple[pd.DataFrame, FeatureBuildReport]:
     """Generate the engineered feature matrix.
 
@@ -250,13 +255,14 @@ def build_features(
         Non-feature columns to carry through unchanged (ids, target, ...). By
         default every column already present is carried through.
     prune:
-        Drop near-constant and near-duplicate columns. Both decisions depend on
-        the data in hand, so a serving batch would prune a *different* set than
-        training did and the fitted pipeline would then be handed the wrong
-        columns. Inference therefore passes ``prune=False``: generation is
-        deterministic, so the unpruned output is always a superset of the
-        training columns, and :class:`~battery_rul.features.pipeline.FeaturePipeline`
-        selects the exact set it was fitted on.
+        Retained for backwards compatibility and **ignored**; passing ``True``
+        logs a warning. Variance filtering and correlation pruning are
+        data-dependent decisions and moved behind the evaluation boundary in
+        Milestone 1.1: they now live in
+        :class:`~battery_rul.features.pipeline.FeaturePipeline`, fitted on
+        training rows only and re-fitted inside every CV fold. Generation here is
+        stateless and deterministic, so its output is always a superset of the
+        training columns and the fitted pipeline selects the exact set it needs.
 
     Returns
     -------
@@ -312,15 +318,19 @@ def build_features(
             )
 
     # Any remaining NaN comes from a window that is still partially filled at the
-    # start of a cell. Forward-filling within the cell is causal; the residual is
-    # zero-filled (the feature is simply "not yet observable").
+    # start of a cell. Forward-filling within the cell is causal. Whatever is
+    # still missing is left as NaN and resolved by the *train-fitted* fallback in
+    # FeaturePipeline — filling it with a constant here would be a silent,
+    # unrecorded imputation decision that serving could not reproduce.
     feats = feature_columns(frame)
-    frame[feats] = (
-        frame.groupby("battery_id", sort=False)[feats].ffill().fillna(0.0).astype("float32")
-    )
+    frame[feats] = frame.groupby("battery_id", sort=False)[feats].ffill().astype("float32")
 
     if prune:
-        frame, report = _prune(frame, cfg, report)
+        logger.warning(
+            "build_features(prune=True) is ignored since Milestone 1.1: variance "
+            "filtering and correlation pruning are fitted on training rows inside "
+            "FeaturePipeline. Remove the argument."
+        )
     report.feature_names = feature_columns(frame)
     report.n_after_pruning = len(report.feature_names)
     logger.info(
@@ -329,54 +339,6 @@ def build_features(
         report.n_after_pruning,
         report.n_generated + len(signals) - report.n_after_pruning,
     )
-    return frame, report
-
-
-def _prune(
-    frame: pd.DataFrame, cfg: FeatureConfig, report: FeatureBuildReport
-) -> tuple[pd.DataFrame, FeatureBuildReport]:
-    """Remove degenerate and near-duplicate features.
-
-    Note this is an *unsupervised* filter — it looks only at the design matrix,
-    never at the target — so running it before the train/test split is safe with
-    respect to label leakage. Supervised selection lives in the fitted
-    :class:`~battery_rul.features.pipeline.FeaturePipeline`, which is fit on the
-    training partition only.
-    """
-    feats = feature_columns(frame)
-    if not feats:
-        return frame, report
-
-    variances = frame[feats].var(numeric_only=True)
-    constant = sorted(variances[variances <= cfg.variance_threshold].index.tolist())
-    if constant:
-        frame = frame.drop(columns=constant)
-        report.dropped_constant = constant
-        logger.info("Dropped %d near-constant features", len(constant))
-
-    if cfg.correlation_prune_threshold is not None:
-        feats = feature_columns(frame)
-        corr = frame[feats].corr().abs()
-        upper = corr.where(np.triu(np.ones(corr.shape, dtype=bool), k=1))
-        to_drop: list[tuple[str, str, float]] = []
-        dropped: set[str] = set()
-        for column in upper.columns:
-            if column in dropped:
-                continue
-            partners = upper[column]
-            for other, rho in partners[partners > cfg.correlation_prune_threshold].items():
-                if other in dropped or other == column:
-                    continue
-                dropped.add(str(other))
-                to_drop.append((column, str(other), float(rho)))
-        if dropped:
-            frame = frame.drop(columns=sorted(dropped))
-            report.dropped_correlated = to_drop
-            logger.info(
-                "Dropped %d features correlated above |rho| > %.3f",
-                len(dropped),
-                cfg.correlation_prune_threshold,
-            )
     return frame, report
 
 

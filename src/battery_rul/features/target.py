@@ -72,7 +72,9 @@ __all__ = [
     "transform_target",
 ]
 
-#: Consecutive cycles that must stay at/below threshold for a crossing to count.
+#: Default consecutive cycles that must stay at/below threshold for a crossing to
+#: count. The live value is ``target.eol_persistence``; this constant is only the
+#: pydantic default and is kept for backwards compatibility of imports.
 EOL_PERSISTENCE = 3
 
 
@@ -123,33 +125,41 @@ def find_eol_cycle(
     group: pd.DataFrame,
     cfg: ExperimentConfig,
     *,
-    persistence: int = EOL_PERSISTENCE,
+    persistence: int | None = None,
     capacity_col: str = "capacity_smooth_ah",
 ) -> int | None:
-    """First persistent end-of-life crossing for one battery, or ``None``.
+    """First *confirmed* end-of-life crossing for one battery, or ``None``.
+
+    A crossing is confirmed only when **P complete consecutive observations** at
+    or below the threshold exist, where P is ``target.eol_persistence``.
+
+    Milestone 1.1 changed this. The previous implementation accepted a crossing
+    that held merely "for every remaining observation", so a cell whose final one
+    or two rows dipped below threshold was labelled as having reached end of life
+    on the strength of one or two readings — exactly the transient dip the
+    persistence rule exists to reject, and precisely where lithium-ion capacity
+    recovery makes a single reading least trustworthy. A record that ends before
+    persistence can be confirmed is **right-censored**: the honest statement is
+    "we do not know when this cell reaches end of life", and ``None`` is what
+    says that. ``attach_target`` then applies the configured censoring policy.
 
     ``group`` must be a single battery's rows, sorted by ``cycle_index``.
     """
     if group.empty:
         return None
 
+    p = max(int(cfg.target.eol_persistence if persistence is None else persistence), 1)
     threshold = eol_capacity_for(group, cfg)
     capacity = group[capacity_col].to_numpy(dtype=float)
     cycles = group["cycle_index"].to_numpy(dtype=int)
 
     below = capacity <= threshold
-    if not below.any():
+    n = below.size
+    if not below.any() or n < p:
         return None
 
-    p = max(int(persistence), 1)
-    n = below.size
-    for idx in range(n):
-        if not below[idx]:
-            continue
-        window_end = min(idx + p, n)
-        # Near the end of the record we cannot demand full persistence; accept a
-        # crossing that holds for every remaining observation.
-        if below[idx:window_end].all():
+    for idx in range(n - p + 1):
+        if below[idx : idx + p].all():
             return int(cycles[idx])
     return None
 

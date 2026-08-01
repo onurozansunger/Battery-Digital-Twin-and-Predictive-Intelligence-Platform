@@ -1,2 +1,2 @@
 battery_id,last_cycle,predicted_rul_cycles,predicted_eol_cycle,n_scored_cycles,current_soh,true_rul_cycles,mae_cycles
-B0005,127,10.2,137.2,108,0.6984,0.0,13.95
+B0005,127,15.5,142.5,108,0.6984,0.0,12.94

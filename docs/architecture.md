@@ -136,27 +136,37 @@ touch another's. The default split holds out whole cells.
 
 **3. Train → validation/test** — `features/pipeline.py`
 
-Scaler statistics and supervised feature selection are fit on training rows only.
-Inside Optuna, the pipeline is re-fit **within each CV fold** — sharing one
-pipeline across folds would leak held-out statistics into every trial's score.
+**Every** data-dependent decision is fitted on training rows only, inside
+`FeaturePipeline`: the fleet-level imputation fallback, the variance filter, the
+correlation pruning, the supervised top-K selection and the scaler statistics.
+Inside Optuna and inside every cross-validation fold the pipeline is re-fit —
+sharing one pipeline across folds would leak held-out statistics into every score.
 
-Unsupervised pruning (near-constant and near-duplicate columns) runs before the
-split. That is deliberate and safe: it never consults the target, so it cannot
-transfer label information.
+> **Changed in Milestone 1.1.** Variance filtering and correlation pruning used to
+> run *before* the split, on the argument that they never consult the target so
+> they cannot transfer label information. That argument is incomplete: both are
+> statistics of the rows they see, so the identity of the surviving columns was a
+> function of the held-out cells even though no label crossed the boundary. They
+> now live behind the evaluation boundary with everything else. See
+> `docs/MILESTONE_1_1_HARDENING.md` §1.2.
 
-## Training/serving skew: one specific trap
+## Training/serving skew: two specific traps
 
-Correlation and variance pruning are **data-dependent** — the surviving column
-set depends on which rows are in hand. A serving batch would therefore prune a
-different set than training did, and the fitted pipeline would be handed columns
-it has never seen.
-
-The fix is that `predict.py` calls `build_features(..., prune=False)`. Feature
-*generation* is deterministic, so the unpruned output is always a superset of the
-training columns, and `FeaturePipeline.transform` then selects the exact set and
-order it was fitted on — raising loudly if any are missing.
+**Feature-set drift.** Correlation and variance pruning are data-dependent, so a
+serving batch would prune a different set than training did and the fitted
+pipeline would be handed columns it has never seen. The fix is that feature
+*generation* is now stateless — the column set is a pure function of the
+configuration, so a one-cell serving batch produces exactly the training columns —
+and `FeaturePipeline.transform` selects the exact set and order it was fitted on,
+raising loudly if any are missing.
 `test_predict_matches_training_time_scores` asserts the two paths agree
 numerically.
+
+**Warm-up drift.** A serving path that pads a short history produces a confident
+prediction from a window the model never saw. `features/warmup.py` is the single
+source of truth for the first scoreable cycle (warm-up trim plus sequence
+window); training, evaluation and the digital-twin service all read it, and the
+service refuses to predict below it with an explicit reason rather than guessing.
 
 ## Two data-quality traps worth knowing about
 

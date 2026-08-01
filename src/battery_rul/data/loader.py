@@ -23,7 +23,7 @@ from battery_rul.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-__all__ = ["CycleDataset", "load_cycles"]
+__all__ = ["CycleDataset", "derive_health", "load_cycles"]
 
 
 @dataclass(slots=True)
@@ -71,7 +71,13 @@ def load_cycles(cfg: ExperimentConfig, *, use_cache: bool | None = None) -> Cycl
     always states which happened.
     """
     use_cache = cfg.data.cache_interim if use_cache is None else use_cache
-    cache_path = cfg.paths.interim_dir / f"cycles_{cfg.data.source}.parquet"
+    # The cache key includes a hash of every data-affecting configuration field
+    # and of the raw source itself. Milestone 1.1 changed this: the key used to be
+    # the source name alone, so editing the collapse threshold, the leading-artifact
+    # trim or the smoothing window silently reused a table built under the *old*
+    # settings, and the run reported results for a configuration it never used.
+    fingerprint = f"{cfg.data_fingerprint()}-{_source_fingerprint(cfg)}"
+    cache_path = cfg.paths.interim_dir / f"cycles_{cfg.data.source}_{fingerprint}.parquet"
 
     if use_cache and cache_path.is_file():
         logger.info("Reading cached cycle table: %s", cache_path)
@@ -136,6 +142,29 @@ def load_cycles(cfg: ExperimentConfig, *, use_cache: bool | None = None) -> Cycl
         logger.info("Cached cycle table -> %s", cache_path)
 
     return CycleDataset(frame=frame, metadata=meta, validation=report)
+
+
+def _source_fingerprint(cfg: ExperimentConfig) -> str:
+    """Cheap, stable hash of the raw source on disk.
+
+    Names, sizes and modification times of the source files — not their contents,
+    which would mean re-reading 200 MB to decide whether re-reading is necessary.
+    That is enough to notice a re-download, an added cell or an edited file, which
+    are the changes that must invalidate the interim cache.
+    """
+    import hashlib
+
+    source_dir = cfg.paths.raw_dir / cfg.data.subdir
+    if not source_dir.is_dir():
+        return "nosource"
+    parts: list[str] = []
+    for file in sorted(source_dir.rglob("*")):
+        if file.is_file() and not file.name.startswith("."):
+            stat = file.stat()
+            parts.append(f"{file.relative_to(source_dir)}:{stat.st_size}:{int(stat.st_mtime)}")
+    if not parts:
+        return "empty"
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:12]
 
 
 def _truncate_at_collapse(df: pd.DataFrame, cfg: ExperimentConfig) -> pd.DataFrame:
@@ -374,6 +403,17 @@ def _derive_health(df: pd.DataFrame, cfg: ExperimentConfig) -> pd.DataFrame:
     if not np.isfinite(df["soh"]).all():
         logger.warning("Non-finite SoH values after derivation; check nominal_capacity_ah")
     return df
+
+
+def derive_health(df: pd.DataFrame, cfg: ExperimentConfig) -> pd.DataFrame:
+    """Public entry point for :func:`_derive_health`.
+
+    Serving needs the identical derivation training used — trailing-median
+    smoothing, the same reference, the same SoH definition. Exposing it here
+    means the digital-twin service calls the training code rather than a
+    lookalike, which is the only way the two stay in agreement.
+    """
+    return _derive_health(df, cfg)
 
 
 def battery_summary_table(dataset: CycleDataset, cfg: ExperimentConfig) -> pd.DataFrame:
