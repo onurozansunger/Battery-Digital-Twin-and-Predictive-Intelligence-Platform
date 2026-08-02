@@ -115,6 +115,8 @@ class SOHTargetReport:
     soh_mean: float
     n_clipped: int
     class_counts: dict[str, int]
+    forecast_horizon_cycles: int = 0
+    n_forecastable_rows: int = 0
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -130,6 +132,12 @@ class SOHTargetReport:
             "soh_mean": round(self.soh_mean, 5),
             "n_clipped_to_plausible_range": self.n_clipped,
             "class_counts": self.class_counts,
+            "forecast_horizon_cycles": self.forecast_horizon_cycles,
+            "n_forecastable_rows": self.n_forecastable_rows,
+            "note": (
+                "Current-cycle SOH is a derived measurement, not a modelling target. "
+                "The model is trained on the forecast target."
+            ),
         }
 
 
@@ -233,6 +241,31 @@ def attach_soh_target(
         )
 
     frame[soh_cfg.target_name] = clipped.astype("float32")
+
+    # --- the forecasting target -------------------------------------------
+    # SOH *at the current cycle* is not a prediction problem. It is measured
+    # capacity divided by a per-cell constant, and measured capacity is a model
+    # input, so a model fitted against it learns a rescaling and reports a
+    # flattering error that is not evidence of inferring a latent health state.
+    # The forecast target — SOH `forecast_horizon_cycles` ahead — is a genuine
+    # prediction: at cycle t nothing in the input reveals capacity at t+H.
+    # Rows within H cycles of a cell's last observation have no target and are
+    # NaN, never extrapolated.
+    horizon = int(soh_cfg.forecast_horizon_cycles)
+    frame[soh_cfg.forecast_target_name] = (
+        frame.groupby("battery_id", sort=False)[soh_cfg.target_name]
+        .shift(-horizon)
+        .astype("float32")
+    )
+    n_forecastable = int(frame[soh_cfg.forecast_target_name].notna().sum())
+    logger.info(
+        "SOH forecast target (+%d cycles): %d/%d rows have a label; the final %d "
+        "cycles of each cell necessarily have none.",
+        horizon,
+        n_forecastable,
+        len(frame),
+        horizon,
+    )
     frame["soh_reference_capacity_ah"] = frame["battery_id"].map(references).astype("float32")
     classes = [classify_soh(float(v), soh_cfg).value for v in clipped]
     frame["soh_health_class"] = pd.Series(classes, index=frame.index, dtype="string")
@@ -248,6 +281,8 @@ def attach_soh_target(
         soh_mean=float(np.mean(clipped)),
         n_clipped=n_clipped,
         class_counts={str(k): int(v) for k, v in counts.items()},
+        forecast_horizon_cycles=horizon,
+        n_forecastable_rows=n_forecastable,
     )
     logger.info(
         "SOH target (%s, fraction): n=%d, range=[%.3f, %.3f], mean=%.3f",

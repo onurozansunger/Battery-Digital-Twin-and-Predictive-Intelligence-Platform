@@ -40,6 +40,19 @@ A model cannot predict a category of event it has never seen. Treating this
 output as a safety-hazard probability would be a serious misreading. See
 `docs/FAILURE_RISK_DEFINITION.md`.
 
+## An external review found seven defects
+
+They are listed with their fixes in `docs/MILESTONE_2_1_REVIEW_FIXES.md`. Three
+changed what the published numbers mean, and the earlier ones should not be
+quoted:
+
+* the deployed RUL family was chosen using a comparison that included the test
+  cell, so the Milestone 2 "held-out test" figure was not untouched;
+* the SOH model predicted current SOH from an input containing current
+  capacity, so its 1.34 % MAE measured a rescaling, not health inference;
+* conformal coverage was measured on the residuals the quantile was fitted
+  from, so 91.7 % was calibration-set coverage rather than evidence.
+
 ## Risk metrics are easy to over-read
 
 The label is "RUL ≤ H", so a cell's positives are exactly its last H cycles and
@@ -51,6 +64,10 @@ reported next to a `*_cycle_index_baseline` computed on the same rows, with a
 
 The same applies to the multi-task model's near-perfect risk PR-AUC on
 single-cell partitions. It is not evidence of a good classifier.
+
+**The risk model loses to that baseline on every partition**, so it now fails an
+acceptance gate: the twin reports its probability as experimental and withholds
+it from the recommendation rules entirely.
 
 Post-calibration Brier and ECE on out-of-fold rows are **in-sample** — the
 calibrator was fitted on them. Only the test-partition calibration figures are

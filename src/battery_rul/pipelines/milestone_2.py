@@ -41,11 +41,11 @@ from battery_rul.calibration.probability import (
     risk_metrics,
 )
 from battery_rul.config import ExperimentConfig, load_config
-from battery_rul.evaluation.metrics import compute_metrics
+from battery_rul.evaluation.metrics import compute_metrics, soh_metrics
 from battery_rul.features.pipeline import FeaturePipeline
 from battery_rul.features.target import inverse_transform_target, transform_target
 from battery_rul.features.warmup import WarmupPolicy
-from battery_rul.models.base import TrainingData, build_model
+from battery_rul.models.base import TrainingData, available_models, build_model
 from battery_rul.models.bundle import save_bundle
 from battery_rul.pipelines.prepare_data import PreparedData, load_prepared
 from battery_rul.targets.risk import attach_failure_risk_target
@@ -116,6 +116,7 @@ def prepare_multitask_data(
 
     target_columns = [
         cfg.soh.target_name,
+        cfg.soh.forecast_target_name,
         "soh_reference_capacity_ah",
         "soh_health_class",
         cfg.risk.target_name,
@@ -292,70 +293,150 @@ def _fit_classifier(train: TrainingData, cfg: ExperimentConfig) -> Any:
 # ---------------------------------------------------------------------------
 # Stage 2 — SOH model
 # ---------------------------------------------------------------------------
+def _select_family_on_non_test(
+    data: MultiTaskData,
+    cfg: ExperimentConfig,
+    *,
+    y: np.ndarray,
+    candidates: list[str],
+    metric_fn: Any,
+) -> tuple[str, dict[str, float]]:
+    """Choose a model family by leave-one-cell-out over the **non-test** cells.
+
+    Selection must not see the test cell, even indirectly. The Milestone 1
+    nested comparison runs over every cell — correctly, because it is a
+    cross-validated estimate of a procedure, not a held-out claim — but reading
+    its ``selection_frequency`` to pick the deployed family let the test cell
+    vote on that choice, after which scoring the same cell was no longer an
+    untouched-test result. This selects on train+validation cells only, so the
+    test cell stays untouched until it is scored once at the end.
+    """
+    frame = data.frame
+    battery_col = frame["battery_id"].to_numpy()
+    pool = data.non_test
+    cells = sorted(pd.unique(battery_col[pool]).tolist())
+    valid = np.isfinite(y)
+    scores: dict[str, list[float]] = {name: [] for name in candidates}
+
+    for cell in cells:
+        held = pool & (battery_col == cell) & valid
+        rest = pool & (battery_col != cell) & valid
+        if rest.sum() < 20 or held.sum() < 5:
+            continue
+        pipeline = _fit_pipeline(data, cfg, rest, y)
+        train = _training_data(data, pipeline, rest, y)
+        test = _training_data(data, pipeline, held, y)
+        for name in candidates:
+            try:
+                model = build_model(name, cfg).fit(train)
+                predicted = np.asarray(model.predict(test), dtype=float)
+            except Exception as exc:  # noqa: BLE001 - one family must not sink selection
+                logger.warning("Family %s failed on selection fold %s: %s", name, cell, exc)
+                continue
+            value = metric_fn(test.y, predicted).get("mae")
+            if value is not None and np.isfinite(value):
+                scores[name].append(float(value))
+
+    pooled = {k: float(np.mean(v)) for k, v in scores.items() if v}
+    if not pooled:
+        raise RuntimeError(f"No candidate family produced a selection score: {candidates}")
+    selected = min(pooled, key=lambda k: pooled[k])
+    logger.info(
+        "Family selected on non-test cells only: %s (leave-one-cell-out MAE %s)",
+        selected,
+        {k: round(v, 5) for k, v in pooled.items()},
+    )
+    return selected, pooled
+
+
+# ---------------------------------------------------------------------------
+# Stage 2 — SOH forecasting model
+# ---------------------------------------------------------------------------
 def train_soh(cfg: ExperimentConfig, data: MultiTaskData | None = None) -> dict[str, Any]:
-    """Fit and evaluate the independent SOH regressor, then bundle it."""
-    log_section(logger, "milestone 2 — train SOH")
+    """Fit and evaluate the SOH **forecasting** model, then bundle it.
+
+    The target is SOH ``soh.forecast_horizon_cycles`` ahead, not at the current
+    cycle. Modelling current SOH is not a prediction problem — it is measured
+    capacity over a per-cell constant, and measured capacity is an input — so a
+    model fitted against it learns a rescaling and reports an error that looks
+    excellent and demonstrates nothing. The twin reports current SOH
+    deterministically from the measurement and uses this model only to forecast.
+
+    Every metric is reported beside a **persistence baseline**: predicting that
+    SOH will not change over the horizon.
+    """
+    log_section(logger, "milestone 2 — train SOH forecast")
     seed_everything(cfg.seed)
     data = data or prepare_multitask_data(cfg)
 
-    y = data.frame[cfg.soh.target_name].to_numpy(dtype=float)
+    horizon = cfg.soh.forecast_horizon_cycles
+    y = data.frame[cfg.soh.forecast_target_name].to_numpy(dtype=float)
+    # The persistence baseline: SOH now, as the forecast of SOH at t+H.
+    persistence_all = data.frame[cfg.soh.target_name].to_numpy(dtype=float)
     valid = np.isfinite(y)
     train_mask = data.mask("train") & valid
-    val_mask = data.mask("val") & valid
     test_mask = data.mask("test") & valid
 
     candidates = ["elastic_net", "random_forest", "lightgbm"]
+    selected, selection_scores = _select_family_on_non_test(
+        data, cfg, y=y, candidates=candidates, metric_fn=soh_metrics
+    )
+
     pipeline = _fit_pipeline(data, cfg, train_mask, y)
     train = _training_data(data, pipeline, train_mask, y)
-    validation = _training_data(data, pipeline, val_mask, y) if val_mask.any() else None
+    model = build_model(selected, cfg).fit(train)
 
-    scores: dict[str, float] = {}
-    models: dict[str, Any] = {}
-    for name in candidates:
-        model = build_model(name, cfg).fit(train)
-        models[name] = model
-        if validation is not None:
-            predicted = np.asarray(model.predict(validation), dtype=float)
-            scores[name] = compute_metrics(validation.y, predicted)["mae"]
-    selected = min(scores, key=lambda k: scores[k]) if scores else candidates[0]
-    logger.info("SOH model selected on validation: %s (MAE %s)", selected, scores)
-
-    model = models[selected]
     out_of_fold = _out_of_fold(data, cfg, y=y, model_name=selected)
-    oof_metrics = compute_metrics(
-        out_of_fold["y_true"].to_numpy(), out_of_fold["y_pred"].to_numpy()
+    oof_persistence = (
+        data.frame.set_index(["battery_id", "cycle_index"])[cfg.soh.target_name]
+        .reindex(pd.MultiIndex.from_arrays([out_of_fold["battery_id"], out_of_fold["cycle_index"]]))
+        .to_numpy(dtype=float)
     )
-    oof_metrics["max_absolute_error"] = float(
-        np.nanmax(np.abs(out_of_fold["y_true"] - out_of_fold["y_pred"]))
+    oof_metrics = soh_metrics(
+        out_of_fold["y_true"].to_numpy(),
+        out_of_fold["y_pred"].to_numpy(),
+        persistence=oof_persistence,
     )
 
-    test_metrics: dict[str, float] = {}
+    test_metrics: dict[str, Any] = {}
     per_battery: list[dict[str, Any]] = []
     if test_mask.any():
         test = _training_data(data, pipeline, test_mask, y)
         predicted = np.asarray(model.predict(test), dtype=float)
-        test_metrics = compute_metrics(test.y, predicted)
+        test_metrics = soh_metrics(test.y, predicted, persistence=persistence_all[test_mask])
+        test_metrics["n_test_cells"] = int(len(np.unique(test.battery_ids)))
         frame = pd.DataFrame(
             {"battery_id": test.battery_ids, "y_true": test.y, "y_pred": predicted}
         )
         for cell, group in frame.groupby("battery_id"):
-            metrics = compute_metrics(group["y_true"].to_numpy(), group["y_pred"].to_numpy())
-            per_battery.append({"battery_id": str(cell), "partition": "test", **metrics})
+            per_battery.append(
+                {
+                    "battery_id": str(cell),
+                    "partition": "test",
+                    **soh_metrics(group["y_true"].to_numpy(), group["y_pred"].to_numpy()),
+                }
+            )
 
     for cell, group in out_of_fold.groupby("battery_id"):
-        metrics = compute_metrics(group["y_true"].to_numpy(), group["y_pred"].to_numpy())
-        per_battery.append({"battery_id": str(cell), "partition": "out_of_fold", **metrics})
+        per_battery.append(
+            {
+                "battery_id": str(cell),
+                "partition": "out_of_fold",
+                **soh_metrics(group["y_true"].to_numpy(), group["y_pred"].to_numpy()),
+            }
+        )
 
     save_bundle(
         cfg.artifacts.soh_dir,
         model=model,
         preprocessing=pipeline,
         cfg=cfg,
-        task="soh_regression",
+        task="soh_forecast",
         model_name=selected,
-        dataset_fingerprint=cfg.data_fingerprint(),
+        dataset_fingerprint=_dataset_fingerprint(cfg),
         metrics={"out_of_fold": oof_metrics, "test": test_metrics},
         thresholds={
+            "forecast_horizon_cycles": horizon,
             "healthy_min": cfg.soh.healthy_min,
             "slightly_degraded_min": cfg.soh.slightly_degraded_min,
             "warning_min": cfg.soh.warning_min,
@@ -365,12 +446,18 @@ def train_soh(cfg: ExperimentConfig, data: MultiTaskData | None = None) -> dict[
             cfg.features.drop_warmup_cycles, None
         ).first_scoreable_cycle,
         warmup_policy=WarmupPolicy(cfg.features.drop_warmup_cycles, None).to_dict(),
-        notes="SOH is a fraction in [0, 1]. Reference strategy is in target_definition.",
+        notes=(
+            f"Forecasts SOH {horizon} cycles ahead, as a fraction in [0, 1]. Current "
+            "SOH is reported by the twin as a derived measurement, not from this model."
+        ),
     )
 
     result = {
+        "task": "soh_forecast",
+        "forecast_horizon_cycles": horizon,
         "selected_model": selected,
-        "validation_selection_mae": scores,
+        "selection_scheme": "leave-one-cell-out over non-test cells",
+        "selection_scores_mae": {k: round(v, 6) for k, v in selection_scores.items()},
         "out_of_fold_metrics": oof_metrics,
         "test_metrics": test_metrics,
         "per_battery": per_battery,
@@ -486,6 +573,21 @@ def train_risk(cfg: ExperimentConfig, data: MultiTaskData | None = None) -> dict
         out_of_fold["y_true"].to_numpy(), calibrated_oof, n_bins=cfg.calibration.n_bins
     )
 
+    # --- acceptance gate ---------------------------------------------------
+    # Documenting that a model loses to a trivial baseline is necessary but not
+    # sufficient: a model that has demonstrated nothing must not be allowed to
+    # trigger an inspection or a replacement. The verdict travels in the bundle
+    # so the serving path cannot forget to check it.
+    passes_gate = bool(oof_metrics_calibrated.get("beats_cycle_index_baseline", False))
+    if not passes_gate:
+        logger.warning(
+            "Risk model FAILED the acceptance gate: out-of-fold PR-AUC %.3f does not "
+            "beat the cycle-index baseline %.3f. Its probability will be reported as "
+            "experimental and withheld from the recommendation rules.",
+            oof_metrics_calibrated.get("pr_auc", float("nan")),
+            oof_metrics_calibrated.get("pr_auc_cycle_index_baseline", float("nan")),
+        )
+
     save_bundle(
         cfg.artifacts.risk_dir,
         model=RiskClassifierAdapter(
@@ -495,13 +597,20 @@ def train_risk(cfg: ExperimentConfig, data: MultiTaskData | None = None) -> dict
         cfg=cfg,
         task="failure_risk_classification",
         model_name=cfg.risk.model,
-        dataset_fingerprint=cfg.data_fingerprint(),
+        dataset_fingerprint=_dataset_fingerprint(cfg),
         metrics={
             "out_of_fold_raw": oof_metrics_raw,
             "out_of_fold_calibrated": oof_metrics_calibrated,
             "test_calibrated": test_metrics,
         },
         thresholds={
+            "passes_acceptance_gate": passes_gate,
+            "acceptance_gate": {
+                "rule": "out-of-fold calibrated PR-AUC must exceed the cycle-index baseline",
+                "model_pr_auc": oof_metrics_calibrated.get("pr_auc"),
+                "baseline_pr_auc": oof_metrics_calibrated.get("pr_auc_cycle_index_baseline"),
+                "enforced": cfg.risk.require_beating_baseline,
+            },
             "decision_threshold": threshold,
             "objective": cfg.risk.threshold_objective,
             "tuned_on": "out-of-fold predictions over non-test cells",
@@ -532,6 +641,7 @@ def train_risk(cfg: ExperimentConfig, data: MultiTaskData | None = None) -> dict
     return {
         "model": cfg.risk.model,
         "horizon_cycles": cfg.risk.horizon_cycles,
+        "passes_acceptance_gate": passes_gate,
         "calibration": calibrator.to_dict(),
         "threshold": threshold,
         "out_of_fold_raw": oof_metrics_raw,
@@ -562,7 +672,14 @@ def calibrate_uncertainty(
     train_mask = data.mask("train") & valid
     test_mask = data.mask("test") & valid
 
-    model_name = _preferred_rul_model(cfg)
+    candidates = [
+        c
+        for c in cfg.evaluation.nested_candidates
+        if c not in {"lstm", "gru", "transformer"} and c in available_models()
+    ] or ["random_forest"]
+    model_name, selection_scores = _select_family_on_non_test(
+        data, cfg, y=y, candidates=candidates, metric_fn=compute_metrics
+    )
     pipeline = _fit_pipeline(data, cfg, train_mask, y)
     train = _training_data(data, pipeline, train_mask, y)
     model = build_model(model_name, cfg).fit(train)
@@ -575,12 +692,32 @@ def calibrate_uncertainty(
     estimator = ConformalIntervalEstimator(cfg=cfg.uncertainty, target_name=cfg.target.name)
     estimator.fit(truth, predicted, life_fraction=stage_values)
 
-    lower, upper = estimator.intervals(predicted, life_fraction=stage_values)
-    stages = estimator.life_stages(stage_values)
-    oof_frame = out_of_fold.assign(
-        y_true=truth, y_pred=predicted, lower_bound=lower, upper_bound=upper, life_stage=stages
-    )
+    # --- honest coverage: cross-conformal, never on the fitting rows ---------
+    # Applying the fitted quantile back to the residuals it was fitted from
+    # recovers the nominal level close to by construction and says nothing about
+    # a new cell. For each non-test cell the quantile is refitted on the *other*
+    # non-test cells and only then applied here.
+    oof_frame = _cross_conformal_frame(out_of_fold, truth, predicted, stage_values, cfg)
     oof_coverage = coverage_report(oof_frame)
+    oof_coverage["scheme"] = (
+        "leave-one-cell-out cross-conformal; the quantile applied to each cell was "
+        "fitted on the other non-test cells only"
+    )
+    in_sample = coverage_report(
+        out_of_fold.assign(
+            y_true=truth,
+            y_pred=predicted,
+            **dict(
+                zip(
+                    ("lower_bound", "upper_bound"),
+                    estimator.intervals(predicted, life_fraction=stage_values),
+                    strict=True,
+                )
+            ),
+            life_stage=estimator.life_stages(stage_values),
+        )
+    )
+    oof_coverage["in_sample_coverage_for_reference"] = in_sample.get("empirical_coverage")
 
     test_coverage: dict[str, Any] = {}
     if test_mask.any():
@@ -610,7 +747,7 @@ def calibrate_uncertainty(
         cfg=cfg,
         task="rul_regression",
         model_name=model_name,
-        dataset_fingerprint=cfg.data_fingerprint(),
+        dataset_fingerprint=_dataset_fingerprint(cfg),
         metrics={
             "out_of_fold": compute_metrics(truth, predicted),
             "out_of_fold_coverage": oof_coverage,
@@ -628,10 +765,74 @@ def calibrate_uncertainty(
     write_table(oof_frame, cfg.paths.reports_dir / "milestone_2" / "rul_out_of_fold_intervals.csv")
     return {
         "model": model_name,
+        "selection_scheme": "leave-one-cell-out over non-test cells",
+        "selection_scores_mae": {k: round(v, 5) for k, v in selection_scores.items()},
         "estimator": estimator.to_dict(),
         "out_of_fold_coverage": oof_coverage,
         "test_coverage": test_coverage,
+        "meets_nominal_coverage": bool(
+            (oof_coverage.get("empirical_coverage") or 0.0) >= cfg.uncertainty.coverage - 0.02
+        ),
     }
+
+
+def _cross_conformal_frame(
+    out_of_fold: pd.DataFrame,
+    truth: np.ndarray,
+    predicted: np.ndarray,
+    stage_values: np.ndarray,
+    cfg: ExperimentConfig,
+) -> pd.DataFrame:
+    """Leave-one-cell-out conformal intervals over the out-of-fold rows.
+
+    For each non-test cell, fit the conformal quantile on every *other* non-test
+    cell's residuals, then apply it to this cell. No row is ever covered by an
+    interval whose width its own residual helped determine, so the resulting
+    coverage is an estimate for a genuinely new cell.
+    """
+    cells = out_of_fold["battery_id"].to_numpy()
+    lower = np.full(len(out_of_fold), np.nan)
+    upper = np.full(len(out_of_fold), np.nan)
+    stages = np.full(len(out_of_fold), "unknown", dtype=object)
+
+    for cell in pd.unique(cells):
+        held = cells == cell
+        rest = ~held
+        if rest.sum() < cfg.uncertainty.min_calibration_rows:
+            logger.warning(
+                "Cross-conformal: only %d rows outside cell %s; it is left uncovered "
+                "rather than scored against a quantile fitted on itself.",
+                int(rest.sum()),
+                cell,
+            )
+            continue
+        fold = ConformalIntervalEstimator(cfg=cfg.uncertainty, target_name=cfg.target.name)
+        fold.fit(truth[rest], predicted[rest], life_fraction=stage_values[rest])
+        low, high = fold.intervals(predicted[held], life_fraction=stage_values[held])
+        lower[held] = low
+        upper[held] = high
+        stages[held] = fold.life_stages(stage_values[held])
+
+    return out_of_fold.assign(
+        y_true=truth,
+        y_pred=predicted,
+        lower_bound=lower,
+        upper_bound=upper,
+        life_stage=stages.astype(str),
+    )
+
+
+def _dataset_fingerprint(cfg: ExperimentConfig) -> str:
+    """Hash of the *source data*, distinct from the configuration hash.
+
+    These were the same value in every bundle, which made the second field
+    worthless: edit the raw files without touching configuration and the
+    recorded dataset identity would not move. This reads the interim-cache key
+    component, which is derived from the raw files' names, sizes and mtimes.
+    """
+    from battery_rul.data.loader import source_fingerprint
+
+    return source_fingerprint(cfg)
 
 
 def _stage_value(frame: pd.DataFrame, cfg: ExperimentConfig) -> np.ndarray:
@@ -645,44 +846,6 @@ def _stage_value(frame: pd.DataFrame, cfg: ExperimentConfig) -> np.ndarray:
         if column in frame.columns:
             return pd.to_numeric(frame[column], errors="coerce").to_numpy(dtype=float)
     return np.full(len(frame), np.nan)
-
-
-def _preferred_rul_model(cfg: ExperimentConfig) -> str:
-    """Pick the RUL family to deploy from the nested comparison, if one exists.
-
-    Falls back to the configured first enabled tabular model. The choice is
-    recorded in the bundle metadata either way, so a reader can see whether it
-    came from evidence or from a default.
-    """
-    metrics_path = cfg.paths.reports_dir / "metrics.json"
-    if metrics_path.is_file():
-        from battery_rul.utils.io import load_json
-
-        payload = load_json(metrics_path)
-        frequency = payload.get("nested_evaluation", {}).get("selection_frequency", {})
-        tabular = {
-            name: count
-            for name, count in frequency.items()
-            if name not in {"lstm", "gru", "transformer"}
-        }
-        if tabular:
-            winner = max(tabular, key=lambda k: tabular[k])
-            logger.info(
-                "Deploying RUL family %s: selected by the inner loop in %d of the "
-                "nested outer folds.",
-                winner,
-                tabular[winner],
-            )
-            return winner
-    fallback = next(
-        (m for m in cfg.models.enabled if m not in {"lstm", "gru", "transformer"}), "ridge"
-    )
-    logger.warning(
-        "No nested selection frequencies available; deploying the configured "
-        "fallback family %r. Run the training pipeline to make this evidence-based.",
-        fallback,
-    )
-    return fallback
 
 
 # ---------------------------------------------------------------------------

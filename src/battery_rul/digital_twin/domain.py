@@ -126,8 +126,17 @@ class BatteryHealthState(_Model):
         "Derived, not predicted — reported alongside the model estimate so the "
         "two can be compared.",
     )
+    soh_forecast: float | None = Field(
+        default=None,
+        description="Model-predicted SOH `soh_forecast_horizon_cycles` ahead. This is "
+        "the only SOH field that is a model output; `soh` is measured.",
+    )
+    soh_forecast_horizon_cycles: int | None = None
+    soh_forecast_class: (
+        Literal["healthy", "slightly_degraded", "warning", "critical", "unknown"] | None
+    ) = None
     capacity_fade_percent: float | None = None
-    provenance: Provenance = Provenance.PREDICTED
+    provenance: Provenance = Provenance.DERIVED
 
     @model_validator(mode="after")
     def _fill_percent(self) -> BatteryHealthState:
@@ -182,6 +191,13 @@ class BatteryRiskAssessment(_Model):
     decision_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
     exceeds_threshold: bool | None = None
     risk_class: Literal["low", "medium", "high", "very_high", "unknown"] = "unknown"
+    is_experimental: bool = Field(
+        default=False,
+        description="True when the model failed its acceptance gate — it did not beat "
+        "the trivial cycle-index baseline out of fold. The probability is still "
+        "reported for transparency, but it is withheld from the recommendation rules.",
+    )
+    excluded_from_recommendation: bool = False
     label_definition: str = (
         "Derived label: the cell's smoothed capacity is projected to cross the "
         "configured end-of-life threshold within the horizon. Not an observed "

@@ -3,11 +3,11 @@
   "model_version": "1.0.0",
   "task": "failure_risk_classification",
   "schema_version": "2.0",
-  "created_at_utc": "2026-08-01T08:46:32.976872+00:00",
-  "git_revision": "82ef951",
-  "data_fingerprint": "02cb461f289b4d40",
+  "created_at_utc": "2026-08-02T11:47:27.862638+00:00",
+  "git_revision": "cf411df",
+  "data_fingerprint": "efaf21bc3eede903",
   "preprocessing_fingerprint": "cbb25f382762afdc",
-  "dataset_fingerprint": "02cb461f289b4d40",
+  "dataset_fingerprint": "53df6f08c6c8",
   "feature_names": [
     "n_samples_discharge",
     "capacity_ah_rmax_3",
@@ -212,6 +212,8 @@
       "reference_strategy": "first_n_cycle_mean",
       "reference_cycles": 5,
       "target_name": "soh_target",
+      "forecast_horizon_cycles": 30,
+      "forecast_target_name": "soh_target_future",
       "healthy_min": 0.9,
       "slightly_degraded_min": 0.8,
       "warning_min": 0.7,
@@ -231,10 +233,18 @@
       "min_recall": 0.8,
       "low_max": 0.2,
       "medium_max": 0.5,
-      "high_max": 0.8
+      "high_max": 0.8,
+      "require_beating_baseline": true
     }
   },
   "thresholds": {
+    "passes_acceptance_gate": false,
+    "acceptance_gate": {
+      "rule": "out-of-fold calibrated PR-AUC must exceed the cycle-index baseline",
+      "model_pr_auc": 0.6467441895698134,
+      "baseline_pr_auc": 0.9282123507735737,
+      "enforced": true
+    },
     "decision_threshold": 0.489010989010989,
     "objective": "f1",
     "tuned_on": "out-of-fold predictions over non-test cells",

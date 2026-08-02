@@ -46,6 +46,7 @@ __all__ = [
     "per_battery_metrics",
     "prognostic_horizon",
     "residual_summary",
+    "soh_metrics",
 ]
 
 #: Whether lower or higher is better, used to pick the champion model.
@@ -124,6 +125,61 @@ def compute_metrics(
         "within_10_cycles": float(np.mean(abs_residual <= 10)),
         "within_25_cycles": float(np.mean(abs_residual <= 25)),
     }
+
+
+def soh_metrics(
+    y_true: Scores, y_pred: Scores, *, persistence: Scores | None = None
+) -> dict[str, Any]:
+    """Regression metrics appropriate to a **state-of-health fraction**.
+
+    Deliberately not :func:`compute_metrics`. That function reports
+    ``within_10_cycles``, ``within_25_cycles``, ``alpha_lambda`` and a
+    cycle-floored MAPE — all of which are defined in units of *discharge
+    cycles*. Applied to a fraction in [0, 1] they produce numbers that parse as
+    metrics and mean nothing: "within 10 cycles" of an SOH of 0.84 is
+    trivially true for every prediction, and the earlier reports published
+    exactly that.
+
+    ``persistence`` is the honest baseline for a forecast: predicting that SOH
+    will not change. A forecaster that cannot beat it has not learned
+    degradation, and the comparison is reported rather than left to the reader.
+    """
+    yt, yp = _clean(y_true, y_pred)
+    if yt.size == 0:
+        return {"n": 0}
+
+    residual = yp - yt
+    out: dict[str, Any] = {
+        "n": int(yt.size),
+        "mae": float(np.mean(np.abs(residual))),
+        "rmse": float(np.sqrt(np.mean(residual**2))),
+        "median_ae": float(np.median(np.abs(residual))),
+        "max_absolute_error": float(np.max(np.abs(residual))),
+        "bias": float(np.mean(residual)),
+        # In SOH points, which is how an engineer reads it.
+        "mae_percentage_points": float(100 * np.mean(np.abs(residual))),
+    }
+    variance = float(np.var(yt))
+    out["r2"] = float(1.0 - np.mean(residual**2) / variance) if variance > 0 else float("nan")
+
+    if persistence is not None:
+        _, yb = _clean(y_true, persistence)
+        if yb.size == yt.size and yb.size:
+            baseline_mae = float(np.mean(np.abs(yb - yt)))
+            out["persistence_baseline_mae"] = baseline_mae
+            out["beats_persistence_baseline"] = bool(out["mae"] < baseline_mae)
+            out["skill_vs_persistence"] = (
+                float(1.0 - out["mae"] / baseline_mae) if baseline_mae > 0 else float("nan")
+            )
+            if not out["beats_persistence_baseline"]:
+                logger.warning(
+                    "SOH forecast MAE %.5f does not beat the persistence baseline "
+                    "(%.5f). Predicting 'SOH will not change' is at least as good, so "
+                    "the model has not demonstrated that it has learned degradation.",
+                    out["mae"],
+                    baseline_mae,
+                )
+    return out
 
 
 def per_battery_metrics(

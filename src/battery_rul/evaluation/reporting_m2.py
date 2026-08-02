@@ -110,11 +110,32 @@ def write_milestone_2_report(cfg: ExperimentConfig, payload: dict[str, Any]) -> 
     add("\n## Remaining useful life and prediction intervals\n")
     if rul:
         oof = rul.get("out_of_fold_coverage", {})
-        add(f"Deployed family: `{rul.get('model')}`.\n")
+        add(
+            f"Deployed family: `{rul.get('model')}` — {rul.get('selection_scheme', 'unknown')}. "
+            f"Leave-one-cell-out MAE by family: {rul.get('selection_scores_mae', {})}.\n"
+        )
+        if rul.get("meets_nominal_coverage") is False:
+            add(
+                f"\n> **The {cfg.uncertainty.coverage:.0%} interval does not achieve its "
+                "nominal coverage.** Measured out-of-fold coverage is "
+                f"{_fmt(oof.get('empirical_coverage'), 3)} and the held-out cell is "
+                f"{_fmt((rul.get('test_coverage') or {}).get('empirical_coverage'), 3)}. "
+                "Treat the interval as indicative, not as a 90 % guarantee. The "
+                "exchangeability assumption conformal prediction rests on is not "
+                "satisfied across physically distinct cells at this cohort size — "
+                "which is the honest reading, and the reason the in-sample figure "
+                "was replaced.\n"
+            )
         add(
             f"\nOut-of-fold empirical coverage: **{_fmt(oof.get('empirical_coverage'), 3)}** "
             f"against a {cfg.uncertainty.coverage:.0%} target, mean interval width "
             f"{_fmt(oof.get('mean_interval_width'), 2)} cycles over {oof.get('n')} rows.\n"
+        )
+        add(
+            f"\nScheme: {oof.get('scheme', 'unspecified')}. For contrast, applying the "
+            "quantile back to the residuals it was fitted from gives "
+            f"{_fmt(oof.get('in_sample_coverage_for_reference'), 3)} — close to the "
+            "nominal level by construction, which is why it is not the headline.\n"
         )
         test = rul.get("test_coverage", {})
         if test:
@@ -145,22 +166,67 @@ def write_milestone_2_report(cfg: ExperimentConfig, payload: dict[str, Any]) -> 
         add("_Not produced in this run._\n")
 
     # --- SOH --------------------------------------------------------------
-    add("\n## State of health\n")
+    add("\n## State of health — forecast\n")
     if soh:
-        add(f"Selected model: `{soh.get('selected_model')}` (chosen on validation).\n")
+        add(
+            f"Target: SOH **{soh.get('forecast_horizon_cycles')} cycles ahead**, not at "
+            "the current cycle. Current SOH is a measurement, reported by the twin as a "
+            "derived quantity; modelling it would mean predicting measured capacity "
+            "divided by a per-cell constant from an input that includes measured "
+            "capacity, which reports a flattering error and demonstrates nothing.\n"
+        )
+        add(
+            f"\nSelected model: `{soh.get('selected_model')}` — "
+            f"{soh.get('selection_scheme', 'unknown scheme')}.\n"
+        )
+        add(
+            "\n> Read the MAE against `persistence_baseline_mae`: predicting that SOH "
+            "will not change over the horizon. A forecaster that does not beat it has "
+            "not learned degradation.\n"
+        )
         add("\n### Out-of-fold metrics (non-test cells)\n")
         add(
             _table(
                 [soh.get("out_of_fold_metrics", {})],
-                ["n", "mae", "rmse", "r2", "max_absolute_error"],
+                [
+                    "n",
+                    "mae",
+                    "mae_percentage_points",
+                    "persistence_baseline_mae",
+                    "beats_persistence_baseline",
+                    "skill_vs_persistence",
+                    "rmse",
+                    "r2",
+                    "max_absolute_error",
+                ],
             )
         )
         if soh.get("test_metrics"):
             add("\n### Held-out test metrics\n")
-            add(_table([soh["test_metrics"]], ["n", "mae", "rmse", "r2", "max_error"]))
+            add(
+                _table(
+                    [soh["test_metrics"]],
+                    [
+                        "n",
+                        "n_test_cells",
+                        "mae",
+                        "mae_percentage_points",
+                        "persistence_baseline_mae",
+                        "beats_persistence_baseline",
+                        "rmse",
+                        "r2",
+                        "max_absolute_error",
+                    ],
+                )
+            )
         if soh.get("per_battery"):
             add("\n### Per battery\n")
-            add(_table(soh["per_battery"], ["battery_id", "partition", "n", "mae", "rmse", "r2"]))
+            add(
+                _table(
+                    soh["per_battery"],
+                    ["battery_id", "partition", "n", "mae", "rmse", "r2", "max_absolute_error"],
+                )
+            )
     else:
         add("_Not produced in this run._\n")
 
@@ -168,6 +234,15 @@ def write_milestone_2_report(cfg: ExperimentConfig, payload: dict[str, Any]) -> 
     add("\n## Failure risk\n")
     if risk:
         calibration = risk.get("calibration", {})
+        gate = risk.get("passes_acceptance_gate")
+        if gate is False:
+            add(
+                "\n> **This model failed its acceptance gate.** It does not beat the "
+                "cycle-index baseline out of fold, so the twin marks its probability "
+                "`experimental` and withholds it from the recommendation rules. The "
+                "numbers below are reported for transparency, not because the model "
+                "is fit to drive a maintenance decision.\n"
+            )
         add(
             f"Model: `{risk.get('model')}`, horizon {risk.get('horizon_cycles')} cycles, "
             f"decision threshold {_fmt(risk.get('threshold'), 3)} "

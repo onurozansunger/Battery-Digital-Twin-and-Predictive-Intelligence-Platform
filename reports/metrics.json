@@ -1,10 +1,10 @@
 {
   "experiment_name": "battery_rul_v1",
   "environment": {
-    "generated_at": "2026-08-01T08:36:57.606750+00:00",
+    "generated_at": "2026-08-02T11:41:29.214665+00:00",
     "python": "3.13.5",
     "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
-    "git_revision": "82ef951",
+    "git_revision": "cf411df",
     "packages": {
       "numpy": "2.3.1",
       "pandas": "2.3.2",
@@ -263,6 +263,8 @@
       "reference_strategy": "first_n_cycle_mean",
       "reference_cycles": 5,
       "target_name": "soh_target",
+      "forecast_horizon_cycles": 30,
+      "forecast_target_name": "soh_target_future",
       "healthy_min": 0.9,
       "slightly_degraded_min": 0.8,
       "warning_min": 0.7,
@@ -283,7 +285,8 @@
       "min_recall": 0.8,
       "low_max": 0.2,
       "medium_max": 0.5,
-      "high_max": 0.8
+      "high_max": 0.8,
+      "require_beating_baseline": true
     },
     "multitask": {
       "enabled": true,
@@ -318,11 +321,12 @@
       "method": "split_conformal",
       "coverage": 0.9,
       "normalise_by_life_stage": true,
-      "life_stage_edges": [
-        0.33,
-        0.66
+      "stage_edges": [
+        0.9,
+        0.8
       ],
-      "min_calibration_rows": 20
+      "min_calibration_rows": 20,
+      "cross_conformal_coverage": true
     },
     "calibration": {
       "method": "isotonic",
@@ -1435,8 +1439,8 @@
       "confidence_interval": {
         "metric": "rmse",
         "point": 10.599958544950896,
-        "lower": 9.203293149509877,
-        "upper": 11.979601798108074,
+        "lower": 9.203293149509879,
+        "upper": 11.979601798108073,
         "confidence": 0.95,
         "n_bootstrap": 1000
       },
@@ -2003,9 +2007,9 @@
       },
       "confidence_interval": {
         "metric": "rmse",
-        "point": 20.47746372263954,
-        "lower": 17.794341412061655,
-        "upper": 22.870210147218064,
+        "point": 20.47746372263955,
+        "lower": 17.794341412061662,
+        "upper": 22.87021014721807,
         "confidence": 0.95,
         "n_bootstrap": 1000
       },
@@ -3776,17 +3780,17 @@
   },
   "failures": {},
   "timings_s": {
-    "build_partitions": 0.383,
-    "fit:linear_regression": 0.001,
-    "fit:ridge": 0.001,
+    "build_partitions": 0.409,
+    "fit:linear_regression": 0.002,
+    "fit:ridge": 0.003,
     "fit:random_forest": 0.169,
-    "fit:xgboost": 0.534,
-    "fit:lightgbm": 3.027,
-    "fit:catboost": 0.741,
-    "fit:lstm": 1.446,
-    "fit:gru": 4.935,
-    "fit:transformer": 5.073,
-    "cross_validate": 147.187,
-    "nested_comparison": 846.706
+    "fit:xgboost": 0.547,
+    "fit:lightgbm": 3.072,
+    "fit:catboost": 0.749,
+    "fit:lstm": 1.475,
+    "fit:gru": 5.157,
+    "fit:transformer": 5.211,
+    "cross_validate": 151.765,
+    "nested_comparison": 856.051
   }
 }

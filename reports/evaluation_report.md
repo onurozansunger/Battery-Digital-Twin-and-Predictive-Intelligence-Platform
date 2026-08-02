@@ -1,6 +1,6 @@
 # Evaluation Report — battery_rul_v1
 
-_Generated 2026-08-01 08:37 UTC_
+_Generated 2026-08-02 11:42 UTC_
 
 > NASA li-ion remaining-useful-life baseline. Battery-holdout split, causal feature engineering, nine models compared, champion selected on validation.
 
@@ -81,8 +81,13 @@ Every feature at cycle *k* is a function of cycles ≤ *k* of the same cell. Thi
 
 ## 3. Data quality
 
-- Rows in: **1605** → out: **1605**
-- Cells in: **16** → out: **16**
+- Rows in: **2280** → out: **1605**
+- Cells in: **26** → out: **16**
+
+| check | severity | message |
+| --- | --- | --- |
+| capacity_jump | warning | 7 cycles move capacity by more than 0.70 Ah in one step (rig glitch) |
+| cohort_gates | info | Excluded 10 cell(s): B0031 (fades only 0.0% (< 2.0%)); B0038 (starts at 0.55 SoH (< 0.8)); B0039 (starts at 0.24 SoH (< 0.8)); B0040 (starts at 0.40 SoH (< 0.8)); B0041 (starts at 0.03 SoH (< 0.8)); B0045 (starts at 0.54 SoH (< 0.8)); B0053 (starts at 0.53 SoH (< 0.8)); B0054 (starts at 0.58 SoH (< 0.8)); B0055 (starts at 0.66 SoH (< 0.8)); B0056 (starts at 0.67 SoH (< 0.8)) |
 
 ## 4. Model comparison (test partition)
 
@@ -275,10 +280,10 @@ Training data is subsampled **by cell**, keeping the earliest cycles, so each po
 
 ```json
 {
-  "generated_at": "2026-08-01T08:37:50.044390+00:00",
+  "generated_at": "2026-08-02T11:42:22.276507+00:00",
   "python": "3.13.5",
   "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
-  "git_revision": "82ef951",
+  "git_revision": "cf411df",
   "packages": {
     "numpy": "2.3.1",
     "pandas": "2.3.2",
@@ -296,20 +301,20 @@ Training data is subsampled **by cell**, keeping the earliest cycles, so each po
 
 | stage | seconds |
 | --- | --- |
-| build_partitions | 0.3830 |
-| cross_validate | 147.1870 |
-| eda_figures | 1.1820 |
-| explainability | 6.8520 |
-| fit:catboost | 0.7410 |
-| fit:gru | 4.9350 |
-| fit:lightgbm | 3.0270 |
-| fit:linear_regression | 0.0010 |
-| fit:lstm | 1.4460 |
+| build_partitions | 0.4090 |
+| cross_validate | 151.7650 |
+| eda_figures | 1.2050 |
+| explainability | 6.9930 |
+| fit:catboost | 0.7490 |
+| fit:gru | 5.1570 |
+| fit:lightgbm | 3.0720 |
+| fit:linear_regression | 0.0020 |
+| fit:lstm | 1.4750 |
 | fit:random_forest | 0.1690 |
-| fit:ridge | 0.0010 |
-| fit:transformer | 5.0730 |
-| fit:xgboost | 0.5340 |
-| learning_curve | 40.8220 |
-| nested_comparison | 846.7060 |
-| result_figures | 3.4930 |
+| fit:ridge | 0.0030 |
+| fit:transformer | 5.2110 |
+| fit:xgboost | 0.5470 |
+| learning_curve | 41.1220 |
+| nested_comparison | 856.0510 |
+| result_figures | 3.6130 |
 

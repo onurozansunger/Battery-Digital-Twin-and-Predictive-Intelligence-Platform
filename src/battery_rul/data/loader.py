@@ -23,7 +23,7 @@ from battery_rul.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-__all__ = ["CycleDataset", "derive_health", "load_cycles"]
+__all__ = ["CycleDataset", "derive_health", "load_cycles", "source_fingerprint"]
 
 
 @dataclass(slots=True)
@@ -76,7 +76,7 @@ def load_cycles(cfg: ExperimentConfig, *, use_cache: bool | None = None) -> Cycl
     # the source name alone, so editing the collapse threshold, the leading-artifact
     # trim or the smoothing window silently reused a table built under the *old*
     # settings, and the run reported results for a configuration it never used.
-    fingerprint = f"{cfg.data_fingerprint()}-{_source_fingerprint(cfg)}"
+    fingerprint = f"{cfg.data_fingerprint()}-{source_fingerprint(cfg)}"
     cache_path = cfg.paths.interim_dir / f"cycles_{cfg.data.source}_{fingerprint}.parquet"
 
     if use_cache and cache_path.is_file():
@@ -144,7 +144,7 @@ def load_cycles(cfg: ExperimentConfig, *, use_cache: bool | None = None) -> Cycl
     return CycleDataset(frame=frame, metadata=meta, validation=report)
 
 
-def _source_fingerprint(cfg: ExperimentConfig) -> str:
+def source_fingerprint(cfg: ExperimentConfig) -> str:
     """Cheap, stable hash of the raw source on disk.
 
     Names, sizes and modification times of the source files — not their contents,
@@ -220,11 +220,19 @@ def _truncate_at_collapse(df: pd.DataFrame, cfg: ExperimentConfig) -> pd.DataFra
 
         below = capacity < fraction * reference
         cut = None
-        for idx in range(len(below)):
+        # A collapse must be confirmed by `persistence` COMPLETE consecutive
+        # observations. The previous condition accepted a short terminal window
+        # (`window.size >= min(persistence, len(below) - idx)`), so a single low
+        # reading in the final row truncated the record on the strength of one
+        # sample — the exact defect Milestone 1.1 fixed in find_eol_cycle, which
+        # was left standing here. A record that ends before the collapse can be
+        # confirmed is not truncated: one bad final reading is far more likely
+        # than a cell that collapsed on its last cycle.
+        for idx in range(len(below) - persistence + 1):
             if not below[idx]:
                 continue
             window = below[idx : idx + persistence]
-            if window.size >= min(persistence, len(below) - idx) and window.all():
+            if window.size == persistence and window.all():
                 cut = idx
                 break
 

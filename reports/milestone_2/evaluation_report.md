@@ -1,6 +1,6 @@
 # Milestone 2 — Battery Digital Twin: evaluation report
 
-Generated at 2026-08-01T08:46:38.230880+00:00 from git revision `82ef951`.
+Generated at 2026-08-02T11:47:27.877983+00:00 from git revision `cf411df`.
 
 > Every number below was produced by the pipeline run that wrote `reports/milestone_2/metrics.json`. Nothing here is carried over from an earlier run.
 
@@ -24,65 +24,80 @@ Risk label positive rate by horizon: H=20: 0.202, H=30: 0.298, H=50: 0.490
 
 ## Remaining useful life and prediction intervals
 
-Deployed family: `random_forest`.
+Deployed family: `elastic_net` — leave-one-cell-out over non-test cells. Leave-one-cell-out MAE by family: {'cohort_median_life': 13.49673, 'capacity_fade_extrapolation': 24.85964, 'soh_analogue': 14.29681, 'elastic_net': 8.53366, 'ridge': 12.14476, 'random_forest': 11.40809, 'xgboost': 13.77688, 'lightgbm': 12.82675}.
 
 
-Out-of-fold empirical coverage: **0.917** against a 90% target, mean interval width 46.96 cycles over 373 rows.
+> **The 90% interval does not achieve its nominal coverage.** Measured out-of-fold coverage is 0.764 and the held-out cell is 0.713. Treat the interval as indicative, not as a 90 % guarantee. The exchangeability assumption conformal prediction rests on is not satisfied across physically distinct cells at this cohort size — which is the honest reading, and the reason the in-sample figure was replaced.
 
 
-Held-out test coverage: **0.803**, mean width 48.60 cycles over 122 rows.
+Out-of-fold empirical coverage: **0.764** against a 90% target, mean interval width 30.62 cycles over 373 rows.
+
+
+Scheme: leave-one-cell-out cross-conformal; the quantile applied to each cell was fitted on the other non-test cells only. For contrast, applying the quantile back to the residuals it was fitted from gives 0.917 — close to the nominal level by construction, which is why it is not the headline.
+
+
+Held-out test coverage: **0.713**, mean width 41.76 cycles over 122 rows.
 
 
 ### Coverage by life stage
 
 | life_stage | n | empirical_coverage | mean_interval_width |
 | --- | --- | --- | --- |
-| early | 159 | 0.9120 | 56.0167 |
-| late | 70 | 0.9286 | 44.0381 |
-| mid | 144 | 0.9167 | 38.3848 |
+| early | 159 | 0.5723 | 42.0199 |
+| late | 70 | 0.9286 | 25.9852 |
+| mid | 144 | 0.8958 | 20.2977 |
 
 
 ### Coverage by battery
 
 | battery_id | n | empirical_coverage | mean_interval_width |
 | --- | --- | --- | --- |
-| B0006 | 106 | 0.9528 | 46.9236 |
-| B0018 | 94 | 1.0000 | 45.8726 |
-| B0033 | 101 | 0.8614 | 49.4214 |
-| B0034 | 72 | 0.8333 | 44.9896 |
+| B0006 | 106 | 0.9528 | 37.5789 |
+| B0018 | 94 | 0.8830 | 34.6252 |
+| B0033 | 101 | 0.2970 | 17.5628 |
+| B0034 | 72 | 0.9861 | 33.4864 |
 
 
-## State of health
+## State of health — forecast
 
-Selected model: `lightgbm` (chosen on validation).
+Target: SOH **30 cycles ahead**, not at the current cycle. Current SOH is a measurement, reported by the twin as a derived quantity; modelling it would mean predicting measured capacity divided by a per-cell constant from an input that includes measured capacity, which reports a flattering error and demonstrates nothing.
+
+
+Selected model: `lightgbm` — leave-one-cell-out over non-test cells.
+
+
+> Read the MAE against `persistence_baseline_mae`: predicting that SOH will not change over the horizon. A forecaster that does not beat it has not learned degradation.
 
 
 ### Out-of-fold metrics (non-test cells)
 
-| n | mae | rmse | r2 | max_absolute_error |
-| --- | --- | --- | --- | --- |
-| 373 | 0.0244 | 0.0320 | 0.8290 | 0.0890 |
+| n | mae | mae_percentage_points | persistence_baseline_mae | beats_persistence_baseline | skill_vs_persistence | rmse | r2 | max_absolute_error |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 253 | 0.0465 | 4.6505 | 0.0659 | yes | 0.2944 | 0.0569 | 0.4063 | 0.1308 |
 
 
 ### Held-out test metrics
 
-| n | mae | rmse | r2 | max_error |
-| --- | --- | --- | --- | --- |
-| 122 | 0.0134 | 0.0200 | 0.9375 | 0.0552 |
+| n | n_test_cells | mae | mae_percentage_points | persistence_baseline_mae | beats_persistence_baseline | rmse | r2 | max_absolute_error |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 92 | 1 | 0.0406 | 4.0646 | 0.0656 | yes | 0.0488 | 0.4956 | 0.1053 |
 
 
 ### Per battery
 
-| battery_id | partition | n | mae | rmse | r2 |
-| --- | --- | --- | --- | --- | --- |
-| B0005 | test | 122 | 0.0134 | 0.0200 | 0.9375 |
-| B0006 | out_of_fold | 106 | 0.0400 | 0.0490 | 0.7341 |
-| B0018 | out_of_fold | 94 | 0.0084 | 0.0098 | 0.9801 |
-| B0033 | out_of_fold | 101 | 0.0222 | 0.0236 | 0.7563 |
-| B0034 | out_of_fold | 72 | 0.0255 | 0.0297 | -0.5357 |
+| battery_id | partition | n | mae | rmse | r2 | max_absolute_error |
+| --- | --- | --- | --- | --- | --- | --- |
+| B0005 | test | 92 | 0.0406 | 0.0488 | 0.4956 | 0.1053 |
+| B0006 | out_of_fold | 76 | 0.0680 | 0.0777 | -0.4278 | 0.1308 |
+| B0018 | out_of_fold | 64 | 0.0295 | 0.0359 | 0.4742 | 0.0852 |
+| B0033 | out_of_fold | 71 | 0.0400 | 0.0493 | -0.1967 | 0.0967 |
+| B0034 | out_of_fold | 42 | 0.0445 | 0.0503 | -2.8434 | 0.0897 |
 
 
 ## Failure risk
+
+
+> **This model failed its acceptance gate.** It does not beat the cycle-index baseline out of fold, so the twin marks its probability `experimental` and withholds it from the recommendation rules. The numbers below are reported for transparency, not because the model is fit to drive a maintenance decision.
 
 Model: `lightgbm`, horizon 30 cycles, decision threshold 0.489 (tuned on out-of-fold non-test rows, objective `f1`).
 

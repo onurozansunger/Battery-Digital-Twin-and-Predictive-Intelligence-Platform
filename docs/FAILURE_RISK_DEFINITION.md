@@ -66,6 +66,25 @@ series puts near-identical windows in the same batch, breaks the temporal
 structure the sequence models depend on, and inflates every metric computed over
 the resampled set.
 
+## The acceptance gate
+
+Reporting that a model loses to a trivial baseline is necessary but not
+sufficient. Milestone 2 documented the loss honestly and then let the same
+probability trigger inspections and replacements — which is acting on a model
+that has demonstrated nothing.
+
+`train_risk` now records `passes_acceptance_gate` in the bundle: does the
+calibrated out-of-fold PR-AUC exceed the cycle-index baseline? When it does not,
+and `risk.require_beating_baseline` is set, the digital-twin service:
+
+* marks the assessment `is_experimental` and `excluded_from_recommendation`,
+* **withholds the probability from the recommendation rules**, so remaining
+  life, its lower bound and measured health carry the decision alone,
+* adds a snapshot warning saying so.
+
+The probability is still reported. Suppressing it would be its own dishonesty;
+the point is that it must not silently drive an action.
+
 ## Threshold selection
 
 `risk.threshold` is `null` by default, meaning "tune it". Tuning runs on

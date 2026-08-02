@@ -15,6 +15,12 @@ import pytest
 from battery_rul.config import ExperimentConfig, load_config
 from battery_rul.data.synthetic import make_synthetic_cycles
 
+#: Cloud-sync duplicates ("test_api 2.py"). They are byte copies of real test
+#: modules, so collecting them runs every test twice and — because the copy is a
+#: stale snapshot — fails against current code. Ignored here as well as in
+#: .gitignore, because pytest does not read .gitignore.
+collect_ignore_glob = ["* [0-9].py"]
+
 
 @pytest.fixture(scope="session")
 def repo_root() -> Path:

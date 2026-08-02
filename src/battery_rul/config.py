@@ -549,6 +549,17 @@ class SOHConfig(_Base):
     )
     reference_cycles: int = Field(default=5, ge=1)
     target_name: str = "soh_target"
+    forecast_horizon_cycles: int = Field(
+        default=30,
+        ge=1,
+        description="The SOH *model* forecasts SOH this many cycles ahead. Modelling "
+        "SOH at the current cycle is not a prediction problem: the target is "
+        "measured capacity over a per-cell constant, and measured capacity is an "
+        "input, so the model would learn a rescaling and report a flattering error. "
+        "The twin reports current SOH deterministically and uses the model only for "
+        "the forecast.",
+    )
+    forecast_target_name: str = "soh_target_future"
     #: Health bands, expressed as fractions. Read as: class C applies when
     #: ``lower <= SOH < upper`` of the band above it. Demonstration values.
     healthy_min: float = Field(default=0.90, gt=0.0, le=1.5)
@@ -590,6 +601,15 @@ class RiskConfig(_Base):
     low_max: float = Field(default=0.20, gt=0.0, lt=1.0)
     medium_max: float = Field(default=0.50, gt=0.0, lt=1.0)
     high_max: float = Field(default=0.80, gt=0.0, lt=1.0)
+    require_beating_baseline: bool = Field(
+        default=True,
+        description="Refuse to let the risk probability drive recommendations unless "
+        "it beats the cycle-index baseline out of fold. Because the label is "
+        "'RUL <= H', cycle index ranks a cell's positives perfectly, so a model that "
+        "loses to it has demonstrated nothing — and a demonstrated-nothing model must "
+        "not trigger an inspection or a replacement. It is still reported, marked "
+        "experimental.",
+    )
 
     @model_validator(mode="after")
     def _ordered(self) -> RiskConfig:
@@ -660,6 +680,13 @@ class UncertaintyConfig(_Base):
         "time, exactly where the interval matters.",
     )
     min_calibration_rows: int = Field(default=20, ge=5)
+    cross_conformal_coverage: bool = Field(
+        default=True,
+        description="Estimate coverage with leave-one-cell-out conformal rather than "
+        "on the rows the quantile was fitted from. Fitting the quantile on a set and "
+        "then measuring coverage on that same set is close to circular — it recovers "
+        "the nominal level by construction and says nothing about a new cell.",
+    )
 
 
 class CalibrationConfig(_Base):

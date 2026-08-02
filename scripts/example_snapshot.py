@@ -121,12 +121,17 @@ def _summary(snapshot) -> str:
     lines = [
         f"Battery ID: {snapshot.battery_id}",
         f"Current cycle: {snapshot.measurement_summary.latest_cycle}  (observed)",
-        f"Estimated SOH: {_pct(health.soh)}  ({health.provenance.value})",
-        f"Measured SOH: {_pct(health.soh_measured)}  (derived)",
+        f"Current SOH: {_pct(health.soh)}  ({health.provenance.value} — a measurement, "
+        "not a model output)",
         "Estimated RUL: "
         + ("—" if prediction.rul_cycles is None else f"{prediction.rul_cycles:.0f} cycles")
         + "  (predicted)",
     ]
+    if health.soh_forecast is not None:
+        lines.append(
+            f"SOH forecast (+{health.soh_forecast_horizon_cycles} cycles): "
+            f"{_pct(health.soh_forecast)}  (predicted, class {health.soh_forecast_class})"
+        )
     if interval:
         lines.append(
             f"RUL interval: {interval.lower_bound:.0f}–{interval.upper_bound:.0f} cycles "
@@ -135,7 +140,9 @@ def _summary(snapshot) -> str:
         )
     lines += [
         f"Failure risk within {risk.horizon_cycles} cycles: {_pct(risk.probability)}"
-        f"  ({'calibrated' if risk.is_calibrated else 'UNCALIBRATED'})",
+        f"  ({'calibrated' if risk.is_calibrated else 'UNCALIBRATED'}"
+        + (", EXPERIMENTAL — withheld from the recommendation" if risk.is_experimental else "")
+        + ")",
         f"Health class: {health.health_class}",
         f"Risk class: {risk.risk_class}",
         f"Data quality: {snapshot.data_quality.quality_class} "

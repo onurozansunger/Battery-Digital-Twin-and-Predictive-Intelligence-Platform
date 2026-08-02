@@ -65,6 +65,24 @@ Status recorded against the run that produced the current contents of `reports/`
    measured state of health, which is observable at every cycle, with a
    regression test pinning that property.
 
+## External review round (Milestone 2.1)
+
+Seven defects found, all reproduced in code before fixing, none disputed. Full
+write-up in `docs/MILESTONE_2_1_REVIEW_FIXES.md`.
+
+| # | Finding | Status |
+|---|---|---|
+| 1 | Test cell influenced the deployed RUL family | ✅ selection restricted to non-test cells |
+| 2 | SOH model restated its own input | ✅ current SOH is derived; the model forecasts at a horizon |
+| 3 | Risk model lost to its baseline yet drove recommendations | ✅ acceptance gate; withheld from the rules |
+| 4 | Conformal coverage measured on the fitting set | ✅ leave-one-cell-out cross-conformal |
+| 5 | Collapse filter accepted a one-reading terminal window | ✅ fixed, 3 regression tests |
+| 6 | Prediction endpoint returned a self-contradicting payload | ✅ unconditional override removed |
+| 7 | `dataset_fingerprint` duplicated the config fingerprint | ✅ derived from the raw files |
+| — | SOH reported in RUL metric units | ✅ `soh_metrics` |
+| — | SOH selected on validation, then reported OOF including it | ✅ leave-one-cell-out selection |
+| — | Multi-task vs independent on identical rows | ⛔ still incomplete, labelled as such |
+
 ## Explicitly out of scope at this milestone
 
 Multi-tenant authentication, cloud deployment, Kubernetes, live IoT ingestion,

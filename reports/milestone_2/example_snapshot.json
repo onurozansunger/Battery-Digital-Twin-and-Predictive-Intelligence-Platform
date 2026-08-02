@@ -1,6 +1,6 @@
 {
   "battery_id": "B0005",
-  "generated_at_utc": "2026-08-01T08:46:47.649531+00:00",
+  "generated_at_utc": "2026-08-02T11:48:05.080330+00:00",
   "identity": {
     "battery_id": "B0005",
     "dataset": "nasa",
@@ -43,19 +43,22 @@
     "provenance": "observed"
   },
   "health": {
-    "soh": 0.77214,
-    "soh_percent": 77.21,
+    "soh": 0.75658,
+    "soh_percent": 75.66,
     "health_class": "warning",
     "soh_measured": 0.75658,
+    "soh_forecast": 0.80405,
+    "soh_forecast_horizon_cycles": 30,
+    "soh_forecast_class": "slightly_degraded",
     "capacity_fade_percent": null,
-    "provenance": "predicted"
+    "provenance": "derived"
   },
   "prediction": {
-    "rul_cycles": 24.345,
+    "rul_cycles": 21.544,
     "rul_interval": {
-      "point_estimate": 24.345462698412707,
-      "lower_bound": 1.7028849206349292,
-      "upper_bound": 46.988040476190484,
+      "point_estimate": 21.544369143569128,
+      "lower_bound": 6.544369143569128,
+      "upper_bound": 36.54436914356913,
       "interval_coverage_target": 0.9,
       "uncertainty_method": "split_conformal_by_life_stage",
       "calibration_sample_size": 70,
@@ -64,7 +67,7 @@
       "note": "Prediction interval, not a confidence interval. Marginal coverage holds under exchangeability between calibration and served cells, which is only approximately true across physical cells.",
       "provenance": "estimated"
     },
-    "model_name": "random_forest",
+    "model_name": "elastic_net",
     "is_scoreable": true,
     "unscoreable_reason": null,
     "provenance": "predicted"
@@ -78,6 +81,8 @@
     "decision_threshold": 0.489010989010989,
     "exceeds_threshold": true,
     "risk_class": "medium",
+    "is_experimental": true,
+    "excluded_from_recommendation": true,
     "label_definition": "Derived label: the cell's smoothed capacity is projected to cross the configured end-of-life threshold within the horizon. Not an observed safety failure \u2014 the source dataset records none.",
     "provenance": "predicted"
   },
@@ -170,14 +175,13 @@
     "provenance": "derived"
   },
   "recommendation": {
-    "action_code": "IMMEDIATE_ENGINEERING_REVIEW",
-    "priority": "urgent",
-    "title": "Immediate engineering review",
-    "explanation": "The model places this cell within a few cycles of the configured end-of-life threshold, or assigns it a very high probability of crossing it within the horizon. Remove it from planned duty and have a qualified engineer review it before further cycling.",
+    "action_code": "PLAN_REPLACEMENT",
+    "priority": "high",
+    "title": "Plan replacement",
+    "explanation": "The estimated remaining life, the calibrated risk, or the measured state of health indicates the cell is approaching the configured end-of-life threshold. Begin replacement planning; the estimate is decision support and should be confirmed against measured capacity.",
     "evidence": [
-      "Estimated state of health 77.2 % (warning).",
-      "Estimated remaining useful life 24 cycles (lower bound of the prediction interval: 2).",
-      "Calibrated probability of reaching end of life within the horizon: 49 % (medium).",
+      "Estimated state of health 75.7 % (warning).",
+      "Estimated remaining useful life 22 cycles (lower bound of the prediction interval: 7).",
       "Operating temperature trend -0.03 \u00b0C per 10 cycles.",
       "Internal resistance trend +1.98 % per 10 cycles.",
       "Capacity fade trend +2.29 % per 10 cycles.",
@@ -186,7 +190,7 @@
     ],
     "suggested_window_cycles": [
       0,
-      5
+      15
     ],
     "disclaimer": "Engineering decision support from a research prototype. Not a substitute for battery-management-system protection and not validated for safety-critical or autonomous use. Review by a qualified engineer is required.",
     "provenance": "rule_based"
@@ -322,10 +326,10 @@
   "metadata": {
     "snapshot_schema_version": "2.0",
     "model_version": "1.0.0",
-    "model_name": "random_forest",
+    "model_name": "elastic_net",
     "feature_pipeline_fingerprint": "c7c0a875626d83e2",
-    "data_version": "02cb461f289b4d40",
-    "git_revision": "82ef951",
+    "data_version": "53df6f08c6c8",
+    "git_revision": "cf411df",
     "end_of_life_definition": {
       "threshold_fraction_of_reference": 0.7,
       "reference": "nominal",
@@ -351,6 +355,9 @@
       "min_history_cycles": 25
     }
   },
-  "warnings": [],
+  "warnings": [
+    "The 30-cycle SOH forecast (80.4 %) is above present measured health (75.7 %). Cells do recover capacity after rest, so this is not impossible, but a forecast above the current measurement usually means the model is extrapolating outside what it learned. Treat it as unreliable. It is reported unchanged rather than clipped, so the model's actual output stays visible.",
+    "The failure-risk model did not beat the cycle-index baseline out of fold, so its probability is reported as experimental and was withheld from the recommendation rules. The recommendation below rests on remaining life, its interval and measured health only."
+  ],
   "disclaimer": "Research prototype for engineering decision support. Not validated for production deployment, not a substitute for battery-management-system protection, and not suitable for autonomous safety-critical control."
 }

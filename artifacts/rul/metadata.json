@@ -1,13 +1,13 @@
 {
-  "model_name": "random_forest",
+  "model_name": "elastic_net",
   "model_version": "1.0.0",
   "task": "rul_regression",
   "schema_version": "2.0",
-  "created_at_utc": "2026-08-01T08:46:11.957753+00:00",
-  "git_revision": "82ef951",
-  "data_fingerprint": "02cb461f289b4d40",
+  "created_at_utc": "2026-08-02T11:46:55.864126+00:00",
+  "git_revision": "cf411df",
+  "data_fingerprint": "efaf21bc3eede903",
   "preprocessing_fingerprint": "c7c0a875626d83e2",
-  "dataset_fingerprint": "02cb461f289b4d40",
+  "dataset_fingerprint": "53df6f08c6c8",
   "feature_names": [
     "capacity_ah",
     "n_samples_discharge",
@@ -212,6 +212,8 @@
       "reference_strategy": "first_n_cycle_mean",
       "reference_cycles": 5,
       "target_name": "soh_target",
+      "forecast_horizon_cycles": 30,
+      "forecast_target_name": "soh_target_future",
       "healthy_min": 0.9,
       "slightly_degraded_min": 0.8,
       "warning_min": 0.7,
@@ -231,7 +233,8 @@
       "min_recall": 0.8,
       "low_max": 0.2,
       "medium_max": 0.5,
-      "high_max": 0.8
+      "high_max": 0.8,
+      "require_beating_baseline": true
     }
   },
   "thresholds": {
@@ -3265,92 +3268,94 @@
   "metrics": {
     "out_of_fold": {
       "n": 373,
-      "mae": 11.251084460014223,
-      "rmse": 13.836391929478749,
-      "mse": 191.44574162614464,
-      "median_ae": 9.633721861471873,
-      "max_error": 33.14596190476195,
-      "mape": 94.76026712676384,
-      "smape": 35.516525917840966,
-      "r2": 0.761219896120667,
-      "bias": -0.26155086992245513,
-      "std_residual": 13.833919645877211,
-      "alpha_lambda": 0.48257372654155495,
-      "within_10_cycles": 0.514745308310992,
-      "within_25_cycles": 0.9115281501340483
+      "mae": 8.560530482998841,
+      "rmse": 11.861445969539854,
+      "mse": 140.69390048831326,
+      "median_ae": 5.767844200489847,
+      "max_error": 35.0009455056989,
+      "mape": 39.56475155886649,
+      "smape": 33.092386800443954,
+      "r2": 0.8245199716199897,
+      "bias": -4.64715507489503,
+      "std_residual": 10.913196149533398,
+      "alpha_lambda": 0.5388739946380697,
+      "within_10_cycles": 0.6943699731903485,
+      "within_25_cycles": 0.9276139410187667
     },
     "out_of_fold_coverage": {
       "n": 373,
-      "empirical_coverage": 0.91689,
-      "mean_interval_width": 46.9618,
-      "median_interval_width": 45.2852,
+      "empirical_coverage": 0.76408,
+      "mean_interval_width": 30.6247,
+      "median_interval_width": 22.3262,
       "by_battery_id": {
         "B0006": {
           "n": 106,
           "empirical_coverage": 0.95283,
-          "mean_interval_width": 46.9236
+          "mean_interval_width": 37.5789
         },
         "B0018": {
           "n": 94,
-          "empirical_coverage": 1.0,
-          "mean_interval_width": 45.8726
+          "empirical_coverage": 0.88298,
+          "mean_interval_width": 34.6252
         },
         "B0033": {
           "n": 101,
-          "empirical_coverage": 0.86139,
-          "mean_interval_width": 49.4214
+          "empirical_coverage": 0.29703,
+          "mean_interval_width": 17.5628
         },
         "B0034": {
           "n": 72,
-          "empirical_coverage": 0.83333,
-          "mean_interval_width": 44.9896
+          "empirical_coverage": 0.98611,
+          "mean_interval_width": 33.4864
         }
       },
       "by_life_stage": {
         "early": {
           "n": 159,
-          "empirical_coverage": 0.91195,
-          "mean_interval_width": 56.0167
+          "empirical_coverage": 0.57233,
+          "mean_interval_width": 42.0199
         },
         "late": {
           "n": 70,
           "empirical_coverage": 0.92857,
-          "mean_interval_width": 44.0381
+          "mean_interval_width": 25.9852
         },
         "mid": {
           "n": 144,
-          "empirical_coverage": 0.91667,
-          "mean_interval_width": 38.3848
+          "empirical_coverage": 0.89583,
+          "mean_interval_width": 20.2977
         }
-      }
+      },
+      "scheme": "leave-one-cell-out cross-conformal; the quantile applied to each cell was fitted on the other non-test cells only",
+      "in_sample_coverage_for_reference": 0.91689
     },
     "test_coverage": {
       "n": 122,
-      "empirical_coverage": 0.80328,
-      "mean_interval_width": 48.6027,
-      "median_interval_width": 50.6855,
+      "empirical_coverage": 0.71311,
+      "mean_interval_width": 41.7632,
+      "median_interval_width": 44.588,
       "by_battery_id": {
         "B0005": {
           "n": 122,
-          "empirical_coverage": 0.80328,
-          "mean_interval_width": 48.6027
+          "empirical_coverage": 0.71311,
+          "mean_interval_width": 41.7632
         }
       },
       "by_life_stage": {
         "early": {
           "n": 61,
-          "empirical_coverage": 0.65574,
-          "mean_interval_width": 56.0859
+          "empirical_coverage": 0.77049,
+          "mean_interval_width": 59.1759
         },
         "late": {
           "n": 20,
-          "empirical_coverage": 0.85,
-          "mean_interval_width": 45.2852
+          "empirical_coverage": 0.35,
+          "mean_interval_width": 30.0
         },
         "mid": {
           "n": 41,
-          "empirical_coverage": 1.0,
-          "mean_interval_width": 39.0873
+          "empirical_coverage": 0.80488,
+          "mean_interval_width": 21.5945
         }
       }
     }

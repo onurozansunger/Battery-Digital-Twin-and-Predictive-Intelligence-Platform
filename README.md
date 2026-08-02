@@ -73,20 +73,21 @@ An example snapshot (`scripts/example_snapshot.py`, real output on a real cell):
 ```
 Battery ID: B0005
 Current cycle: 127  (observed)
-Estimated SOH: 77.2%  (predicted)
-Measured SOH: 75.7%  (derived)
-Estimated RUL: 24 cycles  (predicted)
-RUL interval: 2–47 cycles (90% target coverage,
-              split_conformal_by_life_stage; prediction interval, not a confidence interval)
-Failure risk within 30 cycles: 48.9%  (calibrated)
+Current SOH: 75.7%  (derived — a measurement, not a model output)
+Estimated RUL: 22 cycles  (predicted)
+SOH forecast (+30 cycles): 80.4%  (predicted)
+RUL interval: 7–37 cycles (90% nominal — see the
+              coverage caveat below; prediction interval, not a confidence interval)
+Failure risk within 30 cycles: 48.9%  (calibrated, EXPERIMENTAL —
+              withheld from the recommendation, it loses to a cycle counter)
 Health class: warning
-Risk class: medium
 Data quality: ACCEPTABLE (score 0.75)
 Main degradation factors (model attributions, not causal claims):
   - Running variability of constant-current charge fraction (increases_risk)
   - Discharge-curve slope relative to its beginning-of-life value (decreases_risk)
   - Running variability of measured discharge capacity (increases_risk)
-Recommendation: Immediate engineering review  [IMMEDIATE_ENGINEERING_REVIEW, priority urgent]
+Recommendation: Plan replacement  [PLAN_REPLACEMENT, priority high]
+Warnings: 2
 ```
 
 Numbers in that block come from the committed
@@ -741,54 +742,69 @@ All figures below are read from
 [`reports/milestone_2/metrics.json`](reports/milestone_2/metrics.json), written
 by the run that produced them.
 
-**RUL prediction intervals** — 90 % target coverage, conditioned on measured SOH:
+> **These numbers replace an earlier, better-looking set.** An external review
+> found seven defects, three of which changed what the published figures meant:
+> the deployed RUL family had been chosen using a comparison that included the
+> test cell; the SOH model predicted current SOH from an input containing
+> current capacity; and conformal coverage was measured on the residuals the
+> quantile was fitted from. The earlier figures are withdrawn. Full write-up:
+> [`docs/MILESTONE_2_1_REVIEW_FIXES.md`](docs/MILESTONE_2_1_REVIEW_FIXES.md).
+
+**RUL prediction intervals — the 90 % nominal interval does not achieve
+its nominal coverage:**
 
 | | n | empirical coverage | mean width (cycles) |
 |---|---|---|---|
-| Out-of-fold (4 non-test cells) | 373 | **0.917** | 47.0 |
-| Held-out test (1 cell) | 122 | 0.803 | 48.6 |
+| Cross-conformal, out-of-fold | 373 | **0.764** | 30.6 |
+| Held-out test (1 cell) | 122 | **0.713** | 41.8 |
+| _(in-sample, for reference only)_ | 373 | _0.917_ | — |
 
-| stage (by SOH) | n | coverage | mean width |
-|---|---|---|---|
-| early | 159 | 0.912 | 56.0 |
-| late | 70 | 0.929 | 44.0 |
-| mid | 144 | 0.917 | 38.4 |
+| stage (by SOH) | n | coverage |
+|---|---|---|
+| early | 159 | 0.572 |
+| late | 70 | 0.929 |
+| mid | 144 | 0.896 |
 
-Out-of-fold coverage lands on target. The held-out cell **under-covers**
-(0.80 against 0.90) — which is the exchangeability
-caveat in `docs/UNCERTAINTY_METHOD.md` showing up in practice, on a single cell,
-and is reported rather than smoothed over.
+The in-sample row is what the previous README reported as the headline. Applying
+a quantile back to the residuals it was estimated from recovers the nominal
+level close to by construction; the honest estimate is the cross-conformal one,
+and it falls well short. Early-life coverage is worst. **Treat the interval as
+indicative, not as a 90 % guarantee** — conformal's exchangeability assumption
+is not satisfied across five physically distinct cells.
 
-**State of health** — LightGBM, selected on validation:
+Deployed family: `elastic_net`, chosen by leave-one-cell-out over **non-test
+cells only**. Worth noting: with the test cell in the pool, `random_forest` won;
+without it, `elastic_net` does. At this cohort size the "best model" is not a
+stable quantity, which is itself a result.
 
-| | n | MAE | RMSE | R² | max abs. error |
-|---|---|---|---|---|---|
-| Out-of-fold | 373 | 0.0244 | 0.0320 | 0.829 | 0.0890 |
-| Held-out test | 122 | 0.0134 | 0.0200 | 0.938 | 0.0552 |
+**State of health — now a forecast, not a restatement:**
 
-SOH is a fraction, so an MAE of 0.0244 is
-2.4 percentage points of state of health.
+| | n | MAE | in SOH points | persistence baseline | beats it? | skill |
+|---|---|---|---|---|---|---|
+| Out-of-fold | 253 | 0.0465 | 4.65 | 0.0659 | yes | 0.29 |
+| Held-out test | 92 | 0.0406 | 4.06 | 0.0656 | yes | 0.38 |
 
-**Failure risk** — and the finding that matters most:
+The model forecasts SOH **30 cycles ahead**. The
+previously published 1.34 % MAE was for *current* SOH — a target that is measured
+capacity divided by a per-cell constant, predicted from an input containing
+measured capacity. It measured a rescaling. The forecast is a real prediction and
+its error is correspondingly larger; it does beat a persistence baseline, by
+about 29 % out of fold.
 
-| | n | cells | PR-AUC | PR-AUC of *cycle index alone* | beats it? |
-|---|---|---|---|---|---|
-| Out-of-fold, calibrated | 373 | 4 | 0.647 | **0.928** | **no** |
-| Held-out test, calibrated | 122 | 1 | 0.721 | **1.000** | **no** |
+**Failure risk — fails its acceptance gate:**
 
-Because the label is `RUL ≤ H`, a cell's positives are exactly its last H cycles —
-so **counting cycles ranks them perfectly**, and on a single-cell partition every
-AUC is degenerate. A "test ROC-AUC of 0.93" looks strong and is in
-fact *worse than a cycle counter*. The classifier does not beat that baseline on
-any partition here. That is a negative result, it is the honest reading, and the
-metric code now computes the baseline on the same rows and logs a warning when
-the model loses. The same applies to the multi-task risk head's near-perfect
-PR-AUC on one-cell partitions.
+| | n | PR-AUC | PR-AUC of *cycle index alone* | beats it? |
+|---|---|---|---|---|
+| Out-of-fold, calibrated | 373 | 0.647 | **0.928** | **no** |
+| Held-out test, calibrated | 122 | 0.721 | **1.000** | **no** |
 
-Calibration does help where it is measurable: Brier
-0.278 → 0.092 on the
-held-out cell. Note that the *out-of-fold* post-calibration ECE is in-sample —
-the calibrator was fitted on those rows — and is flagged as such in the payload.
+Because the label is `RUL ≤ H`, a cell's positives are exactly its last H cycles,
+so counting cycles ranks them perfectly. The model loses on every partition. It
+is therefore **gated out**: the twin reports the probability marked
+`experimental` and **withholds it from the recommendation rules**, which then
+rest on remaining life, its lower bound and measured health alone. Reporting a
+negative result was not enough; a model that has demonstrated nothing must not
+be able to trigger a replacement.
 
 Full report: [`reports/milestone_2/evaluation_report.md`](reports/milestone_2/evaluation_report.md).
 How to read it: [`MILESTONE_2_EVALUATION.md`](docs/MILESTONE_2_EVALUATION.md).

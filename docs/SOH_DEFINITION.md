@@ -1,5 +1,24 @@
 # State of Health — definition
 
+## Two different things, kept apart
+
+| | What it is | Provenance | Source |
+|---|---|---|---|
+| **Current SOH** | smoothed capacity ÷ reference | `derived` — a measurement | computed deterministically, no model |
+| **SOH forecast** | SOH at *t + H* (default H = 30 cycles) | `predicted` | the SOH bundle |
+
+This separation is a correction. Milestone 2 trained a model to predict SOH *at
+the current cycle* and published a 1.34 % test MAE for it. That target is
+measured capacity divided by a per-cell constant, and measured capacity is a
+model input — so the model was learning a rescaling, and the error described how
+well a rescaling can be learned, not whether a latent health state can be
+inferred. It was target-proxy leakage, not future leakage, and the number was
+misleading rather than wrong.
+
+Current SOH is now reported as what it is: a measurement. The model forecasts,
+which at cycle *t* is a genuine prediction because nothing in the input reveals
+capacity at *t + H*. See `docs/MILESTONE_2_1_REVIEW_FIXES.md` §2.
+
 ## The quantity
 
 For cell *i* at discharge cycle *k*:
@@ -84,8 +103,22 @@ target and every model output. A reading far outside that band is a measurement
 problem, not a health state; clipping is logged and counted in the target
 report (`n_clipped_to_plausible_range`).
 
+## Reading the forecast metrics
+
+Every forecast metric is reported beside a **persistence baseline** — predicting
+that SOH will not change over the horizon — with a `beats_persistence_baseline`
+flag and a `skill_vs_persistence` score. On a slowly degrading cell, persistence
+is a strong baseline, and a forecaster that cannot beat it has not learned
+degradation regardless of how small its MAE looks.
+
+Metrics use `soh_metrics`, not the RUL `compute_metrics`. The latter reports
+`within_10_cycles`, `within_25_cycles` and `alpha_lambda`, all defined in
+discharge cycles; applied to a fraction in [0, 1] they are meaningless, and
+earlier reports published exactly that.
+
 ## Where it is implemented
 
-- `src/battery_rul/targets/soh.py` — reference strategies, target, banding
+- `src/battery_rul/targets/soh.py` — reference strategies, both targets, banding
+- `src/battery_rul/evaluation/metrics.py::soh_metrics` — SOH-appropriate metrics
 - `src/battery_rul/config.py::SOHConfig` — every threshold
 - `tests/test_targets_m2.py` — reference strategies, causality, bands, clipping

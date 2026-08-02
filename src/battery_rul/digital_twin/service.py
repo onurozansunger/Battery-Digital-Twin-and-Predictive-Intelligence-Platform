@@ -398,11 +398,36 @@ class BatteryDigitalTwinService:
                 soh_measured=soh_measured,
                 explain=explain,
             )
-            prediction.is_scoreable = True
+            # No unconditional `is_scoreable = True` here. Reaching this branch
+            # means the *input* was scoreable; whether a prediction was actually
+            # produced depends on the artifacts, and _assemble_outputs already
+            # recorded that. Overwriting it emitted `rul_cycles: null` beside
+            # `is_scoreable: true` whenever no RUL bundle was loaded.
 
         recommendation = self._recommend(prediction, risk, health_state, quality, health, scoreable)
         metadata = self._metadata(policy, health)
 
+        if (
+            health_state.soh_forecast is not None
+            and health_state.soh is not None
+            and health_state.soh_forecast > health_state.soh + 0.01
+        ):
+            warnings.append(
+                f"The {health_state.soh_forecast_horizon_cycles}-cycle SOH forecast "
+                f"({100 * health_state.soh_forecast:.1f} %) is above present measured "
+                f"health ({100 * health_state.soh:.1f} %). Cells do recover capacity "
+                "after rest, so this is not impossible, but a forecast above the "
+                "current measurement usually means the model is extrapolating outside "
+                "what it learned. Treat it as unreliable. It is reported unchanged "
+                "rather than clipped, so the model's actual output stays visible."
+            )
+        if risk.excluded_from_recommendation:
+            warnings.append(
+                "The failure-risk model did not beat the cycle-index baseline out of "
+                "fold, so its probability is reported as experimental and was "
+                "withheld from the recommendation rules. The recommendation below "
+                "rests on remaining life, its interval and measured health only."
+            )
         if not self.bundles.any_available:
             warnings.append(
                 "No model bundle is loaded; only measured and derived quantities are "
@@ -451,12 +476,15 @@ class BatteryDigitalTwinService:
             data = self._training_data(features, bundle)
             values = np.asarray(bundle.model.predict(data), dtype=float)
             raw = float(values[last]) if np.isfinite(values[last]) else None
-            out["soh_pred"] = (
+            out["soh_forecast"] = (
                 None
                 if raw is None
                 else float(np.clip(raw, self.cfg.soh.plausible_min, self.cfg.soh.plausible_max))
             )
             out["soh_model"] = bundle.metadata.model_name
+            out["soh_forecast_horizon"] = bundle.metadata.thresholds.get(
+                "forecast_horizon_cycles", self.cfg.soh.forecast_horizon_cycles
+            )
 
         if self.bundles.risk is not None:
             bundle = self.bundles.risk
@@ -472,6 +500,8 @@ class BatteryDigitalTwinService:
             out["risk_bundle"] = bundle
             out["risk_scaled"] = data.X
 
+            gate = bundle.metadata.thresholds.get("passes_acceptance_gate")
+            out["risk_passes_gate"] = True if gate is None else bool(gate)
             calibrator = bundle.calibrator
             if isinstance(calibrator, ProbabilityCalibrator) and calibrator.fitted:
                 out["risk"] = float(calibrator.transform(np.array([raw]))[0])
@@ -504,7 +534,7 @@ class BatteryDigitalTwinService:
                 }
                 out.setdefault("rul", out["multitask"]["rul"])
                 out.setdefault("rul_model", "multitask")
-                out.setdefault("soh_pred", out["multitask"]["soh"])
+                out.setdefault("soh_forecast", out["multitask"]["soh"])
                 out.setdefault("soh_model", "multitask")
                 out.setdefault("risk", out["multitask"]["risk"])
                 out.setdefault("risk_raw", out["multitask"]["risk"])
@@ -572,9 +602,16 @@ class BatteryDigitalTwinService:
         # --- risk --------------------------------------------------------------
         probability = outputs.get("risk")
         threshold = outputs.get("risk_threshold")
+        # A model that failed its acceptance gate is still reported — hiding it
+        # would be its own dishonesty — but it is marked experimental and the
+        # recommendation rules are not given its probability.
+        passes_gate = bool(outputs.get("risk_passes_gate", True))
+        experimental = not passes_gate and self.cfg.risk.require_beating_baseline
         risk = BatteryRiskAssessment(
             horizon_cycles=self.cfg.risk.horizon_cycles,
             probability=None if probability is None else round(float(probability), 5),
+            is_experimental=experimental,
+            excluded_from_recommendation=experimental,
             probability_raw=(
                 None if outputs.get("risk_raw") is None else round(float(outputs["risk_raw"]), 5)
             ),
@@ -590,14 +627,26 @@ class BatteryDigitalTwinService:
         )
 
         # --- SOH ---------------------------------------------------------------
-        soh_predicted = outputs.get("soh_pred")
-        chosen = soh_predicted if soh_predicted is not None else soh_measured
+        # Current SOH is a **measurement**, reported as such. It used to come from
+        # a model trained to predict it, which was not a prediction problem at
+        # all: the target is measured capacity over a per-cell constant and
+        # measured capacity is a model input, so the reported error described a
+        # rescaling. The model now forecasts SOH at a horizon, which is reported
+        # as a separate, clearly predicted field.
+        forecast = outputs.get("soh_forecast")
         health_state = BatteryHealthState(
-            soh=None if chosen is None else round(float(chosen), 5),
+            soh=None if soh_measured is None else round(float(soh_measured), 5),
             soh_measured=None if soh_measured is None else round(float(soh_measured), 5),
-            health_class=classify_soh(chosen, self.cfg.soh).value,  # type: ignore[arg-type]
+            health_class=classify_soh(soh_measured, self.cfg.soh).value,  # type: ignore[arg-type]
+            soh_forecast=None if forecast is None else round(float(forecast), 5),
+            soh_forecast_horizon_cycles=(
+                self.cfg.soh.forecast_horizon_cycles if forecast is not None else None
+            ),
+            soh_forecast_class=(
+                classify_soh(forecast, self.cfg.soh).value if forecast is not None else None
+            ),
             capacity_fade_percent=None,
-            provenance=Provenance.PREDICTED if soh_predicted is not None else Provenance.DERIVED,
+            provenance=Provenance.DERIVED,
         )
 
         # --- explanation --------------------------------------------------------
@@ -769,6 +818,11 @@ class BatteryDigitalTwinService:
         scoreable: bool,
     ) -> BatteryRecommendation:
         assert self.recommender is not None
+        # An experimental risk model contributes nothing to the decision. Passing
+        # its probability anyway would let a model that lost to a cycle counter
+        # trigger a replacement, which is the failure the gate exists to prevent.
+        usable_risk = None if risk.excluded_from_recommendation else risk.probability
+        usable_risk_class = "unknown" if risk.excluded_from_recommendation else risk.risk_class
         inputs = RecommendationInputs(
             rul_point=prediction.rul_cycles,
             rul_lower_bound=(
@@ -776,8 +830,8 @@ class BatteryDigitalTwinService:
             ),
             soh=health_state.soh,
             health_class=health_state.health_class,
-            risk_probability=risk.probability,
-            risk_class=risk.risk_class,
+            risk_probability=usable_risk,
+            risk_class=usable_risk_class,
             quality_class=quality.quality_class,
             temperature_trend_c_per_10=self._trend_per_10(
                 health, "temperature_max_c", relative=False

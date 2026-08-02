@@ -77,6 +77,18 @@ held-out slice:
 
 Test cells are excluded from every conformal fit.
 
+## Coverage is measured out of fold, not on the fitting set
+
+An earlier version fitted the conformal quantile on the out-of-fold residuals
+and then measured coverage on those same residuals, reporting 91.7 %. That is
+close to circular: applying a quantile back to the sample it was estimated from
+recovers the nominal level by construction and says nothing about a new cell.
+
+Coverage is now **leave-one-cell-out cross-conformal**: for each non-test cell
+the quantile is refitted on the other non-test cells and only then applied. The
+in-sample figure is still emitted as `in_sample_coverage_for_reference` so the
+gap between the two is visible instead of being the headline.
+
 ## What is reported
 
 - Empirical coverage against the nominal target

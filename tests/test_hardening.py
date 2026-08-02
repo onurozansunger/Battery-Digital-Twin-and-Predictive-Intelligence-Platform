@@ -356,3 +356,144 @@ def test_cache_path_embeds_the_fingerprint(cfg: ExperimentConfig, monkeypatch, t
     second = sorted(cfg.paths.interim_dir.glob("cycles_*.parquet"))
 
     assert len(second) == len(first) + 1, "changing a data-affecting field reused the cache"
+
+
+# ===========================================================================
+# Milestone 2.1 — defects found in external review
+# ===========================================================================
+def test_terminal_single_low_reading_does_not_truncate_the_record(cfg: ExperimentConfig):
+    """Review finding 5: the collapse filter accepted a partial terminal window.
+
+    `_truncate_at_collapse` claimed to need `collapse_persistence` consecutive
+    low observations but used `window.size >= min(persistence, remaining)`, so
+    one low reading in the final row cut the record. This is the same defect
+    Milestone 1.1 fixed in `find_eol_cycle` and left standing in the loader.
+    """
+    from battery_rul.data.loader import _truncate_at_collapse
+
+    cfg.data.collapse_persistence = 3
+    cfg.data.collapse_fraction = 0.25
+    healthy = list(np.linspace(1.90, 1.70, 12))
+    frame = pd.DataFrame(
+        {
+            "battery_id": "A",
+            "cycle_index": np.arange(1, 14),
+            "capacity_ah": healthy + [0.05],
+        }
+    )
+    out = _truncate_at_collapse(frame, cfg)
+    assert len(out) == 13, "a single low final reading must not truncate the record"
+
+
+def test_sustained_collapse_still_truncates(cfg: ExperimentConfig):
+    """The companion: a genuine sustained collapse must still be cut.
+
+    The healthy run has to be at least ten cycles long, because the collapse
+    reference is the median of the first ten — a record that is half-collapsed
+    inside that window poisons its own reference and nothing trips. That is a
+    real constraint of the check, not of this test.
+    """
+    from battery_rul.data.loader import _truncate_at_collapse
+
+    cfg.data.collapse_persistence = 3
+    cfg.data.collapse_fraction = 0.25
+    healthy = list(np.linspace(1.90, 1.70, 12))
+    frame = pd.DataFrame(
+        {
+            "battery_id": "A",
+            "cycle_index": np.arange(1, 18),
+            "capacity_ah": healthy + [0.05] * 5,
+        }
+    )
+    out = _truncate_at_collapse(frame, cfg)
+    assert len(out) == 12, "the healthy run should survive, the collapse should not"
+
+
+def test_collapse_needs_exactly_persistence_observations(cfg: ExperimentConfig):
+    from battery_rul.data.loader import _truncate_at_collapse
+
+    cfg.data.collapse_persistence = 3
+    cfg.data.collapse_fraction = 0.25
+    healthy = list(np.linspace(1.90, 1.70, 12))
+    two_low = pd.DataFrame(
+        {
+            "battery_id": "A",
+            "cycle_index": np.arange(1, 17),
+            "capacity_ah": healthy + [0.05, 0.05] + [1.68, 1.66],
+        }
+    )
+    assert len(_truncate_at_collapse(two_low, cfg)) == 16, "a two-cycle dip is not a collapse"
+
+
+def test_soh_forecast_target_is_not_the_current_cycle(
+    labelled_cycles: pd.DataFrame, cfg: ExperimentConfig
+):
+    """Review finding 2: the SOH model must forecast, not restate its input."""
+    from battery_rul.targets.soh import attach_soh_target
+
+    cfg.soh.forecast_horizon_cycles = 10
+    frame, report = attach_soh_target(labelled_cycles, cfg)
+    assert cfg.soh.forecast_target_name in frame.columns
+
+    group = frame[frame["battery_id"] == "T0001"].reset_index(drop=True)
+    # The forecast at t is the current SOH at t + H, within the same cell.
+    assert group[cfg.soh.forecast_target_name].iloc[0] == pytest.approx(
+        group[cfg.soh.target_name].iloc[10], rel=1e-5
+    )
+    # The final H rows cannot have a label and must not be extrapolated.
+    assert group[cfg.soh.forecast_target_name].tail(10).isna().all()
+    assert report.to_dict()["forecast_horizon_cycles"] == 10
+
+
+def test_soh_metrics_do_not_report_cycle_units(cfg: ExperimentConfig):
+    """Review finding: RUL metrics were applied to an SOH fraction."""
+    from battery_rul.evaluation.metrics import soh_metrics
+
+    metrics = soh_metrics(np.array([0.80, 0.78]), np.array([0.79, 0.77]))
+    for meaningless in ("within_10_cycles", "within_25_cycles", "alpha_lambda", "mape"):
+        assert meaningless not in metrics
+    assert "mae_percentage_points" in metrics
+
+
+def test_soh_metrics_expose_the_persistence_baseline():
+    from battery_rul.evaluation.metrics import soh_metrics
+
+    truth = np.array([0.70, 0.68, 0.66])
+    lazy = np.array([0.80, 0.80, 0.80])  # "SOH will not change"
+    metrics = soh_metrics(truth, lazy, persistence=lazy)
+    assert metrics["beats_persistence_baseline"] is False
+    assert metrics["persistence_baseline_mae"] == pytest.approx(metrics["mae"])
+
+
+def test_risk_bundle_records_an_acceptance_gate_verdict():
+    """Review finding 3: a model that loses to the baseline must be gated."""
+    from battery_rul.config import RiskConfig
+
+    assert RiskConfig().require_beating_baseline is True
+
+
+def test_experimental_risk_is_withheld_from_the_recommendation_rules(cfg: ExperimentConfig):
+    """A gated-out risk probability must not be able to trigger an action."""
+    from battery_rul.recommendations.engine import (
+        ActionCode,
+        RecommendationEngine,
+        RecommendationInputs,
+    )
+
+    engine = RecommendationEngine(cfg=cfg)
+    # Risk alone would force a replacement; withheld, the healthy RUL wins.
+    with_risk = engine.recommend(
+        RecommendationInputs(rul_point=500.0, rul_lower_bound=400.0, risk_probability=0.95)
+    )
+    withheld = engine.recommend(
+        RecommendationInputs(rul_point=500.0, rul_lower_bound=400.0, risk_probability=None)
+    )
+    assert with_risk.action_code == ActionCode.IMMEDIATE_ENGINEERING_REVIEW.value
+    assert withheld.action_code == ActionCode.NORMAL_OPERATION.value
+
+
+def test_dataset_fingerprint_is_not_the_config_fingerprint(cfg: ExperimentConfig):
+    """Review finding 7: the two bundle fields carried the same value."""
+    from battery_rul.data.loader import source_fingerprint
+
+    assert source_fingerprint(cfg) != cfg.data_fingerprint()

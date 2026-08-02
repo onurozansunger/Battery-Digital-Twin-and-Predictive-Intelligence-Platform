@@ -1,0 +1,118 @@
+{
+  "model": "elastic_net",
+  "selection_scheme": "leave-one-cell-out over non-test cells",
+  "selection_scores_mae": {
+    "cohort_median_life": 13.49673,
+    "capacity_fade_extrapolation": 24.85964,
+    "soh_analogue": 14.29681,
+    "elastic_net": 8.53366,
+    "ridge": 12.14476,
+    "random_forest": 11.40809,
+    "xgboost": 13.77688,
+    "lightgbm": 12.82675
+  },
+  "estimator": {
+    "method": "split_conformal",
+    "target": "rul_cycles",
+    "coverage_target": 0.9,
+    "n_calibration_rows": 373,
+    "global_quantile": 19.74839,
+    "stage_quantiles": {
+      "early": 29.58796,
+      "late": 15.0,
+      "mid": 10.79724
+    },
+    "stage_counts": {
+      "early": 159,
+      "late": 70,
+      "mid": 144
+    },
+    "stage_variable": "measured state of health",
+    "stage_edges": [
+      0.9,
+      0.8
+    ],
+    "clip": {
+      "lower": 0.0,
+      "upper": null
+    }
+  },
+  "out_of_fold_coverage": {
+    "n": 373,
+    "empirical_coverage": 0.76408,
+    "mean_interval_width": 30.6247,
+    "median_interval_width": 22.3262,
+    "by_battery_id": {
+      "B0006": {
+        "n": 106,
+        "empirical_coverage": 0.95283,
+        "mean_interval_width": 37.5789
+      },
+      "B0018": {
+        "n": 94,
+        "empirical_coverage": 0.88298,
+        "mean_interval_width": 34.6252
+      },
+      "B0033": {
+        "n": 101,
+        "empirical_coverage": 0.29703,
+        "mean_interval_width": 17.5628
+      },
+      "B0034": {
+        "n": 72,
+        "empirical_coverage": 0.98611,
+        "mean_interval_width": 33.4864
+      }
+    },
+    "by_life_stage": {
+      "early": {
+        "n": 159,
+        "empirical_coverage": 0.57233,
+        "mean_interval_width": 42.0199
+      },
+      "late": {
+        "n": 70,
+        "empirical_coverage": 0.92857,
+        "mean_interval_width": 25.9852
+      },
+      "mid": {
+        "n": 144,
+        "empirical_coverage": 0.89583,
+        "mean_interval_width": 20.2977
+      }
+    },
+    "scheme": "leave-one-cell-out cross-conformal; the quantile applied to each cell was fitted on the other non-test cells only",
+    "in_sample_coverage_for_reference": 0.91689
+  },
+  "test_coverage": {
+    "n": 122,
+    "empirical_coverage": 0.71311,
+    "mean_interval_width": 41.7632,
+    "median_interval_width": 44.588,
+    "by_battery_id": {
+      "B0005": {
+        "n": 122,
+        "empirical_coverage": 0.71311,
+        "mean_interval_width": 41.7632
+      }
+    },
+    "by_life_stage": {
+      "early": {
+        "n": 61,
+        "empirical_coverage": 0.77049,
+        "mean_interval_width": 59.1759
+      },
+      "late": {
+        "n": 20,
+        "empirical_coverage": 0.35,
+        "mean_interval_width": 30.0
+      },
+      "mid": {
+        "n": 41,
+        "empirical_coverage": 0.80488,
+        "mean_interval_width": 21.5945
+      }
+    }
+  },
+  "meets_nominal_coverage": false
+}
