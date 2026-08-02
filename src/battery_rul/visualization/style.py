@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any, cast
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -76,7 +77,11 @@ def apply_style(cfg: VizConfig | None = None, *, force: bool = False) -> None:
     if _APPLIED and not force:
         return
     mpl.use("Agg", force=False)  # headless: pipelines write files, never windows
-    plt.rcParams.update(_STYLE)
+    # matplotlib >= 3.11 types rcParams' keys as a closed Literal of every valid
+    # setting, so a plain dict[str, Any] no longer satisfies it. The keys in
+    # _STYLE are valid — matplotlib validates them at runtime and would raise if
+    # not — so this is a stub-precision problem, not a correctness one.
+    plt.rcParams.update(cast("Any", _STYLE))
     if cfg is not None:
         plt.rcParams["savefig.dpi"] = cfg.dpi
         plt.rcParams["figure.figsize"] = list(cfg.figsize)

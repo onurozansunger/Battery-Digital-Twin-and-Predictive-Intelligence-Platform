@@ -67,11 +67,14 @@ battery_rul = ["py.typed"]
 # ----------------------------------------------------------------------------
 [tool.black]
 line-length = 100
-target-version = ["py312"]
+target-version = ["py311"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+# Must match `requires-python` above. With py312 here, the UP rules "modernise"
+# code into syntax that 3.11 cannot parse — which is how `type X = ...` reached
+# CI and broke the 3.11 job while every local check passed.
+target-version = "py311"
 src = ["src", "tests", "scripts"]
 # Notebooks are intentionally out of scope for linting: they are exploratory
 # records, not production code. README and CI use exactly this scope.
@@ -91,7 +94,9 @@ ignore = ["E501", "B008", "N803", "N806"]
 "src/battery_rul/models/baselines.py" = ["ARG002"]
 
 [tool.mypy]
-python_version = "3.12"
+# The lowest supported interpreter, so 3.12-only constructs are caught here
+# rather than in the 3.11 CI job.
+python_version = "3.11"
 # `warn_return_any` fires almost exclusively on values returned from numpy,
 # pandas, torch and sklearn calls whose stubs return Any. Those warnings are
 # noise that trains reviewers to skim the type-check output, which is worse than
@@ -103,7 +108,7 @@ ignore_missing_imports = true
 disallow_untyped_defs = false
 # Notebooks are exploratory and are excluded from every quality gate — see the
 # Ruff configuration below and the CI workflow, which use the same scope.
-exclude = ["^notebooks/", "^build/", "^dist/"]
+exclude = ["^notebooks/", "^build/", "^dist/", " [0-9]\\."]
 
 [[tool.mypy.overrides]]
 # Matplotlib's `subplots()` is typed as returning `Axes | ndarray[Axes]`, so

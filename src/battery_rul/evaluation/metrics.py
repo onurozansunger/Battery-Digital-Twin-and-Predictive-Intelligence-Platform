@@ -22,7 +22,7 @@ in service past its safe window, while under-predicting only wastes capacity.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -32,7 +32,10 @@ from battery_rul.utils.logging import get_logger
 #: Anything array-like this module can score. Callers pass NumPy arrays far more
 #: often than lists, and declaring `Sequence[float]` made every real call site a
 #: type error while accepting nothing extra at runtime.
-type Scores = Sequence[float] | np.ndarray | pd.Series
+# Written with TypeAlias rather than the `type` statement on purpose: `type X =`
+# is Python 3.12+ syntax and this project supports 3.11. Ruff's UP040 will offer
+# to "modernise" it — do not accept that fix until requires-python moves to 3.12.
+Scores: TypeAlias = Sequence[float] | np.ndarray | pd.Series
 
 logger = get_logger(__name__)
 

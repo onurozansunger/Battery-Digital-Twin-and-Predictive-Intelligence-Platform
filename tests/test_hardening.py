@@ -139,6 +139,11 @@ def test_held_out_battery_cannot_change_the_training_schema(
     tampered = frame.copy()
     held_out = tampered["battery_id"] == "T0004"
     rng = np.random.default_rng(0)
+    # Widen before writing: the engineered columns are float32, and pandas 3.0
+    # raises on a lossy setitem instead of silently downcasting the way 2.x did.
+    # The cast is the test's business, not the pipeline's — what is under test is
+    # that the *training* schema is unmoved by whatever this cell contains.
+    tampered[features] = tampered[features].astype("float64")
     tampered.loc[held_out, features] = rng.normal(
         1000.0, 500.0, size=(int(held_out.sum()), len(features))
     )

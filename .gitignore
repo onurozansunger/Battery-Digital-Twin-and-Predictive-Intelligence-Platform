@@ -60,3 +60,10 @@ Thumbs.db
 .idea/
 .vscode/
 *.sublime-*
+
+# ------------------------------------------------- cloud-sync duplicates
+# iCloud/Dropbox-style copies ("module 2.py", "report 2.csv"). They are byte
+# duplicates of tracked files, they must never be committed, and left visible
+# they break Ruff's module-name rule on every local run. A literal-space glob,
+# not a POSIX class — Ruff's matcher does not understand [[:space:]].
+* [0-9].*
