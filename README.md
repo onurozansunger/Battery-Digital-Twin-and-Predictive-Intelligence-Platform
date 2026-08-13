@@ -1,35 +1,68 @@
 # Battery Digital Twin & Predictive Intelligence Platform
 
-**Milestone 2 — an AI-powered digital twin for lithium-ion cells.**
+**Milestone 3 — fleet intelligence and production MLOps, on top of a digital twin.**
 
-Given a cell and its cycle history, the platform estimates remaining useful life
-**with a prediction interval**, present state of health, a **calibrated**
-probability of reaching end of life within a configurable horizon, health and
-risk classes, the main degradation drivers, whether the input can support any of
-that, and a deterministic engineering recommendation — as one serialisable
-snapshot, served by an API and a dashboard that share a single inference path.
+Milestone 1 predicts remaining useful life. Milestone 2 wraps it in a digital
+twin that answers questions about **one cell** — RUL with a prediction interval,
+state of health, calibrated end-of-life risk, degradation drivers, data quality
+and a rule-based recommendation. Milestone 3 answers questions about **a fleet**,
+and adds what running it responsibly needs: monitoring, a model registry, a
+promotion gate, persistence, containers and CI.
 
-Built on the NASA Ames PCoE battery aging dataset. Milestone 1 (RUL prediction)
-is intact and was **hardened first**: see
-[`docs/MILESTONE_1_1_HARDENING.md`](docs/MILESTONE_1_1_HARDENING.md).
+Built on the NASA Ames PCoE battery aging dataset. Every milestone's interfaces
+remain intact — regression tests assert it.
 
 ```bash
 pip install -e ".[dev]"
 python scripts/download_data.py                                    # ~209 MB
 python scripts/run_pipeline.py --config configs/default.yaml       # Milestone 1
 python -m battery_rul.pipelines.run_milestone_2 --config configs/default.yaml
-python scripts/example_snapshot.py                                 # a worked example
-python -m battery_rul.api.app                                      # API on :8000
-streamlit run src/battery_rul/dashboard/app.py                     # dashboard
+
+# Milestone 3
+python -m battery_rul.pipelines.build_reference   --config configs/default.yaml
+python -m battery_rul.pipelines.run_fleet_batch   --config configs/default.yaml \
+    --fleet-id DEMO-FLEET-01 --source demo --demo-size 24
+python -m battery_rul.pipelines.run_monitoring    --config configs/default.yaml \
+    --fleet-id DEMO-FLEET-01 --source demo --demo-size 24
+python -m battery_rul.pipelines.generate_fleet_report --config configs/default.yaml \
+    --fleet-id DEMO-FLEET-01
+
+python -m battery_rul.api.app                                # API on :8000
+streamlit run src/battery_rul/dashboard/fleet_app.py         # fleet dashboard
+streamlit run src/battery_rul/dashboard/app.py               # single-cell dashboard
 ```
+
+Fifteen-minute tour: [`docs/DEMO_GUIDE.md`](docs/DEMO_GUIDE.md).
 
 > **Research prototype for engineering decision support.** Not validated for
 > production deployment, not a substitute for battery-management-system
 > protection, not suitable for autonomous safety-critical control. The "failure
 > risk" label is derived from a capacity threshold — the source dataset contains
-> no observed safety failures. Read
+> no observed safety failures. Fleet rankings, maintenance priorities and
+> replacement horizons are configurable engineering policy, never validated
+> against real maintenance outcomes. Read
+> [`docs/MILESTONE_3_LIMITATIONS.md`](docs/MILESTONE_3_LIMITATIONS.md) and
 > [`docs/MILESTONE_2_LIMITATIONS.md`](docs/MILESTONE_2_LIMITATIONS.md) before
 > quoting anything here.
+
+---
+
+## Milestone 3 at a glance
+
+| | |
+|---|---|
+| **Fleet outputs** | ranked batteries · maintenance priority (P0–P5) with score breakdown and triggered rules · inspection windows · replacement horizons with uncertainty brackets · workload forecast · fleet statistics **with denominators** |
+| **Monitoring** | input data quality · feature drift vs a versioned training reference · prediction drift · delayed-label performance — four separate questions, four separate statuses |
+| **MLOps** | JSON model registry with checksums and stages · a promotion gate that returns APPROVED / REQUIRES_REVIEW / **REJECTED** · rollback · file-based experiment tracking (MLflow optional) |
+| **Serving** | `FleetInferenceService` calls `BatteryDigitalTwinService` once per cell — one inference path, bundles loaded once per process |
+| **Interfaces** | 15 new API endpoints (including `/metrics` and two administrative ones disabled by default) with pagination and partial success · a 14-page Streamlit fleet dashboard · 8 CLI pipelines |
+| **Platform** | SQLite persistence behind a repository protocol · structured JSON logs · Prometheus `/metrics` · multi-stage Docker (built and run, non-root, read-only rootfs) · four CI workflows |
+| **Tests** | 631 total (349 baseline + 282 new), all passing |
+
+Honest headline from this repository's own run: the promotion gate **rejects**
+the current RUL bundle on interval coverage (0.764 against a 0.80 floor), so
+nothing is at stage `PRODUCTION`. The floor was not lowered to make it pass.
+Full evidence: [`docs/MILESTONE_3_EVALUATION.md`](docs/MILESTONE_3_EVALUATION.md).
 
 ---
 
@@ -52,6 +85,7 @@ streamlit run src/battery_rul/dashboard/app.py                     # dashboard
 14. [Limitations](#14-limitations)
 15. [Roadmap](#15-roadmap)
 16. [Milestone 2 — the digital twin](#16-milestone-2--the-digital-twin)
+17. [Milestone 3 — fleet intelligence and production MLOps](#17-milestone-3--fleet-intelligence-and-production-mlops)
 
 ---
 
@@ -665,11 +699,12 @@ compatibility, and real quality gates.
 
 **Milestone 2 — Battery Digital Twin.** Complete. See §16.
 
-**Milestone 3 — Fleet intelligence and production readiness.** Not started, and
-deliberately out of scope here: fleet-level aggregation and prioritisation,
-maintenance optimisation, data and prediction drift monitoring, a model registry
-with promotion gates, experiment tracking, containerisation, CI/CD deployment,
-authentication and multi-tenancy, and a Battery Passport export.
+**Milestone 3 — Fleet intelligence and production MLOps.** Complete. See §17.
+
+**Still out of scope, deliberately.** Authentication and multi-tenancy (the
+service ships none — put an authenticated proxy in front of it), Kubernetes
+manifests, cloud-vendor infrastructure, a message broker, real-time vehicle
+control, and any write path to a battery-management system.
 
 ## 16. Milestone 2 — the digital twin
 
@@ -809,6 +844,97 @@ be able to trigger a replacement.
 Full report: [`reports/milestone_2/evaluation_report.md`](reports/milestone_2/evaluation_report.md).
 How to read it: [`MILESTONE_2_EVALUATION.md`](docs/MILESTONE_2_EVALUATION.md).
 Acceptance status: [`MILESTONE_2_ACCEPTANCE_CHECKLIST.md`](docs/MILESTONE_2_ACCEPTANCE_CHECKLIST.md).
+
+---
+
+## 17. Milestone 3 — fleet intelligence and production MLOps
+
+### The layering rule everything follows from
+
+> **Battery-level inference has exactly one entry point.**
+
+`FleetInferenceService` calls `BatteryDigitalTwinService.create_snapshot` once
+per cell and never loads a model, builds a feature or applies a calibration
+itself. A test asserts that scoring a fleet loads **zero** bundles. Three layers
+sit above it and none touch a model: policy (priority rules, replacement
+horizons), aggregation (statistics with explicit denominators), and monitoring
+(observes, never modifies).
+
+### What a fleet snapshot answers
+
+```
+Fleet DEMO-FLEET-01 · 24 submitted · 21 evaluated · 0 failed · 3 insufficient data
+Health (measured):    3 healthy · 10 slightly degraded · 8 warning
+Priority (rules):     5 P0 · 7 P1 · 9 P2 · 3 insufficient data
+Median SOH  85.5 %  (derived,   n=21)
+Median RUL  26.7    (predicted, n=21)
+Workload:   12 immediate · 4 next-30 · 3 next-50 · 2 beyond-50
+Replacement: 13 near-term  (2 optimistic – 13 conservative under the intervals)
+Data quality WARNING · Drift CRITICAL · Model 1.0.0
+```
+
+Every aggregate carries the count it was computed over. "Median RUL 26.7" over
+21 of 24 cells is a different claim from "median RUL over the fleet", and only
+one of them is computable.
+
+### The four monitoring questions, kept apart
+
+| Question | Answers "did the model get worse?" |
+| --- | --- |
+| Is the **input** usable? (data quality) | no — it is about sensors |
+| Have the **inputs** moved from training? (feature drift) | no |
+| Has the **output** distribution moved? (prediction drift) | no |
+| Given labels, is it still accurate? (delayed-label performance) | **yes, only this one** |
+
+Conflating them is how a team retrains a healthy model because a temperature
+sensor failed. [`docs/MONITORING_ARCHITECTURE.md`](docs/MONITORING_ARCHITECTURE.md)
+has the diagnostic table.
+
+### Governance
+
+The registry records which version is live, who promoted it and when, with a
+checksum over the bundle files that is re-verified at promotion. The gate
+compares a candidate against production on fourteen checks and returns
+`APPROVED` / `REQUIRES_REVIEW` / `REJECTED` — and it **rejected this
+repository's own bundle** on conformal interval coverage (0.764 < 0.800). The
+floor was not lowered. Nothing is at stage `PRODUCTION`.
+
+Promotion is never automatic: `registry.promotion.allow_auto_promotion` is
+false and CI never sets it.
+
+### Documents
+
+| Topic | Document |
+| --- | --- |
+| Overview and command reference | [`MILESTONE_3_OVERVIEW.md`](docs/MILESTONE_3_OVERVIEW.md) |
+| Architecture | [`FLEET_ARCHITECTURE.md`](docs/FLEET_ARCHITECTURE.md) · [`FLEET_DOMAIN_MODEL.md`](docs/FLEET_DOMAIN_MODEL.md) |
+| Policy | [`MAINTENANCE_PRIORITY_ENGINE.md`](docs/MAINTENANCE_PRIORITY_ENGINE.md) · [`REPLACEMENT_PLANNING.md`](docs/REPLACEMENT_PLANNING.md) |
+| Monitoring | [`MONITORING_ARCHITECTURE.md`](docs/MONITORING_ARCHITECTURE.md) · [`DATA_QUALITY_MONITORING.md`](docs/DATA_QUALITY_MONITORING.md) · [`FEATURE_DRIFT.md`](docs/FEATURE_DRIFT.md) · [`PREDICTION_DRIFT.md`](docs/PREDICTION_DRIFT.md) · [`PERFORMANCE_MONITORING.md`](docs/PERFORMANCE_MONITORING.md) |
+| MLOps | [`MODEL_REGISTRY.md`](docs/MODEL_REGISTRY.md) · [`MODEL_PROMOTION.md`](docs/MODEL_PROMOTION.md) · [`EXPERIMENT_TRACKING.md`](docs/EXPERIMENT_TRACKING.md) |
+| Interfaces | [`API_FLEET_GUIDE.md`](docs/API_FLEET_GUIDE.md) · [`FLEET_DASHBOARD_GUIDE.md`](docs/FLEET_DASHBOARD_GUIDE.md) |
+| Platform | [`DOCKER_DEPLOYMENT.md`](docs/DOCKER_DEPLOYMENT.md) · [`CI_CD.md`](docs/CI_CD.md) · [`OBSERVABILITY.md`](docs/OBSERVABILITY.md) · [`SECURITY.md`](docs/SECURITY.md) |
+| Evidence | [`MILESTONE_3_EVALUATION.md`](docs/MILESTONE_3_EVALUATION.md) · [`MILESTONE_3_ACCEPTANCE_CHECKLIST.md`](docs/MILESTONE_3_ACCEPTANCE_CHECKLIST.md) · [`MILESTONE_3_LIMITATIONS.md`](docs/MILESTONE_3_LIMITATIONS.md) |
+| Tour | [`DEMO_GUIDE.md`](docs/DEMO_GUIDE.md) |
+
+### Honest status
+
+Implemented and evidenced: fleet inference, ranking, priority engine, inspection
+windows, replacement planning, workload forecasting, the four monitoring
+surfaces, alerts, registry, promotion gate, rollback, persistence, tracking,
+observability, 15 API endpoints, a 14-page dashboard, 8 pipelines, 282 new tests.
+
+Docker: all three images **built and run** — non-root, no artifacts baked in,
+`/health` 200 with no model and `/ready` 503 → 200 once bundles are mounted,
+compose stack healthy, batch and monitoring jobs green under a read-only root
+filesystem. Running them found two real defects (a Python-minor-version pickle
+mismatch and a fatal `mkdir` on a read-only root), both fixed and tested.
+
+Still open: the CI workflows have **not run on a GitHub runner**, no real
+delayed labels exist for this cohort, and no model is at stage `PRODUCTION`
+because the gate refused the only candidate.
+
+Recommended release: **`v0.9.0-rc1`**. See the acceptance checklist for what
+`v1.0.0` needs.
 
 ---
 

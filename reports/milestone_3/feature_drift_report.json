@@ -1,0 +1,4362 @@
+{
+  "generated_at_utc": "2026-08-13T08:43:18.201288+00:00",
+  "reference_id": "training_reference",
+  "reference_fingerprint": "7d56f05bf5e85e37",
+  "reference_partition": "train",
+  "reference_window": "train partition, 267 rows",
+  "current_window": "1555 rows from batch 20260813T084312Z-1faadee9",
+  "status": "CRITICAL",
+  "results": [
+    {
+      "feature_name": "capacity_ah",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.574492,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.5427387845650147,
+        "std": 0.11470879759973492,
+        "min": 1.351581335067749,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6482660289746005,
+        "std": 0.15039956961824494,
+        "min": 1.353993535041809,
+        "max": 2.013899087905884
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.299518,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.5427387845650147,
+        "std": 0.11470879759973492,
+        "min": 1.351581335067749,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6482660289746005,
+        "std": 0.15039956961824494,
+        "min": 1.353993535041809,
+        "max": 2.013899087905884
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.334161,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.06890288762022717,
+        "std": 0.025542823935893404,
+        "min": 0.009896424598991871,
+        "max": 0.1363607496023178
+      },
+      "current_summary": {
+        "mean": 0.06279720549271038,
+        "std": 0.035936013837017326,
+        "min": 0.008434200659394264,
+        "max": 0.18724605441093445
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.196688,
+      "p_value": 1.75e-06,
+      "adjusted_p_value": 2e-06,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.06890288762022717,
+        "std": 0.025542823935893404,
+        "min": 0.009896424598991871,
+        "max": 0.1363607496023178
+      },
+      "current_summary": {
+        "mean": 0.06279720549271038,
+        "std": 0.035936013837017326,
+        "min": 0.008434200659394264,
+        "max": 0.18724605441093445
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_lag_1",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.575571,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.545817247044281,
+        "std": 0.11480022568210861,
+        "min": 1.351581335067749,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6518962934469488,
+        "std": 0.15087590097554562,
+        "min": 1.3624125719070435,
+        "max": 2.013899087905884
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_lag_1",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.302878,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.545817247044281,
+        "std": 0.11480022568210861,
+        "min": 1.351581335067749,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6518962934469488,
+        "std": 0.15087590097554562,
+        "min": 1.3624125719070435,
+        "max": 2.013899087905884
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_lag_3",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.578216,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.5527116618352883,
+        "std": 0.11484355263283445,
+        "min": 1.353993535041809,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6593109776352764,
+        "std": 0.15168680240637114,
+        "min": 1.3624125719070435,
+        "max": 2.013899087905884
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_lag_3",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.307379,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.5527116618352883,
+        "std": 0.11484355263283445,
+        "min": 1.353993535041809,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6593109776352764,
+        "std": 0.15168680240637114,
+        "min": 1.3624125719070435,
+        "max": 2.013899087905884
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_lag_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.59204,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.5595148944676145,
+        "std": 0.11682032964584735,
+        "min": 1.353993535041809,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6675783394233974,
+        "std": 0.1528919869034175,
+        "min": 1.3624125719070435,
+        "max": 2.0353376865386963
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_lag_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.315868,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.5595148944676145,
+        "std": 0.11682032964584735,
+        "min": 1.353993535041809,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6675783394233974,
+        "std": 0.1528919869034175,
+        "min": 1.3624125719070435,
+        "max": 2.0353376865386963
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_rmax_10",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.445319,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 1.6206069792018216,
+        "std": 0.12265199628661351,
+        "min": 1.4370006322860718,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.7143657339583604,
+        "std": 0.1471587781164461,
+        "min": 1.4370006322860718,
+        "max": 2.0353376865386963
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_rmax_10",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.288651,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 1.6206069792018216,
+        "std": 0.12265199628661351,
+        "min": 1.4370006322860718,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.7143657339583604,
+        "std": 0.1471587781164461,
+        "min": 1.4370006322860718,
+        "max": 2.0353376865386963
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_rmax_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.40824,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 1.6731918917761908,
+        "std": 0.12404651962538511,
+        "min": 1.4540256261825562,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.7525416394248072,
+        "std": 0.13294484901964082,
+        "min": 1.4540256261825562,
+        "max": 2.0353376865386963
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_rmax_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.266848,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 1.6731918917761908,
+        "std": 0.12404651962538511,
+        "min": 1.4540256261825562,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.7525416394248072,
+        "std": 0.13294484901964082,
+        "min": 1.4540256261825562,
+        "max": 2.0353376865386963
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_rmax_3",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.536187,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.56913968195183,
+        "std": 0.1163283612014033,
+        "min": 1.3767448663711548,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6694975749472714,
+        "std": 0.15019288845095705,
+        "min": 1.3826334476470947,
+        "max": 2.013899087905884
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_rmax_3",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.300675,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.56913968195183,
+        "std": 0.1163283612014033,
+        "min": 1.3767448663711548,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6694975749472714,
+        "std": 0.15019288845095705,
+        "min": 1.3826334476470947,
+        "max": 2.013899087905884
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_rmax_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.535065,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.5885805199655254,
+        "std": 0.11863581360003785,
+        "min": 1.4084460735321045,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6863963459082356,
+        "std": 0.15039118543884544,
+        "min": 1.4229203462600708,
+        "max": 2.0251402854919434
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_rmax_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.298537,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.5885805199655254,
+        "std": 0.11863581360003785,
+        "min": 1.4084460735321045,
+        "max": 1.8851401805877686
+      },
+      "current_summary": {
+        "mean": 1.6863963459082356,
+        "std": 0.15039118543884544,
+        "min": 1.4229203462600708,
+        "max": 2.0251402854919434
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_rrange_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.135131,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.1821946785185072,
+        "std": 0.10350508712211676,
+        "min": 0.06091964244842529,
+        "max": 0.4578934907913208
+      },
+      "current_summary": {
+        "mean": 0.15120461221539153,
+        "std": 0.08344976733146249,
+        "min": 0.04531049728393555,
+        "max": 0.4578934907913208
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "capacity_ah_rrange_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.16134,
+      "p_value": 0.00021396,
+      "adjusted_p_value": 0.000248,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.1821946785185072,
+        "std": 0.10350508712211676,
+        "min": 0.06091964244842529,
+        "max": 0.4578934907913208
+      },
+      "current_summary": {
+        "mean": 0.15120461221539153,
+        "std": 0.08344976733146249,
+        "min": 0.04531049728393555,
+        "max": 0.4578934907913208
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_cummean",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.817902,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0003773816211553716,
+        "std": 6.124177361750192e-05,
+        "min": 0.000259862223174423,
+        "max": 0.0004857578605879098
+      },
+      "current_summary": {
+        "mean": 0.0003275850976980516,
+        "std": 5.1173275701447e-05,
+        "min": 0.000259862223174423,
+        "max": 0.0004857578605879098
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_cummean",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.414116,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0003773816211553716,
+        "std": 6.124177361750192e-05,
+        "min": 0.000259862223174423,
+        "max": 0.0004857578605879098
+      },
+      "current_summary": {
+        "mean": 0.0003275850976980516,
+        "std": 5.1173275701447e-05,
+        "min": 0.000259862223174423,
+        "max": 0.0004857578605879098
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.722223,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00010108241284650787,
+        "std": 7.968944515618767e-05,
+        "min": 1.12446923594689e-05,
+        "max": 0.0003042561875190586
+      },
+      "current_summary": {
+        "mean": 0.00011007841565404136,
+        "std": 7.855451609534945e-05,
+        "min": 1.12446923594689e-05,
+        "max": 0.0003042561875190586
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.200434,
+      "p_value": 1.02e-06,
+      "adjusted_p_value": 1e-06,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00010108241284650787,
+        "std": 7.968944515618767e-05,
+        "min": 1.12446923594689e-05,
+        "max": 0.0003042561875190586
+      },
+      "current_summary": {
+        "mean": 0.00011007841565404136,
+        "std": 7.855451609534945e-05,
+        "min": 1.12446923594689e-05,
+        "max": 0.0003042561875190586
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_delta_from_initial",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.263296,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0001874945390479437,
+        "std": 0.00016617811021211426,
+        "min": -5.5690063163638115e-05,
+        "max": 0.002211251063272357
+      },
+      "current_summary": {
+        "mean": 1.983300617475278e-05,
+        "std": 0.0002113079709720647,
+        "min": -0.00014919176464900374,
+        "max": 0.002211251063272357
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_delta_from_initial",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.527331,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0001874945390479437,
+        "std": 0.00016617811021211426,
+        "min": -5.5690063163638115e-05,
+        "max": 0.002211251063272357
+      },
+      "current_summary": {
+        "mean": 1.983300617475278e-05,
+        "std": 0.0002113079709720647,
+        "min": -0.00014919176464900374,
+        "max": 0.002211251063272357
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_ewm_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.903355,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00044810250929071943,
+        "std": 0.00010236943931572461,
+        "min": 0.00025439189630560577,
+        "max": 0.0007277267868630588
+      },
+      "current_summary": {
+        "mean": 0.00035113706232881074,
+        "std": 0.00010004960345028664,
+        "min": 0.00024858160759322345,
+        "max": 0.0007277267868630588
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_ewm_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.418215,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00044810250929071943,
+        "std": 0.00010236943931572461,
+        "min": 0.00025439189630560577,
+        "max": 0.0007277267868630588
+      },
+      "current_summary": {
+        "mean": 0.00035113706232881074,
+        "std": 0.00010004960345028664,
+        "min": 0.00024858160759322345,
+        "max": 0.0007277267868630588
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_lag_1",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.266416,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0004670602407468629,
+        "std": 0.00016604583562967586,
+        "min": 0.00026456068735569715,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.00035790113302305567,
+        "std": 0.00018072829029075208,
+        "min": 0.00024144377675838768,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_lag_1",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.498135,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0004670602407468629,
+        "std": 0.00016604583562967586,
+        "min": 0.00026456068735569715,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.00035790113302305567,
+        "std": 0.00018072829029075208,
+        "min": 0.00024144377675838768,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_lag_2",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.268131,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00046354404664580964,
+        "std": 0.00016669908989753378,
+        "min": 0.00026456068735569715,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.0003560277476900787,
+        "std": 0.00017950724443484997,
+        "min": 0.00024144377675838768,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_lag_2",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.495209,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00046354404664580964,
+        "std": 0.00016669908989753378,
+        "min": 0.00026456068735569715,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.0003560277476900787,
+        "std": 0.00017950724443484997,
+        "min": 0.00024144377675838768,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_lag_3",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.245949,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00045987829460922893,
+        "std": 0.00016726984743595114,
+        "min": 0.00026030890876427293,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.00035448494334360794,
+        "std": 0.00017887589582020827,
+        "min": 0.00024144377675838768,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_lag_3",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.493633,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00045987829460922893,
+        "std": 0.00016726984743595114,
+        "min": 0.00026030890876427293,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.00035448494334360794,
+        "std": 0.00017887589582020827,
+        "min": 0.00024144377675838768,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_lag_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.20628,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00045266528160412434,
+        "std": 0.00016830963390298203,
+        "min": 0.0002444309648126364,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.0003520835078713691,
+        "std": 0.0001776433827211797,
+        "min": 0.00024144377675838768,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_lag_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.473071,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00045266528160412434,
+        "std": 0.00016830963390298203,
+        "min": 0.0002444309648126364,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.0003520835078713691,
+        "std": 0.0001776433827211797,
+        "min": 0.00024144377675838768,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmax_3",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.223904,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0005003478694602512,
+        "std": 0.0002521323191976858,
+        "min": 0.00026747261290438473,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.00039741028436396717,
+        "std": 0.0002738886406575329,
+        "min": 0.00024724501417949796,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmax_3",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.49127,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0005003478694602512,
+        "std": 0.0002521323191976858,
+        "min": 0.00026747261290438473,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.00039741028436396717,
+        "std": 0.0002738886406575329,
+        "min": 0.00024724501417949796,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmax_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.192673,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0005276089929626759,
+        "std": 0.00031341766668443387,
+        "min": 0.00026747261290438473,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.00043156380846368753,
+        "std": 0.0003389206119192433,
+        "min": 0.00024876761017367244,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmax_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.478408,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0005276089929626759,
+        "std": 0.00031341766668443387,
+        "min": 0.00026747261290438473,
+        "max": 0.0025344137102365494
+      },
+      "current_summary": {
+        "mean": 0.00043156380846368753,
+        "std": 0.0003389206119192433,
+        "min": 0.00024876761017367244,
+        "max": 0.0025344137102365494
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmean_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.172945,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.0004669383416573207,
+        "std": 8.616273299651944e-05,
+        "min": 0.0002941722050309181,
+        "max": 0.0006120842299424112
+      },
+      "current_summary": {
+        "mean": 0.00035670226785386813,
+        "std": 0.00010157653434847037,
+        "min": 0.0002494423824828118,
+        "max": 0.0006120842299424112
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmean_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.487347,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.0004669383416573207,
+        "std": 8.616273299651944e-05,
+        "min": 0.0002941722050309181,
+        "max": 0.0006120842299424112
+      },
+      "current_summary": {
+        "mean": 0.00035670226785386813,
+        "std": 0.00010157653434847037,
+        "min": 0.0002494423824828118,
+        "max": 0.0006120842299424112
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmean_3",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.209405,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0004670611575720239,
+        "std": 0.00012196785705064415,
+        "min": 0.0002655365678947419,
+        "max": 0.001155463745817542
+      },
+      "current_summary": {
+        "mean": 0.00035780058566172433,
+        "std": 0.00013308006934148667,
+        "min": 0.00024392816703766584,
+        "max": 0.001155463745817542
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmean_3",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.494051,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.0004670611575720239,
+        "std": 0.00012196785705064415,
+        "min": 0.0002655365678947419,
+        "max": 0.001155463745817542
+      },
+      "current_summary": {
+        "mean": 0.00035780058566172433,
+        "std": 0.00013308006934148667,
+        "min": 0.00024392816703766584,
+        "max": 0.001155463745817542
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmean_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.142692,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00046346051647233664,
+        "std": 0.00011217847851166688,
+        "min": 0.00026199102285318077,
+        "max": 0.000884758890606463
+      },
+      "current_summary": {
+        "mean": 0.00035615319845048034,
+        "std": 0.00012030063594305345,
+        "min": 0.0002448933373671025,
+        "max": 0.000884758890606463
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmean_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.478119,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00046346051647233664,
+        "std": 0.00011217847851166688,
+        "min": 0.00026199102285318077,
+        "max": 0.000884758890606463
+      },
+      "current_summary": {
+        "mean": 0.00035615319845048034,
+        "std": 0.00012030063594305345,
+        "min": 0.0002448933373671025,
+        "max": 0.000884758890606463
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmin_10",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.330122,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 0.0004287263987969388,
+        "std": 9.223777218317217e-05,
+        "min": 0.0002444309648126364,
+        "max": 0.0006113474373705685
+      },
+      "current_summary": {
+        "mean": 0.00032245968386577096,
+        "std": 9.481814913328573e-05,
+        "min": 0.00024144377675838768,
+        "max": 0.0006113474373705685
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmin_10",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.515843,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 0.0004287263987969388,
+        "std": 9.223777218317217e-05,
+        "min": 0.0002444309648126364,
+        "max": 0.0006113474373705685
+      },
+      "current_summary": {
+        "mean": 0.00032245968386577096,
+        "std": 9.481814913328573e-05,
+        "min": 0.00024144377675838768,
+        "max": 0.0006113474373705685
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmin_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.419632,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.00041271398128527736,
+        "std": 8.514326187411333e-05,
+        "min": 0.0002444309648126364,
+        "max": 0.000584681867621839
+      },
+      "current_summary": {
+        "mean": 0.00031195089863916056,
+        "std": 8.775858363534682e-05,
+        "min": 0.00024144377675838768,
+        "max": 0.000584681867621839
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmin_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.519941,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.00041271398128527736,
+        "std": 8.514326187411333e-05,
+        "min": 0.0002444309648126364,
+        "max": 0.000584681867621839
+      },
+      "current_summary": {
+        "mean": 0.00031195089863916056,
+        "std": 8.775858363534682e-05,
+        "min": 0.00024144377675838768,
+        "max": 0.000584681867621839
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmin_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.318994,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00043912845664162344,
+        "std": 9.436851886257033e-05,
+        "min": 0.0002472975756973028,
+        "max": 0.0006315269274637103
+      },
+      "current_summary": {
+        "mean": 0.0003297498884649762,
+        "std": 9.85462361408331e-05,
+        "min": 0.00024144377675838768,
+        "max": 0.0006315269274637103
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cc_ct_ratio_rmin_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.502492,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.00043912845664162344,
+        "std": 9.436851886257033e-05,
+        "min": 0.0002472975756973028,
+        "max": 0.0006315269274637103
+      },
+      "current_summary": {
+        "mean": 0.0003297498884649762,
+        "std": 9.85462361408331e-05,
+        "min": 0.00024144377675838768,
+        "max": 0.0006315269274637103
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "charge_duration_s_cummax",
+      "feature_type": "categorical",
+      "drift_metric": "chi2",
+      "drift_value": 279.575615,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.05,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {},
+      "current_summary": {},
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "charge_duration_s_cummax",
+      "feature_type": "categorical",
+      "drift_metric": "unseen_rate",
+      "drift_value": 0.527974,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.01,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {},
+      "current_summary": {},
+      "reliable": true,
+      "warnings": [
+        "Categories absent from training carry no learned behaviour."
+      ]
+    },
+    {
+      "feature_name": "charge_duration_s_cummin",
+      "feature_type": "categorical",
+      "drift_metric": "chi2",
+      "drift_value": 283.11089,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.05,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {},
+      "current_summary": {},
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "charge_duration_s_cummin",
+      "feature_type": "categorical",
+      "drift_metric": "unseen_rate",
+      "drift_value": 0.527974,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.01,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {},
+      "current_summary": {},
+      "reliable": true,
+      "warnings": [
+        "Categories absent from training carry no learned behaviour."
+      ]
+    },
+    {
+      "feature_name": "charge_energy_wh",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.36107,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 6.644180570481422,
+        "std": 0.6592013196425607,
+        "min": 0.1337408572435379,
+        "max": 7.516656398773193
+      },
+      "current_summary": {
+        "mean": 6.877810108982674,
+        "std": 0.8514206562319522,
+        "min": 0.048618532717227936,
+        "max": 8.275127410888672
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "charge_energy_wh",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.245884,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 6.644180570481422,
+        "std": 0.6592013196425607,
+        "min": 0.1337408572435379,
+        "max": 7.516656398773193
+      },
+      "current_summary": {
+        "mean": 6.877810108982674,
+        "std": 0.8514206562319522,
+        "min": 0.048618532717227936,
+        "max": 8.275127410888672
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cum_discharge_time_h",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.03183,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 45.47934996144156,
+        "std": 23.79429494466773,
+        "min": 5.381805896759033,
+        "max": 92.88175964355469
+      },
+      "current_summary": {
+        "mean": 43.30301431183646,
+        "std": 25.081440151524014,
+        "min": 5.381805896759033,
+        "max": 111.2182846069336
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "cum_discharge_time_h",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.077138,
+      "p_value": 0.22909588,
+      "adjusted_p_value": 0.229096,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 45.47934996144156,
+        "std": 23.79429494466773,
+        "min": 5.381805896759033,
+        "max": 92.88175964355469
+      },
+      "current_summary": {
+        "mean": 43.30301431183646,
+        "std": 25.081440151524014,
+        "min": 5.381805896759033,
+        "max": 111.2182846069336
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_cummax",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.451224,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.836482360568386,
+        "std": 0.06405421339284573,
+        "min": -1.9821032285690308,
+        "max": -1.729077935218811
+      },
+      "current_summary": {
+        "mean": -1.8508341504829873,
+        "std": 0.06982527213585817,
+        "min": -1.9895483255386353,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_cummax",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.231624,
+      "p_value": 1e-08,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.836482360568386,
+        "std": 0.06405421339284573,
+        "min": -1.9821032285690308,
+        "max": -1.729077935218811
+      },
+      "current_summary": {
+        "mean": -1.8508341504829873,
+        "std": 0.06982527213585817,
+        "min": -1.9895483255386353,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_cummean",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.371326,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.9004532295219907,
+        "std": 0.05077757657193812,
+        "min": -2.0154104232788086,
+        "max": -1.81618332862854
+      },
+      "current_summary": {
+        "mean": -1.9122717128305957,
+        "std": 0.051601219502921035,
+        "min": -2.0154104232788086,
+        "max": -1.8197219371795654
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_cummean",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.117026,
+      "p_value": 0.01421244,
+      "adjusted_p_value": 0.01516,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.9004532295219907,
+        "std": 0.05077757657193812,
+        "min": -2.0154104232788086,
+        "max": -1.81618332862854
+      },
+      "current_summary": {
+        "mean": -1.9122717128305957,
+        "std": 0.051601219502921035,
+        "min": -2.0154104232788086,
+        "max": -1.8197219371795654
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.372388,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.042731359887044976,
+        "std": 0.012138768765433449,
+        "min": 0.00564151257276535,
+        "max": 0.05954678729176521
+      },
+      "current_summary": {
+        "mean": 0.03598544824044175,
+        "std": 0.017041359270240232,
+        "min": 0.00035234150709584355,
+        "max": 0.10035326331853867
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.265932,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.042731359887044976,
+        "std": 0.012138768765433449,
+        "min": 0.00564151257276535,
+        "max": 0.05954678729176521
+      },
+      "current_summary": {
+        "mean": 0.03598544824044175,
+        "std": 0.017041359270240232,
+        "min": 0.00035234150709584355,
+        "max": 0.10035326331853867
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_ewm_15",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.143656,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8976747654796986,
+        "std": 0.0633427389832501,
+        "min": -2.064845323562622,
+        "max": -1.796959400177002
+      },
+      "current_summary": {
+        "mean": -1.9080496212293865,
+        "std": 0.06390382532135554,
+        "min": -2.064845323562622,
+        "max": -1.7775143384933472
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_ewm_15",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.087379,
+      "p_value": 0.12519073,
+      "adjusted_p_value": 0.126775,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8976747654796986,
+        "std": 0.0633427389832501,
+        "min": -2.064845323562622,
+        "max": -1.796959400177002
+      },
+      "current_summary": {
+        "mean": -1.9080496212293865,
+        "std": 0.06390382532135554,
+        "min": -2.064845323562622,
+        "max": -1.7775143384933472
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_ewm_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.194844,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8695033918159285,
+        "std": 0.060887679885250914,
+        "min": -2.0402941703796387,
+        "max": -1.7707403898239136
+      },
+      "current_summary": {
+        "mean": -1.8900977650639328,
+        "std": 0.06548509873360296,
+        "min": -2.0402941703796387,
+        "max": -1.7387897968292236
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_ewm_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.168971,
+      "p_value": 6.802e-05,
+      "adjusted_p_value": 8.1e-05,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8695033918159285,
+        "std": 0.060887679885250914,
+        "min": -2.0402941703796387,
+        "max": -1.7707403898239136
+      },
+      "current_summary": {
+        "mean": -1.8900977650639328,
+        "std": 0.06548509873360296,
+        "min": -2.0402941703796387,
+        "max": -1.7387897968292236
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_lag_1",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.172303,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.857066165641899,
+        "std": 0.061308785913219,
+        "min": -2.0080249309539795,
+        "max": -1.729077935218811
+      },
+      "current_summary": {
+        "mean": -1.880513791485998,
+        "std": 0.06816231774471464,
+        "min": -2.0080249309539795,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_lag_1",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.188585,
+      "p_value": 5.42e-06,
+      "adjusted_p_value": 7e-06,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.857066165641899,
+        "std": 0.061308785913219,
+        "min": -2.0080249309539795,
+        "max": -1.729077935218811
+      },
+      "current_summary": {
+        "mean": -1.880513791485998,
+        "std": 0.06816231774471464,
+        "min": -2.0080249309539795,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_lag_2",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.178077,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8591130288799158,
+        "std": 0.06152578764269516,
+        "min": -2.0080249309539795,
+        "max": -1.7381443977355957
+      },
+      "current_summary": {
+        "mean": -1.882068874598316,
+        "std": 0.06798153414315196,
+        "min": -2.0080249309539795,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_lag_2",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.17873,
+      "p_value": 2.002e-05,
+      "adjusted_p_value": 2.5e-05,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8591130288799158,
+        "std": 0.06152578764269516,
+        "min": -2.0080249309539795,
+        "max": -1.7381443977355957
+      },
+      "current_summary": {
+        "mean": -1.882068874598316,
+        "std": 0.06798153414315196,
+        "min": -2.0080249309539795,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_lag_3",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.192419,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8611742726872476,
+        "std": 0.062004419278250573,
+        "min": -2.0080249309539795,
+        "max": -1.7381443977355957
+      },
+      "current_summary": {
+        "mean": -1.8837086620821446,
+        "std": 0.06808474804685165,
+        "min": -2.0080249309539795,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_lag_3",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.175804,
+      "p_value": 2.91e-05,
+      "adjusted_p_value": 3.5e-05,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8611742726872476,
+        "std": 0.062004419278250573,
+        "min": -2.0080249309539795,
+        "max": -1.7381443977355957
+      },
+      "current_summary": {
+        "mean": -1.8837086620821446,
+        "std": 0.06808474804685165,
+        "min": -2.0080249309539795,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmax_10",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.216942,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": -1.834083146207473,
+        "std": 0.06081115924503457,
+        "min": -1.9682317972183228,
+        "max": -1.729077935218811
+      },
+      "current_summary": {
+        "mean": -1.8611667541968102,
+        "std": 0.06708607281447346,
+        "min": -1.9891170263290405,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmax_10",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.213124,
+      "p_value": 1.7e-07,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": -1.834083146207473,
+        "std": 0.06081115924503457,
+        "min": -1.9682317972183228,
+        "max": -1.729077935218811
+      },
+      "current_summary": {
+        "mean": -1.8611667541968102,
+        "std": 0.06708607281447346,
+        "min": -1.9891170263290405,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmax_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.251622,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": -1.8237280829747518,
+        "std": 0.05667152602494859,
+        "min": -1.9466373920440674,
+        "max": -1.729077935218811
+      },
+      "current_summary": {
+        "mean": -1.849002840025476,
+        "std": 0.06307261101941028,
+        "min": -1.9774550199508667,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmax_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.203327,
+      "p_value": 9.8e-07,
+      "adjusted_p_value": 1e-06,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": -1.8237280829747518,
+        "std": 0.05667152602494859,
+        "min": -1.9466373920440674,
+        "max": -1.729077935218811
+      },
+      "current_summary": {
+        "mean": -1.849002840025476,
+        "std": 0.06307261101941028,
+        "min": -1.9774550199508667,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmax_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.176948,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8418065403284651,
+        "std": 0.06177565678307437,
+        "min": -1.9821032285690308,
+        "max": -1.729077935218811
+      },
+      "current_summary": {
+        "mean": -1.868368707975774,
+        "std": 0.06787280426303927,
+        "min": -1.9895483255386353,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmax_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.19254,
+      "p_value": 3.15e-06,
+      "adjusted_p_value": 4e-06,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8418065403284651,
+        "std": 0.06177565678307437,
+        "min": -1.9821032285690308,
+        "max": -1.729077935218811
+      },
+      "current_summary": {
+        "mean": -1.868368707975774,
+        "std": 0.06787280426303927,
+        "min": -1.9895483255386353,
+        "max": -1.7200547456741333
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmean_10",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.215406,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": -1.8597629416222665,
+        "std": 0.05669863002847435,
+        "min": -1.9986225366592407,
+        "max": -1.7681984901428223
+      },
+      "current_summary": {
+        "mean": -1.8832899054080592,
+        "std": 0.06446602666045674,
+        "min": -1.9986225366592407,
+        "max": -1.7310864925384521
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmean_10",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.206611,
+      "p_value": 4.6e-07,
+      "adjusted_p_value": 1e-06,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": -1.8597629416222665,
+        "std": 0.05669863002847435,
+        "min": -1.9986225366592407,
+        "max": -1.7681984901428223
+      },
+      "current_summary": {
+        "mean": -1.8832899054080592,
+        "std": 0.06446602666045674,
+        "min": -1.9986225366592407,
+        "max": -1.7310864925384521
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmean_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.24685,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": -1.8594009897443984,
+        "std": 0.052303743949924854,
+        "min": -1.983667016029358,
+        "max": -1.7756540775299072
+      },
+      "current_summary": {
+        "mean": -1.8834883692149225,
+        "std": 0.059931190124501765,
+        "min": -1.988694429397583,
+        "max": -1.743844747543335
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmean_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.207133,
+      "p_value": 5.7e-07,
+      "adjusted_p_value": 1e-06,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": -1.8594009897443984,
+        "std": 0.052303743949924854,
+        "min": -1.983667016029358,
+        "max": -1.7756540775299072
+      },
+      "current_summary": {
+        "mean": -1.8834883692149225,
+        "std": 0.059931190124501765,
+        "min": -1.988694429397583,
+        "max": -1.743844747543335
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmean_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.203329,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8591490394613717,
+        "std": 0.058964481390588463,
+        "min": -2.002214193344116,
+        "max": -1.7541189193725586
+      },
+      "current_summary": {
+        "mean": -1.8821475294241952,
+        "std": 0.06663465517202923,
+        "min": -2.002214193344116,
+        "max": -1.7234339714050293
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmean_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.188119,
+      "p_value": 5.78e-06,
+      "adjusted_p_value": 7e-06,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8591490394613717,
+        "std": 0.058964481390588463,
+        "min": -2.002214193344116,
+        "max": -1.7541189193725586
+      },
+      "current_summary": {
+        "mean": -1.8821475294241952,
+        "std": 0.06663465517202923,
+        "min": -2.002214193344116,
+        "max": -1.7234339714050293
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmin_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.353701,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": -1.920245951016744,
+        "std": 0.05741694847755309,
+        "min": -2.0813918113708496,
+        "max": -1.816712498664856
+      },
+      "current_summary": {
+        "mean": -1.9300510459812172,
+        "std": 0.05877617941131363,
+        "min": -2.0813918113708496,
+        "max": -1.7802294492721558
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmin_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.126764,
+      "p_value": 0.00701213,
+      "adjusted_p_value": 0.007581,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": -1.920245951016744,
+        "std": 0.05741694847755309,
+        "min": -2.0813918113708496,
+        "max": -1.816712498664856
+      },
+      "current_summary": {
+        "mean": -1.9300510459812172,
+        "std": 0.05877617941131363,
+        "min": -2.0813918113708496,
+        "max": -1.7802294492721558
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmin_3",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.225333,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8692888231313185,
+        "std": 0.0608101120588128,
+        "min": -2.0080249309539795,
+        "max": -1.7476952075958252
+      },
+      "current_summary": {
+        "mean": -1.8896918526799733,
+        "std": 0.06783419712594552,
+        "min": -2.0080249309539795,
+        "max": -1.721199631690979
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmin_3",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.179373,
+      "p_value": 1.842e-05,
+      "adjusted_p_value": 2.3e-05,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.8692888231313185,
+        "std": 0.0608101120588128,
+        "min": -2.0080249309539795,
+        "max": -1.7476952075958252
+      },
+      "current_summary": {
+        "mean": -1.8896918526799733,
+        "std": 0.06783419712594552,
+        "min": -2.0080249309539795,
+        "max": -1.721199631690979
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmin_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.185288,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.879560905895876,
+        "std": 0.061484160944205946,
+        "min": -2.031933546066284,
+        "max": -1.7819342613220215
+      },
+      "current_summary": {
+        "mean": -1.8978120689606743,
+        "std": 0.06736177744090871,
+        "min": -2.031933546066284,
+        "max": -1.7278671264648438
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "current_mean_a_rmin_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.160772,
+      "p_value": 0.0001801,
+      "adjusted_p_value": 0.000212,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -1.879560905895876,
+        "std": 0.061484160944205946,
+        "min": -2.031933546066284,
+        "max": -1.7819342613220215
+      },
+      "current_summary": {
+        "mean": -1.8978120689606743,
+        "std": 0.06736177744090871,
+        "min": -2.031933546066284,
+        "max": -1.7278671264648438
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_cummin",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.450381,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 3142.1648516137057,
+        "std": 111.80545616573568,
+        "min": 2821.531005859375,
+        "max": 3404.718994140625
+      },
+      "current_summary": {
+        "mean": 3221.520829512912,
+        "std": 145.91800649574256,
+        "min": 2839.531982421875,
+        "max": 3629.172119140625
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_cummin",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.298408,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 3142.1648516137057,
+        "std": 111.80545616573568,
+        "min": 2821.531005859375,
+        "max": 3404.718994140625
+      },
+      "current_summary": {
+        "mean": 3221.520829512912,
+        "std": 145.91800649574256,
+        "min": 2839.531982421875,
+        "max": 3629.172119140625
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.603475,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 58.32551065902138,
+        "std": 40.33340150751317,
+        "min": 5.795335292816162,
+        "max": 185.04705810546875
+      },
+      "current_summary": {
+        "mean": 86.1082456003048,
+        "std": 52.415703714486966,
+        "min": 5.795335292816162,
+        "max": 210.08486938476562
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.320916,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 58.32551065902138,
+        "std": 40.33340150751317,
+        "min": 5.795335292816162,
+        "max": 185.04705810546875
+      },
+      "current_summary": {
+        "mean": 86.1082456003048,
+        "std": 52.415703714486966,
+        "min": 5.795335292816162,
+        "max": 210.08486938476562
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_ewm_15",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.561186,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 3214.2576835718046,
+        "std": 91.86543546540213,
+        "min": 2967.212158203125,
+        "max": 3430.5439453125
+      },
+      "current_summary": {
+        "mean": 3325.982120742062,
+        "std": 165.8593612367562,
+        "min": 2988.071533203125,
+        "max": 3681.28271484375
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_ewm_15",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.298408,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 3214.2576835718046,
+        "std": 91.86543546540213,
+        "min": 2967.212158203125,
+        "max": 3430.5439453125
+      },
+      "current_summary": {
+        "mean": 3325.982120742062,
+        "std": 165.8593612367562,
+        "min": 2988.071533203125,
+        "max": 3681.28271484375
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_rmax_10",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.314872,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 3226.019678691789,
+        "std": 151.1965920808034,
+        "min": 2893.375,
+        "max": 3595.281005859375
+      },
+      "current_summary": {
+        "mean": 3312.9685767282035,
+        "std": 180.1848826145417,
+        "min": 2912.468994140625,
+        "max": 3690.23388671875
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_rmax_10",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.247005,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 3226.019678691789,
+        "std": 151.1965920808034,
+        "min": 2893.375,
+        "max": 3595.281005859375
+      },
+      "current_summary": {
+        "mean": 3312.9685767282035,
+        "std": 180.1848826145417,
+        "min": 2912.468994140625,
+        "max": 3690.23388671875
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_rmax_3",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.373813,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 3179.0667564592113,
+        "std": 129.58611034641987,
+        "min": 2832.702880859375,
+        "max": 3595.281005859375
+      },
+      "current_summary": {
+        "mean": 3261.9692572786876,
+        "std": 165.65062830501338,
+        "min": 2864.110107421875,
+        "max": 3652.281005859375
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_rmax_3",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.23746,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 3179.0667564592113,
+        "std": 129.58611034641987,
+        "min": 2832.702880859375,
+        "max": 3595.281005859375
+      },
+      "current_summary": {
+        "mean": 3261.9692572786876,
+        "std": 165.65062830501338,
+        "min": 2864.110107421875,
+        "max": 3652.281005859375
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_rmax_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.292112,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 3195.548679994733,
+        "std": 136.51171641001451,
+        "min": 2846.639892578125,
+        "max": 3595.281005859375
+      },
+      "current_summary": {
+        "mean": 3281.42770485832,
+        "std": 173.19425578356004,
+        "min": 2884.98388671875,
+        "max": 3672.343994140625
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_rmax_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.22791,
+      "p_value": 1e-08,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 3195.548679994733,
+        "std": 136.51171641001451,
+        "min": 2846.639892578125,
+        "max": 3595.281005859375
+      },
+      "current_summary": {
+        "mean": 3281.42770485832,
+        "std": 173.19425578356004,
+        "min": 2884.98388671875,
+        "max": 3672.343994140625
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_rmin_10",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.444934,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 3136.535251034007,
+        "std": 109.02177705000253,
+        "min": 2821.531005859375,
+        "max": 3380.406005859375
+      },
+      "current_summary": {
+        "mean": 3210.657915500457,
+        "std": 135.37038261195303,
+        "min": 2839.531982421875,
+        "max": 3550.593994140625
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "discharge_duration_s_rmin_10",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.272335,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 3136.535251034007,
+        "std": 109.02177705000253,
+        "min": 2821.531005859375,
+        "max": 3380.406005859375
+      },
+      "current_summary": {
+        "mean": 3210.657915500457,
+        "std": 135.37038261195303,
+        "min": 2839.531982421875,
+        "max": 3550.593994140625
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "energy_throughput_wh_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.202355,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.2167722245099281,
+        "std": 0.11016256047331323,
+        "min": 0.02265377715229988,
+        "max": 0.5195577144622803
+      },
+      "current_summary": {
+        "mean": 0.213005713834592,
+        "std": 0.14640090387750315,
+        "min": 0.021608825773000717,
+        "max": 0.7302558422088623
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "energy_throughput_wh_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.150466,
+      "p_value": 0.00057116,
+      "adjusted_p_value": 0.000635,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.2167722245099281,
+        "std": 0.11016256047331323,
+        "min": 0.02265377715229988,
+        "max": 0.5195577144622803
+      },
+      "current_summary": {
+        "mean": 0.213005713834592,
+        "std": 0.14640090387750315,
+        "min": 0.021608825773000717,
+        "max": 0.7302558422088623
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "energy_throughput_wh_rmax_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.694819,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 5.64736267513699,
+        "std": 0.5199418496279445,
+        "min": 4.705540657043457,
+        "max": 6.605961799621582
+      },
+      "current_summary": {
+        "mean": 6.096296743397482,
+        "std": 0.5912024495986591,
+        "min": 4.705540657043457,
+        "max": 7.259532451629639
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "energy_throughput_wh_rmax_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.309306,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 5.64736267513699,
+        "std": 0.5199418496279445,
+        "min": 4.705540657043457,
+        "max": 6.605961799621582
+      },
+      "current_summary": {
+        "mean": 6.096296743397482,
+        "std": 0.5912024495986591,
+        "min": 4.705540657043457,
+        "max": 7.259532451629639
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "internal_resistance_ohm_rmax_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.942654,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1042,
+      "reference_summary": {
+        "mean": 0.08805019767747985,
+        "std": 0.024334907731202133,
+        "min": 0.06246407702565193,
+        "max": 0.1267251819372177
+      },
+      "current_summary": {
+        "mean": 0.07324326196381548,
+        "std": 0.022773794060230067,
+        "min": 0.04775537922978401,
+        "max": 0.12606702744960785
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "internal_resistance_ohm_rmax_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.380144,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 225,
+      "sample_size": 1042,
+      "reference_summary": {
+        "mean": 0.08805019767747985,
+        "std": 0.024334907731202133,
+        "min": 0.06246407702565193,
+        "max": 0.1267251819372177
+      },
+      "current_summary": {
+        "mean": 0.07324326196381548,
+        "std": 0.022773794060230067,
+        "min": 0.04775537922978401,
+        "max": 0.12606702744960785
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "internal_resistance_ohm_rrange_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.270819,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1042,
+      "reference_summary": {
+        "mean": 0.004346598370207681,
+        "std": 0.0046578656722156535,
+        "min": 0.00141921266913414,
+        "max": 0.035964034497737885
+      },
+      "current_summary": {
+        "mean": 0.0048237443613800115,
+        "std": 0.004874259025097624,
+        "min": 0.00141921266913414,
+        "max": 0.035964034497737885
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "internal_resistance_ohm_rrange_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.145873,
+      "p_value": 0.00138893,
+      "adjusted_p_value": 0.001522,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 225,
+      "sample_size": 1042,
+      "reference_summary": {
+        "mean": 0.004346598370207681,
+        "std": 0.0046578656722156535,
+        "min": 0.00141921266913414,
+        "max": 0.035964034497737885
+      },
+      "current_summary": {
+        "mean": 0.0048237443613800115,
+        "std": 0.004874259025097624,
+        "min": 0.00141921266913414,
+        "max": 0.035964034497737885
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "inv_cycle_index",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.03941,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.03183611429013898,
+        "std": 0.030100794407214488,
+        "min": 0.009433962404727936,
+        "max": 0.1666666716337204
+      },
+      "current_summary": {
+        "mean": 0.03531221083494149,
+        "std": 0.03181182664968266,
+        "min": 0.008064515888690948,
+        "max": 0.1666666716337204
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "inv_cycle_index",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.093569,
+      "p_value": 0.08374067,
+      "adjusted_p_value": 0.085888,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.03183611429013898,
+        "std": 0.030100794407214488,
+        "min": 0.009433962404727936,
+        "max": 0.1666666716337204
+      },
+      "current_summary": {
+        "mean": 0.03531221083494149,
+        "std": 0.03181182664968266,
+        "min": 0.008064515888690948,
+        "max": 0.1666666716337204
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "log_cycle_index",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.039769,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 3.764689482553175,
+        "std": 0.6705716010716909,
+        "min": 1.945910096168518,
+        "max": 4.672828674316406
+      },
+      "current_summary": {
+        "mean": 3.665528423686503,
+        "std": 0.6889564226888678,
+        "min": 1.945910096168518,
+        "max": 4.828313827514648
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "log_cycle_index",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.093569,
+      "p_value": 0.08374067,
+      "adjusted_p_value": 0.085888,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 3.764689482553175,
+        "std": 0.6705716010716909,
+        "min": 1.945910096168518,
+        "max": 4.672828674316406
+      },
+      "current_summary": {
+        "mean": 3.665528423686503,
+        "std": 0.6889564226888678,
+        "min": 1.945910096168518,
+        "max": 4.828313827514648
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "n_samples_discharge",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.817461,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 271.7940074906367,
+        "std": 30.958234684521315,
+        "min": 219.0,
+        "max": 351.0
+      },
+      "current_summary": {
+        "mean": 286.55048231511256,
+        "std": 56.71966323633869,
+        "min": 179.0,
+        "max": 371.0
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "n_samples_discharge",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.297701,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 271.7940074906367,
+        "std": 30.958234684521315,
+        "min": 219.0,
+        "max": 351.0
+      },
+      "current_summary": {
+        "mean": 286.55048231511256,
+        "std": 56.71966323633869,
+        "min": 179.0,
+        "max": 371.0
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_cummean",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.880785,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.8111155307694767,
+        "std": 0.05024632673904032,
+        "min": 0.7388418912887573,
+        "max": 0.9217500686645508
+      },
+      "current_summary": {
+        "mean": 0.8695077034821465,
+        "std": 0.06740135013401417,
+        "min": 0.7413864731788635,
+        "max": 1.0113835334777832
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_cummean",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.397862,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.8111155307694767,
+        "std": 0.05024632673904032,
+        "min": 0.7388418912887573,
+        "max": 0.9217500686645508
+      },
+      "current_summary": {
+        "mean": 0.8695077034821465,
+        "std": 0.06740135013401417,
+        "min": 0.7413864731788635,
+        "max": 1.0113835334777832
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_cummin",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.657742,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.7643797462352653,
+        "std": 0.05584773317573165,
+        "min": 0.6883724331855774,
+        "max": 0.9163501262664795
+      },
+      "current_summary": {
+        "mean": 0.8205196122264555,
+        "std": 0.07633323063488344,
+        "min": 0.6913167238235474,
+        "max": 1.006663203239441
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_cummin",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.401238,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.7643797462352653,
+        "std": 0.05584773317573165,
+        "min": 0.6883724331855774,
+        "max": 0.9163501262664795
+      },
+      "current_summary": {
+        "mean": 0.8205196122264555,
+        "std": 0.07633323063488344,
+        "min": 0.6913167238235474,
+        "max": 1.006663203239441
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.222373,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.03058994399062759,
+        "std": 0.014487852362884858,
+        "min": 0.0038733314722776413,
+        "max": 0.06794677674770355
+      },
+      "current_summary": {
+        "mean": 0.028895431794106384,
+        "std": 0.018565736293812612,
+        "min": 0.0038733314722776413,
+        "max": 0.09406678378582001
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.153746,
+      "p_value": 0.00039892,
+      "adjusted_p_value": 0.000449,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.03058994399062759,
+        "std": 0.014487852362884858,
+        "min": 0.0038733314722776413,
+        "max": 0.06794677674770355
+      },
+      "current_summary": {
+        "mean": 0.028895431794106384,
+        "std": 0.018565736293812612,
+        "min": 0.0038733314722776413,
+        "max": 0.09406678378582001
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_delta_from_initial",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.182944,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -0.1013982170976503,
+        "std": 0.049313093169830444,
+        "min": -0.2290748953819275,
+        "max": -0.011152148246765137
+      },
+      "current_summary": {
+        "mean": -0.09339175603780715,
+        "std": 0.06111996246399867,
+        "min": -0.29409462213516235,
+        "max": -0.010154962539672852
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_delta_from_initial",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.154855,
+      "p_value": 0.00035269,
+      "adjusted_p_value": 0.000403,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": -0.1013982170976503,
+        "std": 0.049313093169830444,
+        "min": -0.2290748953819275,
+        "max": -0.011152148246765137
+      },
+      "current_summary": {
+        "mean": -0.09339175603780715,
+        "std": 0.06111996246399867,
+        "min": -0.29409462213516235,
+        "max": -0.010154962539672852
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_ewm_15",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.745462,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.8048656643106696,
+        "std": 0.05225083824538858,
+        "min": 0.7308698296546936,
+        "max": 0.9260435700416565
+      },
+      "current_summary": {
+        "mean": 0.860484808510906,
+        "std": 0.07090499961293276,
+        "min": 0.7308698296546936,
+        "max": 1.0160696506500244
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_ewm_15",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.332572,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.8048656643106696,
+        "std": 0.05225083824538858,
+        "min": 0.7308698296546936,
+        "max": 0.9260435700416565
+      },
+      "current_summary": {
+        "mean": 0.860484808510906,
+        "std": 0.07090499961293276,
+        "min": 0.7308698296546936,
+        "max": 1.0160696506500244
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_lag_10",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.692003,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 252,
+      "sample_size": 1450,
+      "reference_summary": {
+        "mean": 0.7854967053447451,
+        "std": 0.05554863400884594,
+        "min": 0.7048691511154175,
+        "max": 0.9275022745132446
+      },
+      "current_summary": {
+        "mean": 0.8411516814396299,
+        "std": 0.07498209882860292,
+        "min": 0.7097756266593933,
+        "max": 1.0176688432693481
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_lag_10",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.343103,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 252,
+      "sample_size": 1450,
+      "reference_summary": {
+        "mean": 0.7854967053447451,
+        "std": 0.05554863400884594,
+        "min": 0.7048691511154175,
+        "max": 0.9275022745132446
+      },
+      "current_summary": {
+        "mean": 0.8411516814396299,
+        "std": 0.07498209882860292,
+        "min": 0.7097756266593933,
+        "max": 1.0176688432693481
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_lag_3",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.61593,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.778341471925657,
+        "std": 0.055176711600617864,
+        "min": 0.700567364692688,
+        "max": 0.9215977787971497
+      },
+      "current_summary": {
+        "mean": 0.8324010529702116,
+        "std": 0.0753981743331684,
+        "min": 0.700567364692688,
+        "max": 1.0125701427459717
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_lag_3",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.328939,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.778341471925657,
+        "std": 0.055176711600617864,
+        "min": 0.700567364692688,
+        "max": 0.9215977787971497
+      },
+      "current_summary": {
+        "mean": 0.8324010529702116,
+        "std": 0.0753981743331684,
+        "min": 0.700567364692688,
+        "max": 1.0125701427459717
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_lag_5",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.646051,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.7818957348441363,
+        "std": 0.05609907106475553,
+        "min": 0.700567364692688,
+        "max": 0.9275022745132446
+      },
+      "current_summary": {
+        "mean": 0.8365042792255856,
+        "std": 0.0759273573078951,
+        "min": 0.700567364692688,
+        "max": 1.0176688432693481
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_lag_5",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.343087,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.7818957348441363,
+        "std": 0.05609907106475553,
+        "min": 0.700567364692688,
+        "max": 0.9275022745132446
+      },
+      "current_summary": {
+        "mean": 0.8365042792255856,
+        "std": 0.0759273573078951,
+        "min": 0.700567364692688,
+        "max": 1.0176688432693481
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_rmax_10",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.643612,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 0.7929291830343359,
+        "std": 0.05300597097025933,
+        "min": 0.7115188241004944,
+        "max": 0.9275022745132446
+      },
+      "current_summary": {
+        "mean": 0.8458833390154213,
+        "std": 0.07327519128688861,
+        "min": 0.7115188241004944,
+        "max": 1.0176688432693481
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_rmax_10",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.301567,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 0.7929291830343359,
+        "std": 0.05300597097025933,
+        "min": 0.7115188241004944,
+        "max": 0.9275022745132446
+      },
+      "current_summary": {
+        "mean": 0.8458833390154213,
+        "std": 0.07327519128688861,
+        "min": 0.7115188241004944,
+        "max": 1.0176688432693481
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_rmax_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.78375,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.8048143405384488,
+        "std": 0.048368524764525564,
+        "min": 0.7333379983901978,
+        "max": 0.9275022745132446
+      },
+      "current_summary": {
+        "mean": 0.8569696256322202,
+        "std": 0.06882168515564954,
+        "min": 0.7333379983901978,
+        "max": 1.0176688432693481
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_rmax_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.381487,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.8048143405384488,
+        "std": 0.048368524764525564,
+        "min": 0.7333379983901978,
+        "max": 0.9275022745132446
+      },
+      "current_summary": {
+        "mean": 0.8569696256322202,
+        "std": 0.06882168515564954,
+        "min": 0.7333379983901978,
+        "max": 1.0176688432693481
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_rmin_10",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.693765,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 0.7641501711864097,
+        "std": 0.05286470776826003,
+        "min": 0.6883724331855774,
+        "max": 0.9106006026268005
+      },
+      "current_summary": {
+        "mean": 0.8182271951967806,
+        "std": 0.07280117345954142,
+        "min": 0.6913167238235474,
+        "max": 0.984394907951355
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_rmin_10",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.346258,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 0.7641501711864097,
+        "std": 0.05286470776826003,
+        "min": 0.6883724331855774,
+        "max": 0.9106006026268005
+      },
+      "current_summary": {
+        "mean": 0.8182271951967806,
+        "std": 0.07280117345954142,
+        "min": 0.6913167238235474,
+        "max": 0.984394907951355
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_rmin_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.743994,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.7563519297705756,
+        "std": 0.04765980401695034,
+        "min": 0.6883724331855774,
+        "max": 0.8768152594566345
+      },
+      "current_summary": {
+        "mean": 0.808794518390598,
+        "std": 0.0682800899430252,
+        "min": 0.6913167238235474,
+        "max": 0.939139187335968
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "soh_rmin_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.34435,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.7563519297705756,
+        "std": 0.04765980401695034,
+        "min": 0.6883724331855774,
+        "max": 0.8768152594566345
+      },
+      "current_summary": {
+        "mean": 0.808794518390598,
+        "std": 0.0682800899430252,
+        "min": 0.6913167238235474,
+        "max": 0.939139187335968
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "temperature_max_c_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.548316,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1493,
+      "reference_summary": {
+        "mean": 0.8395739625232497,
+        "std": 0.4065527466675671,
+        "min": 0.17978434264659882,
+        "max": 1.7351239919662476
+      },
+      "current_summary": {
+        "mean": 0.6515855456428566,
+        "std": 0.3172280618237534,
+        "min": 0.1306813806295395,
+        "max": 1.7351239919662476
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "temperature_max_c_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.231631,
+      "p_value": 1e-08,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1493,
+      "reference_summary": {
+        "mean": 0.8395739625232497,
+        "std": 0.4065527466675671,
+        "min": 0.17978434264659882,
+        "max": 1.7351239919662476
+      },
+      "current_summary": {
+        "mean": 0.6515855456428566,
+        "std": 0.3172280618237534,
+        "min": 0.1306813806295395,
+        "max": 1.7351239919662476
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "temperature_max_c_delta_from_initial",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.157239,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1493,
+      "reference_summary": {
+        "mean": 0.11238525333475978,
+        "std": 1.9774782996883227,
+        "min": -3.7152328491210938,
+        "max": 7.494804382324219
+      },
+      "current_summary": {
+        "mean": -0.21493737232900673,
+        "std": 1.5385551606587333,
+        "min": -3.7152328491210938,
+        "max": 7.494804382324219
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "temperature_max_c_delta_from_initial",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.111105,
+      "p_value": 0.02354147,
+      "adjusted_p_value": 0.02478,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "WARNING",
+      "reference_sample_size": 267,
+      "sample_size": 1493,
+      "reference_summary": {
+        "mean": 0.11238525333475978,
+        "std": 1.9774782996883227,
+        "min": -3.7152328491210938,
+        "max": 7.494804382324219
+      },
+      "current_summary": {
+        "mean": -0.21493737232900673,
+        "std": 1.5385551606587333,
+        "min": -3.7152328491210938,
+        "max": 7.494804382324219
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "voltage_min_v_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 1.133877,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.043663626927394096,
+        "std": 0.008623303178166354,
+        "min": 0.023333432152867317,
+        "max": 0.05929914861917496
+      },
+      "current_summary": {
+        "mean": 0.05967341138594978,
+        "std": 0.022076196563509672,
+        "min": 0.023333432152867317,
+        "max": 0.11343425512313843
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "voltage_min_v_cumstd",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.498473,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 0.043663626927394096,
+        "std": 0.008623303178166354,
+        "min": 0.023333432152867317,
+        "max": 0.05929914861917496
+      },
+      "current_summary": {
+        "mean": 0.05967341138594978,
+        "std": 0.022076196563509672,
+        "min": 0.023333432152867317,
+        "max": 0.11343425512313843
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "voltage_min_v_rrange_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.612033,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.1642896885342068,
+        "std": 0.03192325212671682,
+        "min": 0.08795332908630371,
+        "max": 0.24104619026184082
+      },
+      "current_summary": {
+        "mean": 0.16661639690021027,
+        "std": 0.08177298443935267,
+        "min": 0.06391382217407227,
+        "max": 0.3707127571105957
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "voltage_min_v_rrange_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.241939,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.1642896885342068,
+        "std": 0.03192325212671682,
+        "min": 0.08795332908630371,
+        "max": 0.24104619026184082
+      },
+      "current_summary": {
+        "mean": 0.16661639690021027,
+        "std": 0.08177298443935267,
+        "min": 0.06391382217407227,
+        "max": 0.3707127571105957
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "voltage_min_v_rstd_10",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.420609,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 0.04932510265897887,
+        "std": 0.01315020524509998,
+        "min": 0.014280146919190884,
+        "max": 0.07599685341119766
+      },
+      "current_summary": {
+        "mean": 0.04943626896648545,
+        "std": 0.02470038208943098,
+        "min": 0.014280146919190884,
+        "max": 0.12108481675386429
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "voltage_min_v_rstd_10",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.225146,
+      "p_value": 3e-08,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 255,
+      "sample_size": 1471,
+      "reference_summary": {
+        "mean": 0.04932510265897887,
+        "std": 0.01315020524509998,
+        "min": 0.014280146919190884,
+        "max": 0.07599685341119766
+      },
+      "current_summary": {
+        "mean": 0.04943626896648545,
+        "std": 0.02470038208943098,
+        "min": 0.014280146919190884,
+        "max": 0.12108481675386429
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "voltage_min_v_rstd_20",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.520883,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.04997597359120846,
+        "std": 0.010669718719873676,
+        "min": 0.02639838680624962,
+        "max": 0.07493571937084198
+      },
+      "current_summary": {
+        "mean": 0.05001465770771209,
+        "std": 0.023220668300932463,
+        "min": 0.02073708549141884,
+        "max": 0.11564724892377853
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "voltage_min_v_rstd_20",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.226562,
+      "p_value": 3e-08,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 225,
+      "sample_size": 1261,
+      "reference_summary": {
+        "mean": 0.04997597359120846,
+        "std": 0.010669718719873676,
+        "min": 0.02639838680624962,
+        "max": 0.07493571937084198
+      },
+      "current_summary": {
+        "mean": 0.05001465770771209,
+        "std": 0.023220668300932463,
+        "min": 0.02073708549141884,
+        "max": 0.11564724892377853
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "voltage_slope_v_per_s_ratio_to_initial",
+      "feature_type": "numerical",
+      "drift_metric": "psi",
+      "drift_value": 0.465277,
+      "p_value": null,
+      "adjusted_p_value": null,
+      "threshold": 0.1,
+      "drift_detected": true,
+      "severity": "CRITICAL",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.1455368705456623,
+        "std": 0.1727263745800203,
+        "min": 0.5297297239303589,
+        "max": 1.4794288873672485
+      },
+      "current_summary": {
+        "mean": 1.0937197648827286,
+        "std": 0.13111562144038388,
+        "min": 0.5297297239303589,
+        "max": 1.4582231044769287
+      },
+      "reliable": true,
+      "warnings": []
+    },
+    {
+      "feature_name": "voltage_slope_v_per_s_ratio_to_initial",
+      "feature_type": "numerical",
+      "drift_metric": "ks",
+      "drift_value": 0.266174,
+      "p_value": 0.0,
+      "adjusted_p_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 267,
+      "sample_size": 1555,
+      "reference_summary": {
+        "mean": 1.1455368705456623,
+        "std": 0.1727263745800203,
+        "min": 0.5297297239303589,
+        "max": 1.4794288873672485
+      },
+      "current_summary": {
+        "mean": 1.0937197648827286,
+        "std": 0.13111562144038388,
+        "min": 0.5297297239303589,
+        "max": 1.4582231044769287
+      },
+      "reliable": true,
+      "warnings": []
+    }
+  ],
+  "n_features_tested": 80,
+  "n_features_drifted": 77,
+  "n_features_skipped": 0,
+  "drifted_features": [
+    "capacity_ah",
+    "capacity_ah_cumstd",
+    "capacity_ah_lag_1",
+    "capacity_ah_lag_3",
+    "capacity_ah_lag_5",
+    "capacity_ah_rmax_10",
+    "capacity_ah_rmax_20",
+    "capacity_ah_rmax_3",
+    "capacity_ah_rmax_5",
+    "capacity_ah_rrange_20",
+    "cc_ct_ratio_cummean",
+    "cc_ct_ratio_cumstd",
+    "cc_ct_ratio_delta_from_initial",
+    "cc_ct_ratio_ewm_5",
+    "cc_ct_ratio_lag_1",
+    "cc_ct_ratio_lag_2",
+    "cc_ct_ratio_lag_3",
+    "cc_ct_ratio_lag_5",
+    "cc_ct_ratio_rmax_3",
+    "cc_ct_ratio_rmax_5",
+    "cc_ct_ratio_rmean_20",
+    "cc_ct_ratio_rmean_3",
+    "cc_ct_ratio_rmean_5",
+    "cc_ct_ratio_rmin_10",
+    "cc_ct_ratio_rmin_20",
+    "cc_ct_ratio_rmin_5",
+    "charge_duration_s_cummax",
+    "charge_duration_s_cummin",
+    "charge_energy_wh",
+    "current_mean_a_cummax",
+    "current_mean_a_cummean",
+    "current_mean_a_cumstd",
+    "current_mean_a_ewm_15",
+    "current_mean_a_ewm_5",
+    "current_mean_a_lag_1",
+    "current_mean_a_lag_2",
+    "current_mean_a_lag_3",
+    "current_mean_a_rmax_10",
+    "current_mean_a_rmax_20",
+    "current_mean_a_rmax_5",
+    "current_mean_a_rmean_10",
+    "current_mean_a_rmean_20",
+    "current_mean_a_rmean_5",
+    "current_mean_a_rmin_20",
+    "current_mean_a_rmin_3",
+    "current_mean_a_rmin_5",
+    "discharge_duration_s_cummin",
+    "discharge_duration_s_cumstd",
+    "discharge_duration_s_ewm_15",
+    "discharge_duration_s_rmax_10"
+  ],
+  "multiple_comparison": "benjamini_hochberg",
+  "method_notes": [
+    "Numerical metrics: psi, ks.",
+    "Categorical metrics: chi2, unseen_rate.",
+    "PSI, Wasserstein and JS are magnitude metrics with no p-value; they are judged against configured thresholds only.",
+    "KS and chi-square p-values are adjusted for multiple comparisons (benjamini_hochberg, alpha=0.05).",
+    "The reference sample for KS and Wasserstein is reconstructed from stored quantiles, not from raw training rows; both statistics are approximate.",
+    "Features with fewer than 50 current observations are reported unscored."
+  ],
+  "warnings": [
+    "677 feature(s) in the batch are absent from the reference and were not tested: ['cycle_index', 'ambient_temperature_c', 'capacity_smooth_ah', 'soh', 'discharge_duration_s', 'voltage_mean_v', 'voltage_min_v', 'voltage_max_v', 'voltage_std_v', 'voltage_slope_v_per_s']."
+  ]
+}

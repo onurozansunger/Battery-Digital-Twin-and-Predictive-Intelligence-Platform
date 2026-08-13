@@ -1,0 +1,132 @@
+# Local, single-node deployment of the fleet intelligence platform.
+#
+#   docker compose build
+#   docker compose up api dashboard
+#
+# What this file deliberately does not contain
+# --------------------------------------------
+# A message broker, a task queue, a metrics stack or a tracking server. This
+# platform's batch jobs are minutes long and run on a schedule; adding Kafka or
+# a Celery worker here would be infrastructure that exists to look like
+# production rather than to do anything.
+#
+# MLflow is defined but not started by default (profile `tracking`), because the
+# file-backed tracker is the default backend and a server is only worth running
+# when several people are comparing runs.
+
+name: battery-fleet
+
+x-common: &common
+  restart: unless-stopped
+  environment: &common-env
+    BATTERY_RUL_ROOT: /app
+    BATTERY_RUL_CONFIG: /app/configs/default.yaml
+    BATTERY_RUL_LOG_FORMAT: json
+    # Model artifacts and the database live on mounted volumes, never in the
+    # image. An image that carries a trained model is an image that has to be
+    # rebuilt to ship a retrain.
+    PYTHONUNBUFFERED: "1"
+  volumes:
+    - ./artifacts:/app/artifacts:rw
+    - ./reports:/app/reports:rw
+    - ./data/processed:/app/data/processed:ro
+  # The application writes only to the mounted volumes, so the root filesystem
+  # can be read-only. /tmp is a tmpfs because scientific libraries expect a
+  # writable temp directory.
+  read_only: true
+  tmpfs:
+    - /tmp:size=256m
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  api:
+    <<: *common
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: api
+    image: battery-rul-api:local
+    command: ["api"]
+    environment:
+      <<: *common-env
+      API_HOST: 0.0.0.0
+      API_PORT: "8000"
+    ports:
+      # The published port is configurable because a developer machine usually
+      # has something else on 8000/8501 already, and a hardcoded port turns that
+      # into a failed `compose up` rather than a one-variable fix.
+      - "127.0.0.1:${API_PORT_HOST:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  dashboard:
+    <<: *common
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dashboard
+    image: battery-rul-dashboard:local
+    command: ["dashboard"]
+    environment:
+      <<: *common-env
+      DASHBOARD_PORT: "8501"
+      # The dashboard talks to the API service by name; both are the same
+      # service layer, so the two views cannot disagree.
+      DASHBOARD_API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:${DASHBOARD_PORT_HOST:-8501}:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # -- one-shot jobs (profile `jobs`; they exit when finished) --------------
+  fleet-batch:
+    <<: *common
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: jobs
+    image: battery-rul-jobs:local
+    command: ["fleet-batch"]
+    environment:
+      <<: *common-env
+      FLEET_ID: DEMO-FLEET-01
+      FLEET_SOURCE: processed
+    restart: "no"
+    profiles: ["jobs"]
+
+  monitoring:
+    <<: *common
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: jobs
+    image: battery-rul-jobs:local
+    command: ["monitoring"]
+    environment:
+      <<: *common-env
+      FLEET_ID: DEMO-FLEET-01
+      FLEET_SOURCE: processed
+    restart: "no"
+    profiles: ["jobs"]
+
+  # -- optional MLflow tracking UI (profile `tracking`) ---------------------
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.16.2
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri file:///mlruns
+      --default-artifact-root /mlruns
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - ./artifacts/tracking/mlruns:/mlruns:rw
+    profiles: ["tracking"]
+    restart: unless-stopped

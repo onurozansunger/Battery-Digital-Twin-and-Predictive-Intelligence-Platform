@@ -24,27 +24,42 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 __all__ = [
+    "AlertPolicyConfig",
     "ArtifactConfig",
     "CalibrationConfig",
     "DataConfig",
     "DataQualityConfig",
+    "DeploymentConfig",
+    "DriftConfig",
     "EvaluationConfig",
     "ExperimentConfig",
     "ExplainabilityConfig",
     "FeatureConfig",
+    "FleetConfig",
+    "FleetRankingConfig",
+    "MaintenancePolicyConfig",
     "ModelZooConfig",
+    "MonitoringConfig",
     "MultiTaskConfig",
     "PathsConfig",
+    "PerformanceMonitoringConfig",
+    "PersistenceConfig",
+    "PredictionDriftConfig",
+    "PromotionGateConfig",
     "RecommendationConfig",
+    "RegistryConfig",
+    "ReplacementPlanningConfig",
     "RiskConfig",
     "SOHConfig",
     "ServiceConfig",
     "SplitConfig",
     "TargetConfig",
+    "TrackingConfig",
     "TrainingConfig",
     "TuningConfig",
     "UncertaintyConfig",
     "ValidationConfig",
+    "WorkloadForecastConfig",
     "load_config",
     "project_root",
 ]
@@ -106,11 +121,34 @@ class PathsConfig(_Base):
         return self
 
     def ensure(self) -> None:
-        """Create every configured directory. Idempotent."""
+        """Create every configured directory. Idempotent, and best-effort.
+
+        A directory that cannot be created is logged and skipped rather than
+        raising. The reason is containers: a job running with a read-only root
+        filesystem and two writable mounts genuinely cannot create ``data/raw``,
+        and it does not need to — a monitoring run reads processed cycles and
+        writes reports. Failing here would stop that run for a directory it
+        never touches.
+
+        This is not a silent fallback. Nothing is created that was not asked
+        for, and the *use* of a missing directory still fails loudly at the
+        write, with a message naming the actual path.
+        """
+        import logging
+
         for field in self.model_fields:
             path = getattr(self, field)
-            if isinstance(path, Path):
+            if not isinstance(path, Path):
+                continue
+            try:
                 path.mkdir(parents=True, exist_ok=True)
+            except OSError as exc:
+                logging.getLogger(__name__).warning(
+                    "Could not create %s (%s). Continuing: this deployment may not "
+                    "need it. Any write to it will fail with this path named.",
+                    path,
+                    exc.strerror or exc,
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -751,6 +789,12 @@ class ArtifactConfig(_Base):
     multitask_dir: Path = Path("artifacts/multitask")
     calibration_dir: Path = Path("artifacts/calibration")
     bundle_dir: Path = Path("artifacts/bundles")
+    # -- milestone 3 ------------------------------------------------------
+    registry_dir: Path = Path("artifacts/registry")
+    monitoring_dir: Path = Path("artifacts/monitoring")
+    fleet_dir: Path = Path("artifacts/fleet")
+    tracking_dir: Path = Path("artifacts/tracking")
+    persistence_dir: Path = Path("artifacts/persistence")
     schema_version: str = "2.0"
     strict_compatibility: bool = Field(
         default=True,
@@ -767,6 +811,11 @@ class ArtifactConfig(_Base):
         "multitask_dir",
         "calibration_dir",
         "bundle_dir",
+        "registry_dir",
+        "monitoring_dir",
+        "fleet_dir",
+        "tracking_dir",
+        "persistence_dir",
     )
 
     def resolve_against(self, root: Path) -> None:
@@ -808,6 +857,482 @@ class ServiceConfig(_Base):
         "goes through the HTTP client. Both use the same service layer code path.",
     )
     request_id_header: str = "X-Request-ID"
+
+
+# ---------------------------------------------------------------------------
+# Milestone 3 — fleet intelligence
+# ---------------------------------------------------------------------------
+class FleetRankingConfig(_Base):
+    """Weights and normalisation scales for the composite priority score.
+
+    The score is a **configurable decision-support policy**, not an optimum. Each
+    component is mapped into [0, 1] with the reference scale named below, then
+    combined with these weights and multiplied by ``score_scale``. Every
+    component and its transformation is reported in the score breakdown, so a
+    reviewer can see how a ranking was produced rather than trusting the number.
+    """
+
+    risk_weight: float = Field(default=0.30, ge=0.0)
+    rul_weight: float = Field(default=0.20, ge=0.0)
+    rul_lower_weight: float = Field(default=0.20, ge=0.0)
+    soh_weight: float = Field(default=0.15, ge=0.0)
+    trend_weight: float = Field(default=0.05, ge=0.0)
+    uncertainty_weight: float = Field(default=0.05, ge=0.0)
+    quality_weight: float = Field(default=0.05, ge=0.0)
+    #: RUL at or above this many cycles contributes zero urgency; 0 cycles
+    #: contributes 1.0. Linear in between.
+    rul_reference_cycles: int = Field(default=100, ge=1)
+    #: Interval width at or above this many cycles saturates the uncertainty term.
+    uncertainty_reference_cycles: int = Field(default=100, ge=1)
+    #: SOH at or below this fraction saturates the health-severity term; the term
+    #: is zero at ``soh_reference_high``.
+    soh_reference_low: float = Field(default=0.70, gt=0.0, lt=1.5)
+    soh_reference_high: float = Field(default=1.00, gt=0.0, le=1.5)
+    #: Capacity-fade trend (percent per 10 cycles) that saturates the trend term.
+    trend_reference_pct_per_10: float = Field(default=3.0, gt=0.0)
+    score_scale: float = Field(default=100.0, gt=0.0)
+    #: Score floor applied when a critical rule fires, so a rule override cannot
+    #: be out-ranked by a smoothly-scored cell.
+    critical_override_score: float = Field(default=95.0, ge=0.0)
+
+    @model_validator(mode="after")
+    def _weights_positive(self) -> FleetRankingConfig:
+        if self.total_weight <= 0:
+            raise ValueError("At least one ranking weight must be positive")
+        if self.soh_reference_low >= self.soh_reference_high:
+            raise ValueError("soh_reference_low must be below soh_reference_high")
+        if self.critical_override_score > self.score_scale:
+            raise ValueError("critical_override_score must not exceed score_scale")
+        return self
+
+    @property
+    def total_weight(self) -> float:
+        return (
+            self.risk_weight
+            + self.rul_weight
+            + self.rul_lower_weight
+            + self.soh_weight
+            + self.trend_weight
+            + self.uncertainty_weight
+            + self.quality_weight
+        )
+
+    def weights(self) -> dict[str, float]:
+        return {
+            "risk": self.risk_weight,
+            "rul": self.rul_weight,
+            "rul_lower_bound": self.rul_lower_weight,
+            "soh": self.soh_weight,
+            "trend": self.trend_weight,
+            "uncertainty": self.uncertainty_weight,
+            "data_quality": self.quality_weight,
+        }
+
+
+class MaintenancePolicyConfig(_Base):
+    """Thresholds for the fleet maintenance-priority engine.
+
+    Engineering policy, deliberately outside the model: a fleet operator
+    tightening its inspection rules edits this, and nothing is retrained. The
+    defaults are demonstration values, not an industry standard.
+    """
+
+    critical_soh: float = Field(default=0.70, gt=0.0, lt=1.5)
+    critical_rul_lower_cycles: int = Field(default=5, ge=0)
+    critical_risk: float = Field(default=0.85, gt=0.0, le=1.0)
+    urgent_rul_lower_cycles: int = Field(default=15, ge=0)
+    urgent_risk: float = Field(default=0.60, gt=0.0, le=1.0)
+    high_rul_lower_cycles: int = Field(default=40, ge=0)
+    high_fade_trend_pct_per_10: float = Field(default=1.0, gt=0.0)
+    medium_fade_trend_pct_per_10: float = Field(default=0.5, gt=0.0)
+    #: A healthy cell whose interval is wider than this is watched, not filed.
+    monitor_interval_width_cycles: float = Field(default=60.0, gt=0.0)
+    #: Data-quality classes that force INSUFFICIENT_DATA regardless of outputs.
+    insufficient_quality_classes: list[str] = Field(default_factory=lambda: ["INSUFFICIENT"])
+    #: Inspection windows in cycles, per priority level. Cycle-based is the
+    #: primary output; calendar days are only estimated when a usage rate exists.
+    inspection_window_cycles: dict[str, int] = Field(
+        default_factory=lambda: {
+            "P0_CRITICAL": 0,
+            "P1_URGENT": 5,
+            "P2_HIGH": 10,
+            "P3_MEDIUM": 20,
+            "P4_LOW": 0,
+            "P5_MONITOR": 0,
+        },
+        description="Recommended inspection window per priority, in cycles. 0 for "
+        "P0 means immediate engineering review; 0 for P4/P5 means 'next scheduled "
+        "inspection', with no separate window.",
+    )
+    min_cycles_for_rate_estimate: int = Field(
+        default=10,
+        ge=2,
+        description="Cycles of timestamped history required before a cycles-per-day "
+        "rate is estimated. Without it no calendar-day window is produced — a "
+        "cycle-to-day conversion must never be invented.",
+    )
+    disclaimer: str = (
+        "Fleet maintenance priority is deterministic decision support derived from "
+        "model outputs and configurable engineering rules. It is not a schedule, not "
+        "a safety control, and requires review by a qualified engineer."
+    )
+
+
+class ReplacementPlanningConfig(_Base):
+    """Horizons and evidence rules for replacement planning (advisory only)."""
+
+    near_term_cycles: int = Field(default=20, ge=1)
+    medium_term_cycles: int = Field(default=50, ge=1)
+    long_term_cycles: int = Field(default=100, ge=1)
+    #: A candidate is flagged when the RUL lower bound falls inside a horizon.
+    #: The point estimate is reported beside it but does not drive the flag.
+    use_lower_bound: bool = True
+    #: Risk at or above this level makes a cell a candidate regardless of RUL.
+    risk_candidate_threshold: float = Field(default=0.60, gt=0.0, le=1.0)
+    soh_candidate_threshold: float = Field(default=0.72, gt=0.0, lt=1.5)
+    #: Interval width above this fraction of the point estimate downgrades the
+    #: planning confidence to "low".
+    wide_interval_ratio: float = Field(default=1.0, gt=0.0)
+
+    @model_validator(mode="after")
+    def _ordered(self) -> ReplacementPlanningConfig:
+        if not (self.near_term_cycles < self.medium_term_cycles < self.long_term_cycles):
+            raise ValueError("replacement horizons must be strictly increasing")
+        return self
+
+
+class WorkloadForecastConfig(_Base):
+    """Buckets for the maintenance-workload planning view."""
+
+    horizons_cycles: list[int] = Field(default_factory=lambda: [10, 30, 50])
+
+    @field_validator("horizons_cycles")
+    @classmethod
+    def _sorted_positive(cls, v: list[int]) -> list[int]:
+        if any(x < 1 for x in v):
+            raise ValueError("workload horizons must be >= 1")
+        return sorted(set(v))
+
+
+class FleetConfig(_Base):
+    """Fleet orchestration limits and policy sub-sections."""
+
+    default_fleet_id: str = "DEMO-FLEET-01"
+    max_batteries_per_request: int = Field(
+        default=100, ge=1, description="Upper bound on batteries in one online (HTTP) request."
+    )
+    max_batteries_per_batch: int = Field(
+        default=10_000, ge=1, description="Upper bound for an offline batch run."
+    )
+    max_concurrency: int = Field(
+        default=1,
+        ge=1,
+        le=32,
+        description="Worker threads for batch inference. The default is 1: the "
+        "estimators are already BLAS-parallel and the ordering guarantee is easier "
+        "to reason about serially. Results are re-ordered deterministically either way.",
+    )
+    min_cycles_per_battery: int = Field(
+        default=2, ge=1, description="Rows below which an ingested battery is rejected outright."
+    )
+    max_upload_bytes: int = Field(
+        default=25 * 1024 * 1024, ge=1024, description="Cap on an uploaded fleet file."
+    )
+    page_size: int = Field(default=50, ge=1, le=1000)
+    max_page_size: int = Field(default=500, ge=1, le=5000)
+    critical_priorities: list[str] = Field(
+        default_factory=lambda: ["P0_CRITICAL", "P1_URGENT"],
+        description="Priority levels counted as 'critical' in the fleet summary.",
+    )
+    low_rul_thresholds: list[int] = Field(
+        default_factory=lambda: [20, 50, 100],
+        description="Report how many evaluated cells sit below each RUL threshold.",
+    )
+    high_risk_thresholds: list[float] = Field(default_factory=lambda: [0.5, 0.8])
+    quantiles: list[float] = Field(default_factory=lambda: [0.1, 0.25, 0.5, 0.75, 0.9])
+    high_critical_count_alert: int = Field(
+        default=5, ge=0, description="Critical-battery count that raises a fleet-level alert."
+    )
+    ranking: FleetRankingConfig = Field(default_factory=FleetRankingConfig)
+    maintenance: MaintenancePolicyConfig = Field(default_factory=MaintenancePolicyConfig)
+    replacement: ReplacementPlanningConfig = Field(default_factory=ReplacementPlanningConfig)
+    workload: WorkloadForecastConfig = Field(default_factory=WorkloadForecastConfig)
+
+    @model_validator(mode="after")
+    def _page_bounds(self) -> FleetConfig:
+        if self.page_size > self.max_page_size:
+            raise ValueError("fleet.page_size must not exceed fleet.max_page_size")
+        return self
+
+
+# ---------------------------------------------------------------------------
+# Milestone 3 — monitoring
+# ---------------------------------------------------------------------------
+NumericalDriftMetric = Literal["psi", "ks", "wasserstein", "js"]
+CategoricalDriftMetric = Literal["chi2", "js", "unseen_rate"]
+
+
+def _default_numerical_drift_metrics() -> list[NumericalDriftMetric]:
+    return ["psi", "ks"]
+
+
+def _default_categorical_drift_metrics() -> list[CategoricalDriftMetric]:
+    return ["chi2", "unseen_rate"]
+
+
+class DriftConfig(_Base):
+    """Batch feature-drift detection against a versioned reference artifact."""
+
+    enabled: bool = True
+    numerical_metrics: list[NumericalDriftMetric] = Field(
+        default_factory=_default_numerical_drift_metrics
+    )
+    categorical_metrics: list[CategoricalDriftMetric] = Field(
+        default_factory=_default_categorical_drift_metrics
+    )
+    #: Alert thresholds per metric: (warning, critical).
+    psi_thresholds: tuple[float, float] = (0.10, 0.25)
+    ks_thresholds: tuple[float, float] = (0.10, 0.20)
+    wasserstein_thresholds: tuple[float, float] = (0.10, 0.25)
+    js_thresholds: tuple[float, float] = (0.10, 0.25)
+    unseen_rate_thresholds: tuple[float, float] = (0.01, 0.05)
+    n_bins: int = Field(default=10, ge=2)
+    min_sample_size: int = Field(
+        default=50,
+        ge=5,
+        description="Below this many current observations a feature is reported as "
+        "UNRELIABLE rather than drifted: a small sample moves these statistics on "
+        "its own.",
+    )
+    max_features: int = Field(
+        default=200, ge=1, description="Cap on features tested, for runtime and readability."
+    )
+    #: Multiple-comparison control for the p-value-bearing tests (KS, chi-square).
+    multiple_comparison: Literal["benjamini_hochberg", "bonferroni", "none"] = "benjamini_hochberg"
+    alpha: float = Field(default=0.05, gt=0.0, lt=1.0)
+    #: Fleet status: fraction of tested features that must be flagged.
+    fleet_warning_fraction: float = Field(default=0.10, gt=0.0, le=1.0)
+    fleet_critical_fraction: float = Field(default=0.25, gt=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _ordered(self) -> DriftConfig:
+        for name in (
+            "psi_thresholds",
+            "ks_thresholds",
+            "wasserstein_thresholds",
+            "js_thresholds",
+            "unseen_rate_thresholds",
+        ):
+            warning, critical = getattr(self, name)
+            if warning >= critical:
+                raise ValueError(f"{name}: warning threshold must be below the critical one")
+        if self.fleet_warning_fraction >= self.fleet_critical_fraction:
+            raise ValueError("fleet_warning_fraction must be below fleet_critical_fraction")
+        return self
+
+
+class PredictionDriftConfig(_Base):
+    """Thresholds for changes in the model's own output distribution."""
+
+    enabled: bool = True
+    #: Absolute mean shift, in units of the reference standard deviation.
+    standardised_mean_shift_thresholds: tuple[float, float] = (0.25, 0.50)
+    psi_thresholds: tuple[float, float] = (0.10, 0.25)
+    #: Total-variation distance between class frequency vectors.
+    class_frequency_thresholds: tuple[float, float] = (0.15, 0.30)
+    #: Ratio of current to reference median interval width.
+    interval_width_ratio_thresholds: tuple[float, float] = (1.25, 1.75)
+    quantiles: list[float] = Field(default_factory=lambda: [0.1, 0.5, 0.9])
+    min_sample_size: int = Field(default=20, ge=3)
+    n_bins: int = Field(default=10, ge=2)
+
+
+class PerformanceMonitoringConfig(_Base):
+    """Delayed-label performance monitoring thresholds."""
+
+    enabled: bool = True
+    min_labels: int = Field(
+        default=20,
+        ge=1,
+        description="Below this many joined labels the status is INSUFFICIENT_LABELS "
+        "and no metric is published. Metrics on a handful of rows are noise.",
+    )
+    rul_mae_thresholds: tuple[float, float] = Field(
+        default=(15.0, 30.0), description="(warning, degraded) MAE in cycles."
+    )
+    soh_mae_thresholds: tuple[float, float] = (0.03, 0.06)
+    brier_thresholds: tuple[float, float] = (0.15, 0.25)
+    pr_auc_floor: float = Field(default=0.50, ge=0.0, le=1.0)
+    #: Empirical interval coverage may fall this far below the nominal level.
+    coverage_tolerance: float = Field(default=0.05, ge=0.0, lt=1.0)
+    label_delay_note: str = (
+        "Production monitoring metrics are computed on labels that became available "
+        "after the prediction was made. They are not comparable with the Milestone 1 "
+        "and Milestone 2 held-out test metrics, which describe a different partition."
+    )
+
+
+class FleetDataQualityConfig(_Base):
+    """Fleet-level aggregation thresholds for input data quality."""
+
+    warning_poor_fraction: float = Field(default=0.10, gt=0.0, le=1.0)
+    critical_poor_fraction: float = Field(default=0.25, gt=0.0, le=1.0)
+    warning_insufficient_fraction: float = Field(default=0.10, gt=0.0, le=1.0)
+    critical_insufficient_fraction: float = Field(default=0.25, gt=0.0, le=1.0)
+    warning_missing_feature_fraction: float = Field(default=0.10, gt=0.0, le=1.0)
+    critical_missing_feature_fraction: float = Field(default=0.30, gt=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _ordered(self) -> FleetDataQualityConfig:
+        pairs = (
+            (self.warning_poor_fraction, self.critical_poor_fraction),
+            (self.warning_insufficient_fraction, self.critical_insufficient_fraction),
+            (self.warning_missing_feature_fraction, self.critical_missing_feature_fraction),
+        )
+        if any(warning >= critical for warning, critical in pairs):
+            raise ValueError("data-quality warning fractions must be below the critical ones")
+        return self
+
+
+class AlertPolicyConfig(_Base):
+    """Which monitoring findings become alerts, and how loud."""
+
+    enabled: bool = True
+    #: Alert types suppressed entirely, by name.
+    muted_types: list[str] = Field(default_factory=list)
+    #: Alerts are written locally. No external notifier is configured or called;
+    #: doing so would need credentials this repository deliberately does not hold.
+    external_notifications: bool = Field(default=False, frozen=True)
+    max_alerts_per_run: int = Field(default=200, ge=1)
+
+
+class MonitoringConfig(_Base):
+    """Reference artifacts, detectors and alerting."""
+
+    enabled: bool = True
+    reference_id: str = Field(
+        default="training_reference",
+        description="Name of the reference-distribution artifact used by the drift "
+        "detectors. Built from the TRAINING partition only.",
+    )
+    reference_partition: Literal["train", "train_val"] = Field(
+        default="train",
+        description="Partition the reference distribution is fitted on. The final "
+        "test partition is never used: a reference fitted on it would make the "
+        "held-out result part of the monitoring machinery.",
+    )
+    max_reference_samples: int = Field(default=50_000, ge=100)
+    data_quality: FleetDataQualityConfig = Field(default_factory=FleetDataQualityConfig)
+    drift: DriftConfig = Field(default_factory=DriftConfig)
+    prediction_drift: PredictionDriftConfig = Field(default_factory=PredictionDriftConfig)
+    performance: PerformanceMonitoringConfig = Field(default_factory=PerformanceMonitoringConfig)
+    alerts: AlertPolicyConfig = Field(default_factory=AlertPolicyConfig)
+
+
+# ---------------------------------------------------------------------------
+# Milestone 3 — registry, promotion, tracking, persistence, deployment
+# ---------------------------------------------------------------------------
+class PromotionGateConfig(_Base):
+    """Conditions a candidate must satisfy before it may reach PRODUCTION.
+
+    Every gate is a *comparison against the current production model* where one
+    exists, and an absolute floor where it does not. No single metric promotes a
+    model on its own, and promotion never happens implicitly in CI.
+    """
+
+    require_validation_status: bool = True
+    require_artifact_checksum: bool = True
+    require_feature_schema_compatible: bool = True
+    require_leakage_check: bool = True
+    require_inference_smoke_test: bool = True
+    require_contract_tests: bool = True
+    require_tests_passed: bool = True
+    #: Relative RUL MAE regression tolerated against production (0.05 = 5 % worse).
+    max_rul_mae_regression: float = Field(default=0.05, ge=0.0)
+    max_soh_mae_regression: float = Field(default=0.05, ge=0.0)
+    max_brier_regression: float = Field(default=0.05, ge=0.0)
+    #: PR-AUC may fall by at most this much in absolute terms.
+    max_pr_auc_regression: float = Field(default=0.02, ge=0.0)
+    min_interval_coverage: float = Field(default=0.80, ge=0.0, le=1.0)
+    max_latency_regression_ratio: float = Field(default=1.50, gt=1.0)
+    #: Absolute floors applied when there is no production model to compare with.
+    max_absolute_rul_mae: float | None = Field(default=None)
+    allow_auto_promotion: bool = Field(
+        default=False,
+        description="Never true in CI by default. Promotion is an explicit human "
+        "action; a gate that promotes on green turns a metric into a deploy button.",
+    )
+
+
+class RegistryConfig(_Base):
+    """Model registry backend and stage policy."""
+
+    backend: Literal["file"] = Field(
+        default="file",
+        description="Local JSON-file registry. MLflow's Model Registry needs a "
+        "tracking server with a database backend; adding one for a single-node "
+        "prototype would be infrastructure for appearance.",
+    )
+    dir: Path = Path("artifacts/registry")
+    registry_file: str = "models.json"
+    allow_multiple_production: bool = Field(default=False)
+    verify_checksums: bool = True
+    promotion: PromotionGateConfig = Field(default_factory=PromotionGateConfig)
+
+
+class TrackingConfig(_Base):
+    """Experiment tracking. Local file backend by default; MLflow when installed."""
+
+    backend: Literal["file", "mlflow"] = "file"
+    dir: Path = Path("artifacts/tracking")
+    experiment_name: str = "battery-fleet"
+    #: Only used when ``backend='mlflow'``. Empty means MLflow's local ``mlruns``.
+    mlflow_tracking_uri: str | None = None
+    log_figures: bool = True
+    #: Raw cycle measurements are never logged as parameters or artifacts.
+    log_raw_data: bool = Field(default=False, frozen=True)
+
+
+class PersistenceConfig(_Base):
+    """Where fleet snapshots, monitoring snapshots and alerts are stored."""
+
+    backend: Literal["sqlite", "memory"] = "sqlite"
+    database_path: Path = Path("artifacts/persistence/platform.db")
+    schema_version: str = "3.0"
+    retention_days: int | None = Field(
+        default=365, description="None disables pruning. Nothing is deleted automatically."
+    )
+    busy_timeout_s: float = Field(default=5.0, gt=0.0)
+
+
+class DeploymentConfig(_Base):
+    """Runtime switches a container or CI runner sets."""
+
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    log_format: Literal["console", "json"] = "console"
+    metrics_enabled: bool = True
+    #: Serve the Prometheus text exposition on ``/metrics``.
+    metrics_endpoint_enabled: bool = True
+    read_only: bool = Field(
+        default=False,
+        description="Refuse every write to persistence and artifacts. For a "
+        "container running with a read-only root filesystem.",
+    )
+    demo_mode: bool = Field(
+        default=False,
+        description="Dashboard/API demo data is generated and labelled as synthetic. "
+        "Never silently on: a demo fleet mistaken for a real one is the failure this "
+        "flag exists to prevent.",
+    )
+    admin_endpoints_enabled: bool = Field(
+        default=False, description="Model promotion/rollback over HTTP. Off by default."
+    )
+    cors_allow_origins: list[str] = Field(
+        default_factory=list,
+        description="Explicit origin allow-list. Empty means no cross-origin access.",
+    )
+    request_timeout_s: float = Field(default=60.0, gt=0.0)
+    max_request_bytes: int = Field(default=32 * 1024 * 1024, ge=1024)
 
 
 class VizConfig(_Base):
@@ -852,6 +1377,14 @@ class ExperimentConfig(_Base):
     artifacts: ArtifactConfig = Field(default_factory=ArtifactConfig)
     service: ServiceConfig = Field(default_factory=ServiceConfig)
 
+    # -- milestone 3 ------------------------------------------------------
+    fleet: FleetConfig = Field(default_factory=FleetConfig)
+    monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
+    registry: RegistryConfig = Field(default_factory=RegistryConfig)
+    tracking: TrackingConfig = Field(default_factory=TrackingConfig)
+    persistence: PersistenceConfig = Field(default_factory=PersistenceConfig)
+    deployment: DeploymentConfig = Field(default_factory=DeploymentConfig)
+
     @model_validator(mode="after")
     def _propagate_seed(self) -> ExperimentConfig:
         """A single ``seed:`` at the root drives every stochastic component unless
@@ -864,7 +1397,26 @@ class ExperimentConfig(_Base):
         if self.multitask.seed == 42 and self.seed != 42:
             self.multitask.seed = self.seed
         self.artifacts.resolve_against(self.paths.root)
+        self._resolve_milestone_3_paths()
         return self
+
+    def _resolve_milestone_3_paths(self) -> None:
+        """Anchor the Milestone 3 storage paths to ``paths.root``.
+
+        Same reasoning as :meth:`ArtifactConfig.resolve_against`: a test or CI
+        run that redirects ``paths.root`` at a temporary directory must not have
+        its registry, tracking store or database silently point at the
+        developer's real artifacts.
+        """
+        root = self.paths.root
+        for section, field_name in (
+            (self.registry, "dir"),
+            (self.tracking, "dir"),
+            (self.persistence, "database_path"),
+        ):
+            value = Path(getattr(section, field_name))
+            if not value.is_absolute():
+                object.__setattr__(section, field_name, root / value)
 
     # -- data-affecting fingerprint ---------------------------------------
     def data_affecting_dict(self) -> dict[str, Any]:

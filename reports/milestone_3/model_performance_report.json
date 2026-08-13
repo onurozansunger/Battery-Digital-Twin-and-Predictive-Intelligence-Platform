@@ -1,0 +1,20 @@
+{
+  "generated_at_utc": "2026-08-13T08:43:18.203237+00:00",
+  "model_version": "1.0.0",
+  "status": "NO_LABELS",
+  "n_predictions": 47,
+  "n_labels_joined": 0,
+  "label_coverage": 0.0,
+  "evaluation_delay_cycles": {},
+  "rul_metrics": {},
+  "rul_error_by_life_stage": [],
+  "interval_coverage": {},
+  "soh_metrics": {},
+  "risk_metrics": {},
+  "thresholds": {},
+  "breaches": [],
+  "comparison_note": "Production monitoring metrics are computed on labels that became available after the prediction was made. They are not comparable with the Milestone 1 and Milestone 2 held-out test metrics, which describe a different partition.",
+  "warnings": [
+    "No outcome labels have been joined yet. Prognostic labels arrive only once a cell reaches end of life, so an empty report early in a deployment is expected, not a failure."
+  ]
+}

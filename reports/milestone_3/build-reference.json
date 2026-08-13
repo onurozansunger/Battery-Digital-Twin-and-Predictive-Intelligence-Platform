@@ -1,0 +1,9 @@
+{
+  "reference_id": "training_reference",
+  "partition": "train",
+  "n_rows": 267,
+  "n_batteries": 3,
+  "n_features": 80,
+  "fingerprint": "327f555ef6e96a23",
+  "path": "artifacts/monitoring/reference_distributions/training_reference.json"
+}

@@ -1,0 +1,71 @@
+# Keep the build context small and keep data, artifacts and secrets out of the
+# image. Everything the runtime needs is either installed from source or mounted
+# at run time.
+
+# ------------------------------------------------------------------ data
+# The NASA archive is ~209 MB and is not redistributable through an image.
+data/
+!data/**/.gitkeep
+
+# ------------------------------------------------- artifacts and outputs
+# Model bundles are mounted, not baked in: an image carrying a trained model has
+# to be rebuilt to ship a retrain, and its provenance stops being checkable.
+artifacts/
+models/
+reports/
+figures/
+mlruns/
+
+# ------------------------------------------------------------ notebooks
+notebooks/
+*.ipynb
+.ipynb_checkpoints/
+
+# ---------------------------------------------------------------- python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ----------------------------------------------------------------- tools
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.hypothesis/
+*.db
+*.db-journal
+
+# -------------------------------------------------------------------- vcs
+.git/
+.github/
+.gitignore
+
+# ------------------------------------------------------------------- os
+.DS_Store
+Thumbs.db
+*.swp
+*~
+* [0-9].*
+
+# ------------------------------------------------------------------- ide
+.idea/
+.vscode/
+
+# --------------------------------------------------------------- secrets
+# Nothing of the sort is committed, and this makes sure a local file never
+# reaches a layer either.
+.env
+.env.*
+*.pem
+*.key
+secrets/

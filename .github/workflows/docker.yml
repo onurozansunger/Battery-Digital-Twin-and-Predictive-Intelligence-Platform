@@ -1,0 +1,103 @@
+name: Docker
+
+# Build validation only. Nothing is pushed to a registry: publishing needs
+# credentials this repository deliberately does not hold, and a workflow that
+# pushes on green is a workflow that ships whatever merged last.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docker/**"
+      - "docker-compose.yml"
+      - ".dockerignore"
+      - "pyproject.toml"
+      - "src/**"
+      - ".github/workflows/docker.yml"
+  pull_request:
+    paths:
+      - "docker/**"
+      - "docker-compose.yml"
+      - ".dockerignore"
+      - "pyproject.toml"
+      - "src/**"
+      - ".github/workflows/docker.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compose-validate:
+    name: Compose file is valid
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker-compose.yml
+        run: docker compose -f docker-compose.yml config --quiet
+      - name: Entry point is valid shell
+        run: bash -n docker/entrypoint.sh
+
+  build:
+    name: Build ${{ matrix.target }} image
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [api, dashboard, jobs]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: ${{ matrix.target }}
+          push: false
+          load: true
+          tags: battery-rul-${{ matrix.target }}:ci
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
+
+      - name: Image runs as a non-root user
+        run: |
+          user=$(docker inspect --format '{{.Config.User}}' battery-rul-${{ matrix.target }}:ci)
+          echo "Image user: ${user}"
+          test -n "${user}" && test "${user}" != "root" && test "${user}" != "0"
+
+      - name: No dataset or model artifacts baked into the image
+        run: |
+          docker run --rm --entrypoint /bin/bash battery-rul-${{ matrix.target }}:ci -c '
+            set -e
+            for path in /app/data/raw /app/models/zoo /app/artifacts/rul/model.pkl; do
+              if [ -e "${path}" ]; then
+                echo "Unexpected artifact in the image: ${path}"; exit 1
+              fi
+            done
+            echo "No dataset or model artifacts are baked in."
+          '
+
+      - name: Package imports inside the image
+        run: |
+          docker run --rm --entrypoint python battery-rul-${{ matrix.target }}:ci \
+            -c 'import battery_rul, battery_rul.api.app, battery_rul.fleet, battery_rul.monitoring, battery_rul.registry; print("battery_rul", battery_rul.__version__, "imports cleanly in the image")'
+
+      - name: API image answers /health with no model artifacts mounted
+        if: matrix.target == 'api'
+        run: |
+          docker run -d --name api-smoke -p 8000:8000 battery-rul-api:ci
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health; then ok=1; break; fi
+            sleep 2
+          done
+          echo
+          # /ready must report 503 with no artifacts — a service that claims to
+          # be ready without a model is worse than one that admits it is not.
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/ready)
+          echo "ready -> ${code}"
+          docker logs api-smoke | tail -20
+          docker rm -f api-smoke
+          test "${ok}" = "1"
+          test "${code}" = "503"

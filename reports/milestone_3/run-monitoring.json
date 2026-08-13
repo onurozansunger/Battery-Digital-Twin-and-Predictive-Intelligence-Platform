@@ -1,0 +1,22 @@
+{
+  "fleet_id": "DEMO-FLEET-01",
+  "batch_id": "20260813T084312Z-1faadee9",
+  "monitoring_snapshot_id": "mon-20260813T084312Z-1faadee9",
+  "overall_status": "CRITICAL",
+  "data_quality_status": "WARNING",
+  "feature_drift_status": "CRITICAL",
+  "n_features_tested": 80,
+  "n_features_drifted": 77,
+  "prediction_drift_status": "OK",
+  "performance_status": "NO_LABELS",
+  "label_coverage": 0.0,
+  "n_alerts": 3,
+  "warnings": [],
+  "report_paths": {
+    "data_quality_report": "reports/milestone_3/data_quality_report.json",
+    "feature_drift_report": "reports/milestone_3/feature_drift_report.json",
+    "prediction_drift_report": "reports/milestone_3/prediction_drift_report.json",
+    "model_performance_report": "artifacts/monitoring/performance_reports/20260813T084312Z-1faadee9.json",
+    "alerts": "artifacts/monitoring/alerts/20260813T084312Z-1faadee9.json"
+  }
+}

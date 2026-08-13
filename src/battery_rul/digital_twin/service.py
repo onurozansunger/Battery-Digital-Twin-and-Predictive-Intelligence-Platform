@@ -297,6 +297,20 @@ class BatteryDigitalTwinService:
         return health, features
 
     # -- public prediction API -------------------------------------------------
+    def prepare_features(self, battery_id: str, history: pd.DataFrame) -> pd.DataFrame:
+        """The engineered feature frame this service would score.
+
+        Added in Milestone 3 for feature-drift monitoring, which needs the
+        *serving* features rather than a re-derivation of them. Exposing the
+        existing pipeline is the alternative to monitoring code rebuilding
+        features itself, which is how a drift detector ends up watching a
+        different feature space from the one the model sees.
+
+        Purely additive: no existing caller or response shape changes.
+        """
+        _, features = self._prepare(battery_id, history)
+        return features
+
     def predict_rul(self, battery_id: str, history: pd.DataFrame) -> BatteryPrediction:
         """RUL for the latest cycle, with a conformal interval when available."""
         snapshot = self.create_snapshot(battery_id, history, explain=False)

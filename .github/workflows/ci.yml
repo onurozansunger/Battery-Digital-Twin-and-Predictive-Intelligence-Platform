@@ -117,8 +117,55 @@ jobs:
           test -f artifacts/multitask/model.pkl
           echo "All expected artifacts present."
 
-      - name: Streamlit dashboard imports and compiles
-        run: python -c "import battery_rul.dashboard.app as m; assert hasattr(m, 'main')"
+      - name: Milestone 3 — drift reference from the training partition
+        run: python -m battery_rul.pipelines.build_reference --config configs/synthetic.yaml
+
+      - name: Milestone 3 — fleet batch
+        run: >
+          python -m battery_rul.pipelines.run_fleet_batch
+          --config configs/synthetic.yaml --fleet-id CI-FLEET --source processed
+
+      - name: Milestone 3 — monitoring run
+        run: >
+          python -m battery_rul.pipelines.run_monitoring
+          --config configs/synthetic.yaml --fleet-id CI-FLEET --source processed
+
+      - name: Milestone 3 — fleet report
+        run: >
+          python -m battery_rul.pipelines.generate_fleet_report
+          --config configs/synthetic.yaml --fleet-id CI-FLEET
+
+      - name: Milestone 3 — registry round trip
+        # Registers the bundle CI just built and evaluates the promotion gate.
+        # `|| true` on the gate is deliberate: a REJECTED verdict exits 2, and a
+        # gate that fails the build would create pressure to loosen it.
+        # Promotion itself is never automated here.
+        run: |
+          python -m battery_rul.pipelines.register_model \
+            --config configs/synthetic.yaml --model-name ci-rul --model-version 0.0.1 \
+            --bundle artifacts/rul --validation-status VALIDATED --overwrite
+          python -m battery_rul.pipelines.evaluate_promotion \
+            --config configs/synthetic.yaml --model-name ci-rul --model-version 0.0.1 \
+            --unit-tests --contract-tests --smoke-test --leakage-check || true
+
+      - name: Check the Milestone 3 artifacts exist
+        run: |
+          test -f artifacts/monitoring/reference_distributions/training_reference.json
+          test -f reports/milestone_3/fleet_summary.json
+          test -f reports/milestone_3/data_quality_report.json
+          test -f reports/milestone_3/feature_drift_report.json
+          test -f reports/milestone_3/model_performance_report.json
+          test -f reports/milestone_3/fleet_report.md
+          test -f artifacts/registry/models.json
+          echo "All expected Milestone 3 artifacts present."
+
+      - name: Streamlit dashboards import and compile
+        run: |
+          python -c "import battery_rul.dashboard.app as m; assert hasattr(m, 'main')"
+          python -c "import battery_rul.dashboard.fleet_app as m; assert hasattr(m, 'main')"
+
+      - name: No absolute machine paths in the generated artifacts
+        run: python scripts/sanitise_reports.py --check
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -129,6 +176,37 @@ jobs:
             figures/
             artifacts/
           retention-days: 7
+
+  contract:
+    name: API contract and model-bundle fixtures
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Contract, regression and smoke tests
+        # These run against fixture bundles built inside the tests, so they need
+        # neither the dataset nor a trained model, and they are the gate that
+        # catches a breaking change to a published response shape.
+        run: >
+          pytest -m "not slow"
+          tests/test_fleet_api.py
+          tests/test_milestone_3_regression.py
+          tests/test_registry.py
+          tests/test_persistence.py
+          -q
+
+      - name: Import smoke test
+        run: |
+          python -c "import battery_rul.api.app, battery_rul.api.fleet_routes"
+          python -c "import battery_rul.fleet, battery_rul.monitoring, battery_rul.registry"
+          python -c "import battery_rul.persistence, battery_rul.tracking, battery_rul.observability"
 
   hygiene:
     name: Repository hygiene
@@ -145,3 +223,5 @@ jobs:
           pip install -e ".[dev]"
       - name: No absolute machine paths in committed artifacts
         run: python scripts/sanitise_reports.py --check
+      - name: No committed secrets
+        run: python scripts/check_secrets.py
