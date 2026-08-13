@@ -164,8 +164,16 @@ jobs:
           python -c "import battery_rul.dashboard.app as m; assert hasattr(m, 'main')"
           python -c "import battery_rul.dashboard.fleet_app as m; assert hasattr(m, 'main')"
 
-      - name: No absolute machine paths in the generated artifacts
-        run: python scripts/sanitise_reports.py --check
+      - name: The sanitiser strips the paths a fresh run writes
+        # Freshly generated Milestone 1/2 artifacts *do* contain absolute paths —
+        # the pipelines write them and `sanitise_reports.py` is the step that
+        # removes them before anything is committed. Running only `--check` here
+        # asserted the opposite and failed, correctly. What is worth testing is
+        # the cycle a developer actually performs: sanitise, then verify. The
+        # `hygiene` job separately checks the artifacts already in git.
+        run: |
+          python scripts/sanitise_reports.py
+          python scripts/sanitise_reports.py --check
 
       - uses: actions/upload-artifact@v4
         if: always()
