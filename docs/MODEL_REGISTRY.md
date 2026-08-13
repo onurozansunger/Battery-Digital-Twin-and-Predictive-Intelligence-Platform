@@ -26,7 +26,7 @@ the registry is a JSON document behind an interface narrow enough to swap.
       "bundle_path": "artifacts/rul",
       "artifact_checksum": "3f9c…",
       "dataset_fingerprint": "53df6f08c6c8",
-      "data_fingerprint": "efaf21bc3eede903",
+      "data_fingerprint": "dcd2456b90b332d4",
       "feature_schema_fingerprint": "c7c0a875626d83e2",
       "n_features": 80,
       "task": "rul_regression",
@@ -66,14 +66,15 @@ by something the registry says was refused; archive it first.
 
 ## Guarantees
 
-**At most one PRODUCTION version per model family.** Enforced on write:
-promoting a version auto-archives the previous one and records that in the
-history. `production_model()` raises rather than guessing if it ever finds two.
+**At most one PRODUCTION version per serving task.** RUL, SOH and risk may each
+have one live bundle, even when their family names differ. Promoting a task
+auto-archives its previous live entry and records that in history.
 
 **Checksums are verified, not trusted.** Every entry carries a SHA-256 over its
 bundle files in a fixed order (`metadata.json`, `model.pkl`,
 `preprocessing.pkl`, `calibration.pkl`, `uncertainty.pkl`), with absent optional
-files hashed as their absence. Promotion re-verifies it and refuses on mismatch:
+files hashed as their absence. Promotion and service startup both re-verify it
+and refuse on mismatch:
 a registry entry pointing at a bundle that has since been overwritten is worse
 than no registry.
 
@@ -140,12 +141,14 @@ verifies against its checksum.
 
 ## Relationship to serving
 
-The serving path loads bundles from the configured artifact directories; the
-registry records *which version those artifacts are* and who approved them.
-Fleet snapshots cite both: `model_metadata.active_model_version` from the
-loaded bundle, and `registry_model_name` / `registry_stage` from the registry
-when one is present.
+For each task, service startup asks the registry for its PRODUCTION entry,
+resolves that entry's bundle path, verifies its checksum and checks that the
+bundle's declared task and version match the record. Fleet metadata cites that
+exact loaded entry. A tampered or missing promoted bundle makes that serving
+slot unready; it never silently falls back to unrelated bytes.
 
-When no model is at PRODUCTION, the dashboard says so and the API returns 404
-with the command to promote one — the service keeps working, but the live model
-is not *explicit*, and the platform says which of the two situations you are in.
+When the registry has no PRODUCTION entry for a task, the research-prototype
+configured directory remains the explicit ungoverned fallback. The dashboard
+labels that state and the production-model API returns 404. Promote/rollback
+over HTTP reloads the current worker immediately; CLI changes take effect on
+the next service start or explicit `load_artifacts()` call.

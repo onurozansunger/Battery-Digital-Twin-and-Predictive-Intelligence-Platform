@@ -91,7 +91,7 @@ def build_fleet_router(
         limit = cfg.fleet.max_batteries_per_request
         if len(body.batteries) > limit:
             raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
                 detail=(
                     f"{len(body.batteries)} batteries submitted; this endpoint accepts "
                     f"at most {limit}. Use the batch pipeline "
@@ -518,7 +518,7 @@ def build_fleet_router(
         registry = FileModelRegistry(cfg=cfg)
         try:
             entries = registry.list_models()
-            production = registry.production_model()
+            production = registry.production_model(task="rul_regression")
         except RegistryError as exc:
             return ModelListResponse(registry_available=False, note=str(exc))
         return ModelListResponse(
@@ -532,7 +532,7 @@ def build_fleet_router(
         from battery_rul.registry.store import FileModelRegistry, RegistryError
 
         try:
-            entry = FileModelRegistry(cfg=cfg).production_model()
+            entry = FileModelRegistry(cfg=cfg).production_model(task="rul_regression")
         except RegistryError as exc:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
         if entry is None:
@@ -551,13 +551,16 @@ def build_fleet_router(
     admin = APIRouter(prefix="/admin", tags=["admin"])
 
     @admin.post("/models/promote")
-    def admin_promote(body: PromotionRequest) -> dict[str, Any]:
-        """Promote a version. Requires ``deployment.admin_endpoints_enabled``."""
+    def admin_promote(
+        body: PromotionRequest,
+        service: FleetInferenceService = Depends(get_fleet_service),
+    ) -> dict[str, Any]:
+        """Promote a version and reload bundles in this API worker."""
         _require_admin()
         from battery_rul.pipelines.milestone_3 import promote_model
 
         with _registry_errors():
-            return promote_model(
+            result = promote_model(
                 cfg,
                 model_name=body.model_name,
                 model_version=body.model_version,
@@ -565,15 +568,25 @@ def build_fleet_router(
                 reason=body.reason,
                 dry_run=body.dry_run,
             )
+            if result.get("promoted"):
+                service.twin.load_artifacts()
+                result["activation"] = "current_api_worker_reloaded"
+            return result
 
     @admin.post("/models/rollback")
-    def admin_rollback(body: RollbackRequest) -> dict[str, Any]:
-        """Roll back to the previously live version."""
+    def admin_rollback(
+        body: RollbackRequest,
+        service: FleetInferenceService = Depends(get_fleet_service),
+    ) -> dict[str, Any]:
+        """Roll back and reload bundles in this API worker."""
         _require_admin()
         from battery_rul.pipelines.milestone_3 import rollback_model
 
         with _registry_errors():
-            return rollback_model(cfg, model_name=body.model_name, by=body.by, reason=body.reason)
+            result = rollback_model(cfg, model_name=body.model_name, by=body.by, reason=body.reason)
+            service.twin.load_artifacts()
+            result["activation"] = "current_api_worker_reloaded"
+            return result
 
     def _require_admin() -> None:
         if not cfg.deployment.admin_endpoints_enabled:

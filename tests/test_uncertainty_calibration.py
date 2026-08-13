@@ -30,6 +30,7 @@ def uncertainty_cfg() -> UncertaintyConfig:
     return UncertaintyConfig(
         method="split_conformal",
         coverage=0.9,
+        calibration_unit="row",
         normalise_by_life_stage=False,
         min_calibration_rows=10,
     )
@@ -94,7 +95,12 @@ def test_stage_conditioning_produces_different_widths():
     The stage variable is **measured SOH** — a healthy cell (high SOH) has the
     least predictable remaining life and must get the widest interval.
     """
-    cfg = UncertaintyConfig(coverage=0.9, normalise_by_life_stage=True, min_calibration_rows=10)
+    cfg = UncertaintyConfig(
+        coverage=0.9,
+        calibration_unit="row",
+        normalise_by_life_stage=True,
+        min_calibration_rows=10,
+    )
     rng = np.random.default_rng(3)
     n = 900
     soh = np.concatenate([np.full(300, 0.95), np.full(300, 0.85), np.full(300, 0.72)])
@@ -115,7 +121,12 @@ def test_stage_variable_is_observable_at_serving_time():
     cell can never supply it and every interval would quietly use the global
     quantile. Bucketing must therefore work from a measured SOH value alone.
     """
-    cfg = UncertaintyConfig(coverage=0.9, normalise_by_life_stage=True, min_calibration_rows=10)
+    cfg = UncertaintyConfig(
+        coverage=0.9,
+        calibration_unit="row",
+        normalise_by_life_stage=True,
+        min_calibration_rows=10,
+    )
     rng = np.random.default_rng(7)
     soh = rng.uniform(0.70, 1.0, size=400)
     truth = rng.normal(80.0, 15.0, size=400)
@@ -130,7 +141,12 @@ def test_stage_variable_is_observable_at_serving_time():
 
 
 def test_unknown_stage_falls_back_to_the_global_quantile():
-    cfg = UncertaintyConfig(coverage=0.9, normalise_by_life_stage=True, min_calibration_rows=10)
+    cfg = UncertaintyConfig(
+        coverage=0.9,
+        calibration_unit="row",
+        normalise_by_life_stage=True,
+        min_calibration_rows=10,
+    )
     rng = np.random.default_rng(8)
     soh = rng.uniform(0.70, 1.0, size=400)
     truth = rng.normal(80.0, 15.0, size=400)
@@ -140,6 +156,90 @@ def test_unknown_stage_falls_back_to_the_global_quantile():
     quantile, stage = estimator.quantile_for(None)
     assert stage is None
     assert quantile == pytest.approx(estimator.global_quantile)
+
+
+def test_battery_block_calibration_counts_cells_not_autocorrelated_rows():
+    """Repeating cycles from one cell must not create independent evidence."""
+    cfg = UncertaintyConfig(
+        coverage=0.9,
+        calibration_unit="battery",
+        normalise_by_life_stage=False,
+        min_calibration_rows=10,
+        min_calibration_batteries=3,
+    )
+    groups = np.repeat(["A", "B", "C", "D"], 50)
+    truth = np.zeros(200)
+    residual = np.concatenate(
+        [np.full(50, 2.0), np.full(50, 3.0), np.full(50, 4.0), np.full(50, 12.0)]
+    )
+
+    estimator = ConformalIntervalEstimator(cfg=cfg).fit(
+        truth,
+        truth + residual,
+        groups=groups,
+    )
+
+    assert estimator.n_calibration == 200
+    assert estimator.n_calibration_groups == 4
+    assert estimator.global_quantile == pytest.approx(12.0)
+    assert estimator.interval(20.0).uncertainty_method.startswith("battery_block_")
+
+
+def test_thin_battery_stage_falls_back_to_global_cell_block_quantile():
+    cfg = UncertaintyConfig(
+        coverage=0.9,
+        calibration_unit="battery",
+        normalise_by_life_stage=True,
+        min_calibration_rows=10,
+        min_calibration_batteries=3,
+    )
+    groups = np.repeat(["A", "B", "C"], 30)
+    soh = np.concatenate(
+        [
+            np.full(20, 0.95),
+            np.full(10, 0.70),
+            np.full(20, 0.95),
+            np.full(10, 0.70),
+            np.full(30, 0.95),
+        ]
+    )
+    truth = np.zeros(90)
+    predicted = np.concatenate(
+        [
+            np.full(20, 2.0),
+            np.full(10, 8.0),
+            np.full(20, 3.0),
+            np.full(10, 7.0),
+            np.full(30, 4.0),
+        ]
+    )
+
+    estimator = ConformalIntervalEstimator(cfg=cfg).fit(
+        truth,
+        predicted,
+        life_fraction=soh,
+        groups=groups,
+    )
+
+    assert estimator.stage_group_counts == {"early": 3, "late": 2}
+    assert "late" not in estimator.stage_quantiles
+    late_quantile, stage = estimator.quantile_for(0.70)
+    assert stage == "late"
+    assert late_quantile == pytest.approx(estimator.global_quantile)
+
+
+def test_battery_block_calibration_refuses_too_few_independent_cells():
+    cfg = UncertaintyConfig(
+        calibration_unit="battery",
+        min_calibration_rows=10,
+        min_calibration_batteries=3,
+    )
+    with pytest.raises(ValueError, match="independent batteries"):
+        ConformalIntervalEstimator(cfg=cfg).fit(
+            np.zeros(40),
+            np.ones(40),
+            groups=np.repeat(["A", "B"], 20),
+        )
 
 
 def test_thin_conformal_calibration_set_is_refused(uncertainty_cfg):

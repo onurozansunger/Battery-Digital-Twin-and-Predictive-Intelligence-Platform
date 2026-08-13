@@ -4,7 +4,7 @@ Four workflows. None of them holds a secret, and none publishes anything.
 
 | Workflow | Trigger | Jobs |
 | --- | --- | --- |
-| `ci.yml` | push to main, PR, manual | lint, type-check, test (3.11 + 3.12), smoke, contract, hygiene |
+| `ci.yml` | push to main, PR, manual | lint, type-check, test (3.11 + 3.12 + 3.13), smoke, contract, hygiene |
 | `docker.yml` | PR/push touching Docker or source, manual | compose-validate, build × 3 targets |
 | `security.yml` | push, PR, weekly cron, manual | dependency-audit, bandit, secrets, path hygiene |
 | `release.yml` | version tag or manual | quality-gate, artifacts, images |
@@ -28,7 +28,7 @@ pinned to 3.11 so that 3.12-only constructs were caught here rather than in the
 under 3.11, and a fatal error in a third-party stub stops it checking anything.
 The 3.11 guarantee lives in the Tests (3.11) job, which imports every module.
 
-**test** — matrix over Python 3.11 and 3.12, `pytest -m "not slow"` with
+**test** — matrix over Python 3.11, 3.12 and 3.13, `pytest -m "not slow"` with
 coverage. The one test that parses real `.mat` files is deselected: the 209 MB
 NASA archive is not downloaded in CI, and everything else runs against the
 synthetic generator.

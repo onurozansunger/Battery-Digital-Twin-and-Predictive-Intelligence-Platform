@@ -35,7 +35,7 @@ from battery_rul.tracking.experiment import tracked_run
 
 with tracked_run(cfg, "rul-elastic-net", stage="milestone_2") as tracker:
     tracker.log_params({"model": "elastic_net", "alpha": 0.5, "features": 80})
-    tracker.log_metrics({"mae": 8.561, "coverage": 0.764})
+    tracker.log_metrics({"mae": 8.561, "coverage": 0.917})
     tracker.log_artifact("bundle_metadata", cfg.artifacts.rul_dir / "metadata.json")
 ```
 
@@ -84,7 +84,7 @@ pd.DataFrame(compare_runs(cfg, limit=20))
 
 ```
 run_id                            status    model_type   git_revision  metric.mae  metric.coverage
-20260813T001204Z-rul-elastic-net  FINISHED  elastic_net  f476aeb            8.561            0.764
+20260813T001204Z-rul-elastic-net  FINISHED  elastic_net  f476aeb            8.561            0.917
 20260813T000731Z-rul-random-fore  FINISHED  random_fore  f476aeb            9.204            0.812
 ```
 

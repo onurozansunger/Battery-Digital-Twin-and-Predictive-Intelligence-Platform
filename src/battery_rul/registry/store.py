@@ -9,8 +9,8 @@ narrow enough to swap later.
 
 Guarantees this implementation makes
 ------------------------------------
-* at most one PRODUCTION version per model family, unless explicitly configured
-  otherwise — enforced on write, not by convention;
+* at most one PRODUCTION version per serving task (RUL, SOH or risk), unless
+  explicitly configured otherwise — enforced on write, not by convention;
 * every entry carries a checksum over its bundle files, verified on promotion,
   so an entry cannot silently point at an artifact that has been replaced;
 * every stage transition is appended to a history, with who did it and why, so
@@ -182,13 +182,19 @@ class FileModelRegistry:
         save_json(payload, self.path)
 
     def list_models(
-        self, *, model_name: str | None = None, stage: ModelStage | None = None
+        self,
+        *,
+        model_name: str | None = None,
+        stage: ModelStage | None = None,
+        task: str | None = None,
     ) -> list[RegisteredModel]:
         entries = [RegisteredModel.from_dict(e) for e in self._read().get("models", [])]
         if model_name:
             entries = [e for e in entries if e.model_name == model_name]
         if stage:
             entries = [e for e in entries if e.stage is stage]
+        if task:
+            entries = [e for e in entries if e.task == task]
         return sorted(entries, key=lambda e: (e.model_name, e.created_at_utc), reverse=False)
 
     def get(self, model_name: str, model_version: str) -> RegisteredModel | None:
@@ -201,9 +207,20 @@ class FileModelRegistry:
             None,
         )
 
-    def production_model(self, model_name: str | None = None) -> RegisteredModel | None:
-        """The live model, or ``None``. Never guesses when several exist."""
-        entries = self.list_models(model_name=model_name, stage=ModelStage.PRODUCTION)
+    def production_model(
+        self, model_name: str | None = None, *, task: str | None = None
+    ) -> RegisteredModel | None:
+        """The live model for a family or task, or ``None``.
+
+        Serving resolves by task (RUL, SOH, risk). A caller that supplies neither
+        filter retains the old registry-wide view and receives an explicit error
+        when several task-specific production models exist.
+        """
+        entries = self.list_models(
+            model_name=model_name,
+            stage=ModelStage.PRODUCTION,
+            task=task,
+        )
         if not entries:
             return None
         if len(entries) > 1 and not self.cfg.registry.allow_multiple_production:
@@ -213,6 +230,25 @@ class FileModelRegistry:
                 "Archive all but one before serving."
             )
         return entries[-1]
+
+    def bundle_directory(self, entry: RegisteredModel, *, verify_checksum: bool = True) -> Path:
+        """Resolve and verify the bundle behind a registry entry.
+
+        This is the serving boundary: a promoted record is not trusted merely
+        because it says ``PRODUCTION``. Its directory must still exist and its
+        bytes must still match the checksum captured at registration.
+        """
+        directory = _absolute_path(entry.bundle_path, self.cfg).resolve()
+        if not directory.is_dir():
+            raise RegistryError(f"Bundle for {entry.key} is missing at {entry.bundle_path}.")
+        if verify_checksum:
+            actual = bundle_checksum(directory)
+            if actual != entry.artifact_checksum:
+                raise RegistryError(
+                    f"Checksum mismatch for {entry.key}: registered "
+                    f"{entry.artifact_checksum[:12]}…, on disk {actual[:12]}…."
+                )
+        return directory
 
     def history(self, *, limit: int = 100) -> list[dict[str, Any]]:
         return list(self._read().get("history", []))[-limit:]
@@ -333,27 +369,15 @@ class FileModelRegistry:
 
         check = self.cfg.registry.verify_checksums if verify_checksum is None else verify_checksum
         if check and stage in (ModelStage.STAGING, ModelStage.PRODUCTION):
-            directory = _absolute_path(target.bundle_path, self.cfg)
-            if not directory.is_dir():
-                raise RegistryError(
-                    f"Bundle for {target.key} is missing at {target.bundle_path}; refusing "
-                    "to promote a registry entry with no artifact behind it."
-                )
-            actual = bundle_checksum(directory)
-            if actual != target.artifact_checksum:
-                raise RegistryError(
-                    f"Checksum mismatch for {target.key}: registered "
-                    f"{target.artifact_checksum[:12]}…, on disk {actual[:12]}…. The "
-                    "artifact changed after registration; re-register it."
-                )
+            self.bundle_directory(target, verify_checksum=True)
 
         archived: list[str] = []
         if stage is ModelStage.PRODUCTION and not self.cfg.registry.allow_multiple_production:
             for entry in entries:
                 if (
-                    entry.model_name == model_name
+                    (entry.model_name == model_name or entry.task == target.task)
                     and entry.stage is ModelStage.PRODUCTION
-                    and entry.model_version != model_version
+                    and entry.key != target.key
                 ):
                     entry.stage = ModelStage.ARCHIVED
                     archived.append(entry.key)

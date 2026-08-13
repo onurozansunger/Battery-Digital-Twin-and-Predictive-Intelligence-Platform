@@ -12,7 +12,9 @@ license = { text = "MIT" }
 authors = [{ name = "Onur Ozan Sunger" }]
 keywords = ["battery", "prognostics", "remaining-useful-life", "time-series", "machine-learning"]
 classifiers = [
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]

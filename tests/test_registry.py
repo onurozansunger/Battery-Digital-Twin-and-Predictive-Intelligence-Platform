@@ -146,6 +146,40 @@ def test_only_one_version_is_in_production_at_a_time(registry_cfg, tmp_path):
     assert registry.get("fam", "1.0.0").stage is ModelStage.ARCHIVED
 
 
+def test_only_one_model_per_serving_task_is_in_production(registry_cfg, tmp_path):
+    registry = FileModelRegistry(cfg=registry_cfg)
+    _register(registry_cfg, registry, tmp_path, version="1.0.0", name="family-a")
+    _register(registry_cfg, registry, tmp_path, version="1.0.0", name="family-b")
+
+    registry.promote("family-a", "1.0.0", by="alice")
+    registry.promote("family-b", "1.0.0", by="bob")
+
+    production = registry.production_model(task="rul_regression")
+    assert production is not None and production.model_name == "family-b"
+    assert registry.get("family-a", "1.0.0").stage is ModelStage.ARCHIVED
+
+
+def test_serving_resolves_and_rechecks_the_promoted_bundle(registry_cfg, tmp_path):
+    from battery_rul.digital_twin.service import BatteryDigitalTwinService
+
+    registry = FileModelRegistry(cfg=registry_cfg)
+    entry = _register(registry_cfg, registry, tmp_path, version="1.0.0")
+    registry.promote("fam", "1.0.0", by="alice")
+
+    service = BatteryDigitalTwinService(cfg=registry_cfg)
+    path, resolved = service._serving_bundle_path(  # noqa: SLF001 - serving boundary test
+        "rul_regression", registry_cfg.artifacts.rul_dir
+    )
+    assert path == (tmp_path / entry.bundle_path).resolve()
+    assert resolved is not None and resolved.key == "fam:1.0.0"
+
+    (path / "model.pkl").write_bytes(b"tampered")
+    with pytest.raises(RegistryError, match="Checksum mismatch"):
+        service._serving_bundle_path(  # noqa: SLF001 - serving boundary test
+            "rul_regression", registry_cfg.artifacts.rul_dir
+        )
+
+
 def test_an_illegal_transition_is_refused(registry_cfg, tmp_path):
     registry = FileModelRegistry(cfg=registry_cfg)
     _register(registry_cfg, registry, tmp_path, version="1.0.0")

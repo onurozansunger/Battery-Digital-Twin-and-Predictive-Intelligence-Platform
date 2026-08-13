@@ -57,11 +57,12 @@ Fifteen-minute tour: [`docs/DEMO_GUIDE.md`](docs/DEMO_GUIDE.md).
 | **Serving** | `FleetInferenceService` calls `BatteryDigitalTwinService` once per cell — one inference path, bundles loaded once per process |
 | **Interfaces** | 15 new API endpoints (including `/metrics` and two administrative ones disabled by default) with pagination and partial success · a 14-page Streamlit fleet dashboard · 8 CLI pipelines |
 | **Platform** | SQLite persistence behind a repository protocol · structured JSON logs · Prometheus `/metrics` · multi-stage Docker (built and run, non-root, read-only rootfs) · four CI workflows |
-| **Tests** | 631 total (349 baseline + 282 new), all passing |
+| **Tests** | 638 collected, all non-slow tests passing |
 
-Honest headline from this repository's own run: the promotion gate **rejects**
-the current RUL bundle on interval coverage (0.764 against a 0.80 floor), so
-nothing is at stage `PRODUCTION`. The floor was not lowered to make it pass.
+Honest headline from this repository's own run: battery-block conformal
+calibration raises cross-conformal coverage to 0.917, above the 0.80 promotion
+floor. The gate now returns **REQUIRES_REVIEW**, because there is no production
+MAE baseline or configured absolute MAE floor. Nothing is promoted automatically.
 Full evidence: [`docs/MILESTONE_3_EVALUATION.md`](docs/MILESTONE_3_EVALUATION.md).
 
 ---
@@ -681,9 +682,10 @@ Summarised — the full treatment is **[`docs/limitations.md`](docs/limitations.
 * **One chemistry, one format, one rig.** LCO 18650, chamber-cycled, 2008-era
   instrumentation. Transfer to field data is unproven.
 * **Early-life RUL is close to unpredictable** and the metrics reflect that.
-* **Serving exists but is not production infrastructure.** There is an API and a
-  dashboard; there is no authentication, container, model registry, experiment
-  tracking or drift monitoring. Do not expose the service publicly as it stands.
+* **Serving is production-shaped, not production-validated.** API, dashboard,
+  containers, registry, tracking and drift monitoring exist, but authentication
+  and multi-replica/load validation do not. Do not expose it publicly without an
+  authenticated gateway and deployment-specific validation.
 * **The failure-risk label is derived, not observed.** The dataset contains no
   safety events, so the model has never seen one and cannot predict one.
 
@@ -785,27 +787,27 @@ by the run that produced them.
 > quantile was fitted from. The earlier figures are withdrawn. Full write-up:
 > [`docs/MILESTONE_2_1_REVIEW_FIXES.md`](docs/MILESTONE_2_1_REVIEW_FIXES.md).
 
-**RUL prediction intervals — the 90 % nominal interval does not achieve
-its nominal coverage:**
+**RUL prediction intervals — calibrated by independent battery, not by
+autocorrelated cycle row:**
 
 | | n | empirical coverage | mean width (cycles) |
 |---|---|---|---|
-| Cross-conformal, out-of-fold | 373 | **0.764** | 30.6 |
-| Held-out test (1 cell) | 122 | **0.713** | 41.8 |
-| _(in-sample, for reference only)_ | 373 | _0.917_ | — |
+| Cross-conformal, out-of-fold | 373 | **0.917** | 44.8 |
+| Held-out test (1 cell) | 122 | **0.951** | 54.2 |
+| _(in-sample, for reference only)_ | 373 | _1.000_ | — |
 
 | stage (by SOH) | n | coverage |
 |---|---|---|
-| early | 159 | 0.572 |
-| late | 70 | 0.929 |
-| mid | 144 | 0.896 |
+| early | 159 | 0.811 |
+| late | 70 | 1.000 |
+| mid | 144 | 0.993 |
 
-The in-sample row is what the previous README reported as the headline. Applying
-a quantile back to the residuals it was estimated from recovers the nominal
-level close to by construction; the honest estimate is the cross-conformal one,
-and it falls well short. Early-life coverage is worst. **Treat the interval as
-indicative, not as a 90 % guarantee** — conformal's exchangeability assumption
-is not satisfied across five physically distinct cells.
+The calibration score is now the maximum absolute residual per independent
+battery. A cell with 100 correlated cycles therefore contributes one score,
+not 100 pseudo-independent observations. For each cross-conformal fold the
+quantile is fitted on the other cells only. Coverage clears the configured
+floor, but the interval is wider and one cell (`B0033`) still covers only 0.703;
+five cells are not enough to claim a universal 90 % guarantee.
 
 Deployed family: `elastic_net`, chosen by leave-one-cell-out over **non-test
 cells only**. Worth noting: with the test cell in the pool, `random_forest` won;
@@ -830,10 +832,12 @@ about 29 % out of fold.
 
 | | n | PR-AUC | PR-AUC of *cycle index alone* | beats it? |
 |---|---|---|---|---|
-| Out-of-fold, calibrated | 373 | 0.647 | **0.928** | **no** |
-| Held-out test, calibrated | 122 | 0.721 | **1.000** | **no** |
+| Out-of-fold, calibrated | 373 | 0.830 | **0.928** | **no** |
+| Held-out test, calibrated | 122 | 0.992 | **1.000** | **no** |
 
-Because the label is `RUL ≤ H`, a cell's positives are exactly its last H cycles,
+`random_forest` is selected from logistic regression, random forest, LightGBM
+and XGBoost using leave-one-battery-out PR-AUC on non-test cells only. Because
+the label is `RUL ≤ H`, a cell's positives are exactly its last H cycles,
 so counting cycles ranks them perfectly. The model loses on every partition. It
 is therefore **gated out**: the twin reports the probability marked
 `experimental` and **withholds it from the recommendation rules**, which then
@@ -893,11 +897,13 @@ has the diagnostic table.
 ### Governance
 
 The registry records which version is live, who promoted it and when, with a
-checksum over the bundle files that is re-verified at promotion. The gate
+checksum over the bundle files that is re-verified both at promotion and every
+service load. Serving resolves the PRODUCTION bundle by task. The gate
 compares a candidate against production on fourteen checks and returns
-`APPROVED` / `REQUIRES_REVIEW` / `REJECTED` — and it **rejected this
-repository's own bundle** on conformal interval coverage (0.764 < 0.800). The
-floor was not lowered. Nothing is at stage `PRODUCTION`.
+`APPROVED` / `REQUIRES_REVIEW` / `REJECTED`. The current bundle clears the
+coverage floor (0.917 ≥ 0.800) and returns `REQUIRES_REVIEW`: its MAE is 8.561,
+but there is neither a production baseline nor an absolute first-model floor.
+It remains a candidate pending an explicit human decision.
 
 Promotion is never automatic: `registry.promotion.allow_auto_promotion` is
 false and CI never sets it.
@@ -935,12 +941,12 @@ checking nothing because a NumPy stub no longer parses under the pinned Python
 version, and one smoke-job step asserted the opposite of the truth. All fixed.
 
 Still true, and documented rather than hidden: no real delayed labels exist for
-a five-cell laboratory cohort, and no model is at stage `PRODUCTION` because the
-gate refused the only candidate on interval coverage.
+a five-cell laboratory cohort, and no model is at stage `PRODUCTION` because a
+`REQUIRES_REVIEW` verdict is evidence for a human decision, not auto-promotion.
 
 Recommended release: **`v1.0.0`** — for the *platform*. It does not claim a
-validated model: the registry has no `PRODUCTION` entry, because the gate
-refused the only candidate. See
+validated model: the registry has no `PRODUCTION` entry because the candidate
+still requires review. See
 [`MILESTONE_3_ACCEPTANCE_CHECKLIST.md`](docs/MILESTONE_3_ACCEPTANCE_CHECKLIST.md).
 
 ---

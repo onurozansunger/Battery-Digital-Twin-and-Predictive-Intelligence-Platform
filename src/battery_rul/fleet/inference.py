@@ -516,15 +516,14 @@ class FleetInferenceService:
             if getattr(bundles, name) is not None
         }
         registry_name = registry_stage = None
-        try:
-            from battery_rul.registry.store import FileModelRegistry
-
-            entry = FileModelRegistry(cfg=self.cfg).production_model()
-            if entry is not None:
-                registry_name = entry.model_name
-                registry_stage = entry.stage.value
-        except Exception as exc:  # noqa: BLE001 - registry absence is not an error here
-            logger.debug("No registry metadata available for this snapshot: %s", exc)
+        primary_slot = next(
+            (name for name in ("rul", "risk", "soh") if getattr(bundles, name) is primary),
+            None,
+        )
+        entry = bundles.registry_entries.get(primary_slot or "")
+        if entry is not None:
+            registry_name = entry.model_name
+            registry_stage = entry.stage.value
 
         return FleetModelMetadata(
             active_model_version=primary.metadata.model_version if primary else None,

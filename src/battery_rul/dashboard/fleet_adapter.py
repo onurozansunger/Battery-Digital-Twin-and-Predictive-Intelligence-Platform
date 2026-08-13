@@ -193,7 +193,7 @@ class FleetDashboardAdapter:
 
             registry = FileModelRegistry(cfg=self.cfg)
             try:
-                production = registry.production_model()
+                production = registry.production_model(task="rul_regression")
                 return {
                     "models": [e.to_dict() for e in registry.list_models()],
                     "production": production.to_dict() if production is not None else None,

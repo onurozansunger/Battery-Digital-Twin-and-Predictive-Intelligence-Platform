@@ -45,14 +45,14 @@ any pipeline that forgot to run them.
 
 ---
 
-## Worked example — the gate rejecting this repository's own bundle
+## Worked example — the current repository bundle
 
 ```
 $ python -m battery_rul.pipelines.evaluate_promotion \
       --model-name battery-rul --model-version 1.0.0 \
       --unit-tests --contract-tests --smoke-test --leakage-check
 
-REJECTED
+REQUIRES_REVIEW
   validation_status          PASS | validation_status=VALIDATED
   artifact_checksum          PASS | matches the registered checksum
   required_metadata          PASS | complete
@@ -62,19 +62,16 @@ REJECTED
   inference_smoke_test       PASS | passed
   leakage_check              PASS | passed
   rul_mae                    UNKNOWN | MAE 8.561; no production baseline
-  interval_coverage          FAIL | empirical coverage 0.764, minimum 0.800
+  interval_coverage          PASS | empirical coverage 0.917, minimum 0.800
   inference_latency          UNKNOWN | no candidate latency measurement was supplied
-reasons: ['interval_coverage: empirical coverage 0.764, minimum 0.800']
+reasons: ['rul_mae: MAE 8.561; no production baseline']
 ```
 
-This is a real result from the real Milestone 2 RUL bundle. Its cross-conformal
-out-of-fold coverage is 0.764 against a configured floor of 0.80, and the gate
-refuses it. The bundle is left at `CANDIDATE` in this repository rather than
-lowering the floor to make it pass, because a gate tuned until the current
-model clears it is not a gate.
-
-Fixing it properly means improving conformal coverage (more calibration cells,
-or a different conditioning scheme) — not editing `min_interval_coverage`.
+This is a real result from the real Milestone 2 RUL bundle. Battery-block
+cross-conformal coverage is 0.917 against a configured floor of 0.80. No check
+fails, but the first model has neither a production MAE baseline nor a configured
+absolute MAE floor, so the gate correctly asks for review. The bundle stays at
+`CANDIDATE`; a `REQUIRES_REVIEW` result is not an automatic deployment decision.
 
 ---
 

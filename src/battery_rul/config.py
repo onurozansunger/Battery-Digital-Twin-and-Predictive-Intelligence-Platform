@@ -626,7 +626,24 @@ class RiskConfig(_Base):
     )
     additional_horizons: list[int] = Field(default_factory=lambda: [20, 50])
     target_name: str = "failure_within_horizon"
-    model: Literal["logistic_regression", "random_forest", "lightgbm", "xgboost"] = "lightgbm"
+    model: Literal["auto", "logistic_regression", "random_forest", "lightgbm", "xgboost"] = Field(
+        default="auto",
+        description="Classifier family. 'auto' selects the highest PR-AUC family by "
+        "leave-one-battery-out predictions over non-test cells only.",
+    )
+    candidates: list[Literal["logistic_regression", "random_forest", "lightgbm", "xgboost"]] = (
+        Field(
+            default=[
+                "logistic_regression",
+                "random_forest",
+                "lightgbm",
+                "xgboost",
+            ],
+            min_length=1,
+            description="Families compared when model='auto'. The held-out test cell never "
+            "participates in family selection.",
+        )
+    )
     class_weight_balanced: bool = True
     threshold: float | None = Field(
         default=None,
@@ -653,6 +670,8 @@ class RiskConfig(_Base):
     def _ordered(self) -> RiskConfig:
         if not (self.low_max < self.medium_max < self.high_max):
             raise ValueError("risk bands must satisfy low_max < medium_max < high_max")
+        if len(self.candidates) != len(set(self.candidates)):
+            raise ValueError("risk.candidates must not contain duplicates")
         return self
 
 
@@ -702,6 +721,13 @@ class UncertaintyConfig(_Base):
 
     method: Literal["split_conformal", "none"] = "split_conformal"
     coverage: float = Field(default=0.90, gt=0.0, lt=1.0)
+    calibration_unit: Literal["row", "battery"] = Field(
+        default="battery",
+        description="Exchangeability unit used to calibrate residuals. 'battery' "
+        "uses the worst residual per held-out cell, so hundreds of autocorrelated "
+        "cycles cannot masquerade as hundreds of independent calibration examples. "
+        "'row' is retained for genuinely exchangeable tabular data and unit tests.",
+    )
     normalise_by_life_stage: bool = Field(
         default=True,
         description="Fit separate conformal quantiles per degradation-stage bucket. "
@@ -718,6 +744,13 @@ class UncertaintyConfig(_Base):
         "time, exactly where the interval matters.",
     )
     min_calibration_rows: int = Field(default=20, ge=5)
+    min_calibration_batteries: int = Field(
+        default=3,
+        ge=2,
+        description="Minimum independent cells required for a stage-specific "
+        "battery-block quantile. Thinner stages fall back to the global cell-block "
+        "quantile instead of claiming group-conditional evidence from one cell.",
+    )
     cross_conformal_coverage: bool = Field(
         default=True,
         description="Estimate coverage with leave-one-cell-out conformal rather than "
@@ -1275,7 +1308,11 @@ class RegistryConfig(_Base):
     )
     dir: Path = Path("artifacts/registry")
     registry_file: str = "models.json"
-    allow_multiple_production: bool = Field(default=False)
+    allow_multiple_production: bool = Field(
+        default=False,
+        description="Permit several PRODUCTION entries for one serving task. Keep false "
+        "unless an external traffic router, rather than this service, selects among them.",
+    )
     verify_checksums: bool = True
     promotion: PromotionGateConfig = Field(default_factory=PromotionGateConfig)
 

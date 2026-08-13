@@ -857,6 +857,7 @@ def promote_model(
         "promoted_by": entry.promoted_by,
         "decision": gate["decision"] if gate else "SKIPPED",
         "forced": force,
+        "activation": "next_service_start_or_explicit_reload",
     }
 
 
@@ -873,6 +874,7 @@ def rollback_model(
         "model": entry.key,
         "previous_production": before.key if before else None,
         "stage": entry.stage.value,
+        "activation": "next_service_start_or_explicit_reload",
     }
 
 

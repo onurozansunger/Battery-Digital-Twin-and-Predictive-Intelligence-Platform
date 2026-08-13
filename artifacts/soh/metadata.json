@@ -3,9 +3,9 @@
   "model_version": "1.0.0",
   "task": "soh_forecast",
   "schema_version": "2.0",
-  "created_at_utc": "2026-08-02T11:47:23.432229+00:00",
-  "git_revision": "cf411df",
-  "data_fingerprint": "efaf21bc3eede903",
+  "created_at_utc": "2026-08-13T10:46:00.360925+00:00",
+  "git_revision": "985b886",
+  "data_fingerprint": "dcd2456b90b332d4",
   "preprocessing_fingerprint": "654fad76bc12cf62",
   "dataset_fingerprint": "53df6f08c6c8",
   "feature_names": [
@@ -227,7 +227,13 @@
         50
       ],
       "target_name": "failure_within_horizon",
-      "model": "lightgbm",
+      "model": "auto",
+      "candidates": [
+        "logistic_regression",
+        "random_forest",
+        "lightgbm",
+        "xgboost"
+      ],
       "class_weight_balanced": true,
       "threshold_objective": "f1",
       "min_recall": 0.8,
@@ -3308,5 +3314,6 @@
     "torch": "2.11.0",
     "optuna": "4.9.0"
   },
+  "python_version": "3.13.5",
   "notes": "Forecasts SOH 30 cycles ahead, as a fraction in [0, 1]. Current SOH is reported by the twin as a derived measurement, not from this model."
 }

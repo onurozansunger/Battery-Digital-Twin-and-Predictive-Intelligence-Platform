@@ -472,6 +472,19 @@ def test_risk_bundle_records_an_acceptance_gate_verdict():
     assert RiskConfig().require_beating_baseline is True
 
 
+def test_risk_family_selection_is_enabled_and_candidate_list_is_validated():
+    """Risk performance must not depend on an untested hard-coded family."""
+    from pydantic import ValidationError
+
+    from battery_rul.config import RiskConfig
+
+    cfg = RiskConfig()
+    assert cfg.model == "auto"
+    assert {"logistic_regression", "random_forest", "lightgbm", "xgboost"} == set(cfg.candidates)
+    with pytest.raises(ValidationError, match="must not contain duplicates"):
+        RiskConfig(candidates=["random_forest", "random_forest"])
+
+
 def test_experimental_risk_is_withheld_from_the_recommendation_rules(cfg: ExperimentConfig):
     """A gated-out risk probability must not be able to trigger an action."""
     from battery_rul.recommendations.engine import (

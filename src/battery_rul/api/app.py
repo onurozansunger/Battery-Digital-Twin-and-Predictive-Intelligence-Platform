@@ -239,7 +239,7 @@ def create_app(
     async def _invalid_history(request: Request, exc: InvalidHistoryError) -> JSONResponse:
         return _error(
             request,
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "invalid_history",
             str(exc),
             hint="See the canonical cycle schema in battery_rul.data.schema.",

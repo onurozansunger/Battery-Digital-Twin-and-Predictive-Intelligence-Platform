@@ -105,16 +105,16 @@ behaviour, and it is also a reduced evidence base.
 
 ---
 
-## 8. The current RUL bundle fails the promotion gate
+## 8. The current RUL bundle requires promotion review
 
-Its cross-conformal out-of-fold interval coverage is **0.764** against a
-configured floor of **0.80**. The gate rejects it, and it is left at `CANDIDATE`
-rather than lowering the floor to make it pass.
+Battery-block cross-conformal out-of-fold interval coverage is **0.917** against
+a configured floor of **0.80**. The coverage check passes, but the gate returns
+`REQUIRES_REVIEW` because the first model has no production MAE baseline or
+configured absolute MAE floor.
 
 Nothing in this repository is at stage `PRODUCTION`. The serving path still
 loads the configured artifacts and works; what is missing is the *explicit*
-statement that a validated model is live. Fixing it properly means improving
-conformal coverage, not editing the threshold.
+statement that a reviewed model is live. Promotion remains a human decision.
 
 ---
 

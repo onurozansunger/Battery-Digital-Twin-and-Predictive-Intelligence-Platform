@@ -1,7 +1,7 @@
 {
-  "fleet_id": "DEMO-FLEET-01",
-  "snapshot_id": "20260813T084312Z-1faadee9",
+  "fleet_id": "NASA-COHORT",
+  "snapshot_id": "20260813T105529Z-f48bfe3a",
   "report_path": "reports/milestone_3/fleet_report.md",
-  "monitoring_snapshot_id": "mon-20260813T084312Z-1faadee9",
-  "n_alerts": 11
+  "monitoring_snapshot_id": "mon-20260813T105529Z-f48bfe3a",
+  "n_alerts": 2
 }

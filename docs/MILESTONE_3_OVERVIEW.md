@@ -175,8 +175,8 @@ python -m battery_rul.api.app
 streamlit run src/battery_rul/dashboard/fleet_app.py
 ```
 
-Exit codes: `0` success, `1` the stage failed, `2` the stage ran and the
-promotion gate returned REJECTED.
+Exit codes: `0` success (including `REQUIRES_REVIEW`), `1` the stage failed,
+`2` the stage ran and the promotion gate returned `REJECTED`.
 
 ---
 

@@ -1,146 +1,109 @@
 {
   "summary": {
-    "fleet_id": "DEMO-FLEET-01",
-    "generated_at_utc": "2026-08-13T08:43:10.783958+00:00",
-    "battery_count": 24,
-    "successfully_processed_count": 21,
+    "fleet_id": "NASA-COHORT",
+    "generated_at_utc": "2026-08-13T10:55:27.023291+00:00",
+    "battery_count": 5,
+    "successfully_processed_count": 5,
     "failed_count": 0,
-    "insufficient_data_count": 3,
-    "healthy_count": 3,
-    "slightly_degraded_count": 10,
-    "warning_count": 8,
-    "critical_count": 0,
-    "inspection_recommended_count": 21,
-    "replacement_planning_count": 21,
+    "insufficient_data_count": 0,
+    "healthy_count": 0,
+    "slightly_degraded_count": 2,
+    "warning_count": 2,
+    "critical_count": 1,
+    "inspection_recommended_count": 5,
+    "replacement_planning_count": 5,
     "high_priority_battery_ids": [
-      "DEMO-0001",
-      "DEMO-0004",
-      "DEMO-0010",
-      "DEMO-0011",
-      "DEMO-0013",
-      "DEMO-0015",
-      "DEMO-0017",
-      "DEMO-0018",
-      "DEMO-0019",
-      "DEMO-0020",
-      "DEMO-0021",
-      "DEMO-0024"
+      "B0005",
+      "B0006",
+      "B0018",
+      "B0033",
+      "B0034"
     ],
-    "median_soh": 0.8552,
-    "median_rul": 26.656,
+    "median_soh": 0.75683,
+    "median_rul": 3.625,
     "drift_status": "UNKNOWN",
-    "data_quality_status": "WARNING",
+    "data_quality_status": "OK",
     "active_model_version": "1.0.0",
-    "is_demo_data": true
+    "is_demo_data": false
   },
   "health_distribution": {
     "counts": {
-      "warning": 8,
-      "slightly_degraded": 10,
-      "healthy": 3
+      "warning": 2,
+      "critical": 1,
+      "slightly_degraded": 2
     },
-    "denominator": 21,
+    "denominator": 5,
     "unknown_count": 0,
     "provenance": "derived"
   },
   "risk_distribution": {
     "counts": {
-      "medium": 9,
-      "low": 5,
-      "very_high": 7
+      "high": 2,
+      "very_high": 3
     },
-    "denominator": 21,
+    "denominator": 5,
     "unknown_count": 0,
     "quantiles": {
-      "q10": 0.0,
-      "q25": 0.489,
-      "q50": 0.489,
+      "q10": 0.566,
+      "q25": 0.566,
+      "q50": 1.0,
       "q75": 1.0,
       "q90": 1.0
     },
-    "mean": 0.54291,
+    "mean": 0.82642,
     "experimental_model": true,
     "above_thresholds": {
-      "0.5": 7,
-      "0.8": 7
+      "0.5": 5,
+      "0.8": 3
     },
     "provenance": "predicted"
   },
   "maintenance_summary": {
     "priority_counts": {
-      "P1_URGENT": 7,
-      "P2_HIGH": 9,
-      "INSUFFICIENT_DATA": 3,
       "P0_CRITICAL": 5
     },
     "action_counts": {
-      "PLAN_REPLACEMENT": 7,
-      "SCHEDULE_INSPECTION": 9,
-      "INSUFFICIENT_DATA": 3,
       "IMMEDIATE_ENGINEERING_REVIEW": 5
     },
-    "critical_count": 12,
-    "inspection_recommended_count": 21,
-    "insufficient_data_count": 3,
-    "denominator": 24,
+    "critical_count": 5,
+    "inspection_recommended_count": 5,
+    "insufficient_data_count": 0,
+    "denominator": 5,
     "high_risk_battery_ids": [
-      "DEMO-0001",
-      "DEMO-0004",
-      "DEMO-0010",
-      "DEMO-0011",
-      "DEMO-0013",
-      "DEMO-0015",
-      "DEMO-0017",
-      "DEMO-0018",
-      "DEMO-0019",
-      "DEMO-0020",
-      "DEMO-0021",
-      "DEMO-0024"
+      "B0005",
+      "B0006",
+      "B0018",
+      "B0033",
+      "B0034"
     ],
     "provenance": "rule_based"
   },
   "replacement_summary": {
     "counts_by_horizon": {
-      "near_term": 13,
-      "medium_term": 6,
-      "long_term": 2,
+      "near_term": 5,
+      "medium_term": 0,
+      "long_term": 0,
       "not_flagged": 0,
-      "unknown": 3
+      "unknown": 0
     },
     "lower_counts_by_horizon": {
       "near_term": 2,
-      "medium_term": 14,
-      "long_term": 21
+      "medium_term": 3,
+      "long_term": 5
     },
     "upper_counts_by_horizon": {
-      "near_term": 13,
-      "medium_term": 19,
-      "long_term": 21
+      "near_term": 5,
+      "medium_term": 5,
+      "long_term": 5
     },
-    "candidate_count": 21,
-    "denominator": 21,
+    "candidate_count": 5,
+    "denominator": 5,
     "candidate_battery_ids": [
-      "DEMO-0001",
-      "DEMO-0002",
-      "DEMO-0004",
-      "DEMO-0006",
-      "DEMO-0007",
-      "DEMO-0009",
-      "DEMO-0010",
-      "DEMO-0011",
-      "DEMO-0012",
-      "DEMO-0013",
-      "DEMO-0014",
-      "DEMO-0015",
-      "DEMO-0016",
-      "DEMO-0017",
-      "DEMO-0018",
-      "DEMO-0019",
-      "DEMO-0020",
-      "DEMO-0021",
-      "DEMO-0022",
-      "DEMO-0023",
-      "DEMO-0024"
+      "B0005",
+      "B0006",
+      "B0018",
+      "B0033",
+      "B0034"
     ],
     "caveats": [
       "Replacement horizons are advisory planning input derived from model predictions and configurable thresholds, not a maintenance schedule.",
@@ -154,27 +117,19 @@
       {
         "label": "immediate",
         "horizon_cycles": 0,
-        "battery_count": 12,
-        "percent_of_evaluated": 57.14,
+        "battery_count": 5,
+        "percent_of_evaluated": 100.0,
         "priority_counts": {
-          "P1_URGENT": 7,
           "P0_CRITICAL": 5
         },
         "lower_count": null,
         "upper_count": null,
         "battery_ids": [
-          "DEMO-0001",
-          "DEMO-0004",
-          "DEMO-0010",
-          "DEMO-0011",
-          "DEMO-0013",
-          "DEMO-0015",
-          "DEMO-0017",
-          "DEMO-0018",
-          "DEMO-0019",
-          "DEMO-0020",
-          "DEMO-0021",
-          "DEMO-0024"
+          "B0005",
+          "B0006",
+          "B0018",
+          "B0033",
+          "B0034"
         ]
       },
       {
@@ -184,56 +139,38 @@
         "percent_of_evaluated": 0.0,
         "priority_counts": {},
         "lower_count": 0,
-        "upper_count": 9,
+        "upper_count": 5,
         "battery_ids": []
       },
       {
         "label": "next_30_cycles",
         "horizon_cycles": 30,
-        "battery_count": 4,
-        "percent_of_evaluated": 19.05,
-        "priority_counts": {
-          "P2_HIGH": 4
-        },
-        "lower_count": 5,
-        "upper_count": 16,
-        "battery_ids": [
-          "DEMO-0012",
-          "DEMO-0014",
-          "DEMO-0016",
-          "DEMO-0023"
-        ]
+        "battery_count": 0,
+        "percent_of_evaluated": 0.0,
+        "priority_counts": {},
+        "lower_count": 2,
+        "upper_count": 5,
+        "battery_ids": []
       },
       {
         "label": "next_50_cycles",
         "horizon_cycles": 50,
-        "battery_count": 3,
-        "percent_of_evaluated": 14.29,
-        "priority_counts": {
-          "P2_HIGH": 3
-        },
-        "lower_count": 14,
-        "upper_count": 19,
-        "battery_ids": [
-          "DEMO-0006",
-          "DEMO-0007",
-          "DEMO-0009"
-        ]
+        "battery_count": 0,
+        "percent_of_evaluated": 0.0,
+        "priority_counts": {},
+        "lower_count": 3,
+        "upper_count": 5,
+        "battery_ids": []
       },
       {
         "label": "beyond_50_cycles",
         "horizon_cycles": null,
-        "battery_count": 2,
-        "percent_of_evaluated": 9.52,
-        "priority_counts": {
-          "P2_HIGH": 2
-        },
+        "battery_count": 0,
+        "percent_of_evaluated": 0.0,
+        "priority_counts": {},
         "lower_count": null,
         "upper_count": null,
-        "battery_ids": [
-          "DEMO-0002",
-          "DEMO-0022"
-        ]
+        "battery_ids": []
       },
       {
         "label": "monitor_only",
@@ -248,168 +185,94 @@
       {
         "label": "insufficient_data",
         "horizon_cycles": null,
-        "battery_count": 3,
-        "percent_of_evaluated": 14.29,
-        "priority_counts": {
-          "INSUFFICIENT_DATA": 3
-        },
+        "battery_count": 0,
+        "percent_of_evaluated": 0.0,
+        "priority_counts": {},
         "lower_count": null,
         "upper_count": null,
-        "battery_ids": [
-          "DEMO-0003",
-          "DEMO-0005",
-          "DEMO-0008"
-        ]
+        "battery_ids": []
       }
     ],
-    "evaluated_count": 21,
-    "excluded_count": 3,
+    "evaluated_count": 5,
+    "excluded_count": 0,
     "basis": "Cells at priority P0/P1 are counted as immediate; the remaining cells are bucketed by the RUL interval lower bound where one exists, otherwise by the point estimate.",
     "caveats": [
       "A workload forecast, not a schedule: it describes expected demand under the configured policy, and does not account for crew availability, spares, or operational constraints.",
-      "Percentages are of the evaluated fleet, not of the submitted fleet; 3 cell(s) could not be evaluated."
+      "Percentages are of the evaluated fleet, not of the submitted fleet; 0 cell(s) could not be evaluated."
     ],
     "provenance": "rule_based"
   },
   "fleet_statistics": {
-    "soh_median": 0.8552,
-    "soh_mean": 0.83586,
+    "soh_median": 0.75683,
+    "soh_mean": 0.77433,
     "soh_quantiles": {
-      "q10": 0.767,
-      "q25": 0.7736,
-      "q50": 0.8552,
-      "q75": 0.8821,
-      "q90": 0.9062
+      "q10": 0.7161,
+      "q25": 0.7566,
+      "q50": 0.7568,
+      "q75": 0.8312,
+      "q90": 0.8352
     },
-    "soh_denominator": 21,
-    "rul_median": 26.656,
-    "rul_mean": 32.681,
+    "soh_denominator": 5,
+    "rul_median": 3.625,
+    "rul_mean": 8.669,
     "rul_quantiles": {
-      "q10": 9.491,
-      "q25": 19.245,
-      "q50": 26.656,
-      "q75": 48.295,
-      "q90": 66.781
+      "q10": 0.9946,
+      "q25": 1.174,
+      "q50": 3.625,
+      "q75": 16.129,
+      "q90": 19.378
     },
-    "rul_denominator": 21,
-    "rul_lower_bound_median": 11.284,
-    "interval_width_median": 21.594,
-    "risk_median": 0.48901,
-    "risk_mean": 0.54291,
-    "risk_denominator": 21,
+    "rul_denominator": 5,
+    "rul_lower_bound_median": 0.0,
+    "interval_width_median": 36.175,
+    "risk_median": 1.0,
+    "risk_mean": 0.82642,
+    "risk_denominator": 5,
     "below_rul_threshold_counts": {
-      "20": 6,
-      "50": 16,
-      "100": 21
+      "20": 4,
+      "50": 5,
+      "100": 5
     },
     "above_risk_threshold_counts": {
-      "0.5": 7,
-      "0.8": 7
+      "0.5": 5,
+      "0.8": 3
     },
     "missingness": {
-      "measured_soh": 0.125,
-      "predicted_rul": 0.125,
-      "rul_lower_bound": 0.125,
-      "failure_risk": 0.125
+      "measured_soh": 0.0,
+      "predicted_rul": 0.0,
+      "rul_lower_bound": 0.0,
+      "failure_risk": 0.0
     },
     "provenance": "derived"
   },
   "data_quality": {
-    "status": "WARNING",
+    "status": "OK",
     "quality_class_counts": {
-      "ACCEPTABLE": 10,
-      "INSUFFICIENT": 3,
-      "GOOD": 11
+      "ACCEPTABLE": 2,
+      "GOOD": 3
     },
-    "mean_quality_score": 0.7646,
-    "poor_or_worse_fraction": 0.125,
-    "insufficient_fraction": 0.125,
-    "mean_missing_feature_fraction": 0.1224,
-    "per_feature_missing_rate": {
-      "capacity_ah_rmax_3": 0.125,
-      "capacity_ah_rmax_5": 0.125,
-      "capacity_ah_rmax_10": 0.125,
-      "capacity_ah_rmax_20": 0.125,
-      "capacity_ah_rrange_20": 0.125,
-      "capacity_ah_lag_1": 0.125,
-      "capacity_ah_lag_3": 0.125,
-      "capacity_ah_lag_5": 0.125,
-      "capacity_ah_cumstd": 0.125,
-      "soh_rmin_10": 0.125,
-      "soh_rmax_10": 0.125,
-      "soh_rmin_20": 0.125,
-      "soh_rmax_20": 0.125,
-      "soh_ewm_15": 0.125,
-      "soh_lag_3": 0.125,
-      "soh_lag_5": 0.125,
-      "soh_lag_10": 0.125,
-      "soh_delta_from_initial": 0.125,
-      "soh_cummean": 0.125,
-      "soh_cummin": 0.125,
-      "soh_cumstd": 0.125,
-      "discharge_duration_s_rmax_3": 0.125,
-      "discharge_duration_s_rmax_5": 0.125,
-      "discharge_duration_s_rmin_10": 0.125,
-      "discharge_duration_s_rmax_10": 0.125,
-      "discharge_duration_s_ewm_15": 0.125,
-      "discharge_duration_s_cummin": 0.125,
-      "discharge_duration_s_cumstd": 0.125,
-      "charge_duration_s_cummin": 0.125,
-      "charge_duration_s_cummax": 0.125,
-      "voltage_min_v_rstd_10": 0.125,
-      "voltage_min_v_rstd_20": 0.125,
-      "voltage_min_v_rrange_20": 0.125,
-      "voltage_min_v_cumstd": 0.125,
-      "voltage_slope_v_per_s_ratio_to_initial": 0.125,
-      "current_mean_a_rmin_3": 0.125,
-      "current_mean_a_rmean_5": 0.125,
-      "current_mean_a_rmin_5": 0.125,
-      "current_mean_a_rmax_5": 0.125,
-      "current_mean_a_rmean_10": 0.125,
-      "current_mean_a_rmax_10": 0.125,
-      "current_mean_a_rmean_20": 0.125,
-      "current_mean_a_rmin_20": 0.125,
-      "current_mean_a_rmax_20": 0.125,
-      "current_mean_a_ewm_5": 0.125,
-      "current_mean_a_ewm_15": 0.125,
-      "current_mean_a_lag_1": 0.125,
-      "current_mean_a_lag_2": 0.125,
-      "current_mean_a_lag_3": 0.125,
-      "current_mean_a_cummean": 0.125
-    },
-    "batteries_with_schema_mismatch": [
-      "DEMO-0003",
-      "DEMO-0005",
-      "DEMO-0007",
-      "DEMO-0008"
-    ],
+    "mean_quality_score": 0.9,
+    "poor_or_worse_fraction": 0.0,
+    "insufficient_fraction": 0.0,
+    "mean_missing_feature_fraction": 0.0,
+    "per_feature_missing_rate": {},
+    "batteries_with_schema_mismatch": [],
     "batteries_with_ood_features": [
-      "DEMO-0001",
-      "DEMO-0002",
-      "DEMO-0006",
-      "DEMO-0007",
-      "DEMO-0011",
-      "DEMO-0012",
-      "DEMO-0016",
-      "DEMO-0017",
-      "DEMO-0021",
-      "DEMO-0022"
+      "B0005",
+      "B0006"
     ],
     "check_failure_rates": {
       "cycle_gaps": 0.0,
       "cycle_ordering": 0.0,
-      "distribution": 0.4762,
+      "distribution": 0.4,
       "duplicate_cycles": 0.0,
-      "history_length": 0.125,
-      "missing_features": 0.125,
+      "history_length": 0.0,
+      "missing_features": 0.0,
       "value_plausibility": 0.0
     },
-    "denominator": 24,
+    "denominator": 5,
     "warnings": [
-      "12% of the fleet has POOR or worse input quality (warning threshold 10%).",
-      "12% of the fleet has insufficient data to score (warning threshold 10%).",
-      "On average 12% of required features are absent (warning threshold 10%).",
-      "10 cell(s) have at least one feature outside the training reference range; those predictions are extrapolations. This is an input-range observation, not a drift verdict \u2014 see the feature-drift report for that."
+      "2 cell(s) have at least one feature outside the training reference range; those predictions are extrapolations. This is an input-range observation, not a drift verdict \u2014 see the feature-drift report for that."
     ],
     "provenance": "derived"
   },
@@ -427,7 +290,7 @@
     "data_version": "53df6f08c6c8",
     "snapshot_schema_version": "3.0",
     "battery_snapshot_schema_version": "2.0",
-    "git_revision": "f476aeb",
+    "git_revision": "985b886",
     "package_version": "0.1.0",
     "risk_horizon_cycles": 30,
     "end_of_life_definition": {
@@ -437,9 +300,7 @@
     }
   },
   "warnings": [
-    "DEMONSTRATION FLEET DERIVED FROM MEASURED CELLS. Each cell here is one of the measured laboratory cells, truncated at a different point in its own life and given a demo identifier, so that a small cohort can illustrate a fleet at a range of ages. Several demo cells share an underlying physical cell. The measurements are real; the fleet is not, and no number computed from it describes any operator's fleet.",
-    "The failure-risk model is marked experimental (it did not beat the cycle-index baseline out of fold). Risk probabilities are reported but were withheld from the maintenance rules.",
-    "DEMO DATA: this fleet contains synthetic histories from the physics-informed generator. It is not measured data and must not be read as a description of any real fleet."
+    "The failure-risk model is marked experimental (it did not beat the cycle-index baseline out of fold). Risk probabilities are reported but were withheld from the maintenance rules."
   ],
   "disclaimer": "Fleet intelligence from a research prototype. Rankings, maintenance priorities and replacement horizons are configurable engineering policy applied to model outputs, not validated operational decisions, and not a substitute for battery-management-system protection or qualified engineering review."
 }

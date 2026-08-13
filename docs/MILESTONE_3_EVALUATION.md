@@ -17,7 +17,7 @@ built by Milestone 2.
 | Lint | `ruff check src tests scripts` | **pass** — all checks passed |
 | Format | `black --check src tests scripts` | **pass** |
 | Types | `mypy src tests scripts` | **pass** — no issues in 152 source files |
-| Tests | `pytest -m "not slow"` | **pass** — 631 collected, exit code 0 |
+| Tests | `pytest -m "not slow"` | **pass** — 638 collected, exit code 0 |
 | Secrets | `python scripts/check_secrets.py` | **pass** — no credential patterns in 227 tracked files |
 | Paths | `python scripts/sanitise_reports.py --check` | **pass** — no absolute machine paths |
 
@@ -27,7 +27,8 @@ built by Milestone 2.
 | --- | --- |
 | Milestone 1 + 2 baseline (before this milestone) | 349 |
 | Milestone 3 additions | **282** |
-| **Total** | **631** |
+| Registry/conformal/model-selection hardening additions | **7** |
+| **Total** | **638** |
 
 Milestone 3 test files:
 
@@ -41,13 +42,13 @@ Milestone 3 test files:
 | `test_fleet_dashboard.py` | 15 (11 dashboard + 4 Battery Passport) |
 | `test_monitoring_drift.py` | 24 |
 | `test_monitoring_performance.py` | 25 |
-| `test_registry.py` | 29 |
+| `test_registry.py` | 31 |
 | `test_persistence.py` | 30 |
 | `test_milestone_3_regression.py` | 19 |
 | `test_digital_twin.py` (bundle interpreter check) | 3 added to an existing file |
 
 The baseline suite was run **before** any Milestone 3 code was written (349
-passed) and again after (all 631 pass), so the Milestone 1 and 2 regression
+passed) and again after (all 638 pass), so the Milestone 1 and 2 regression
 claim is measured, not assumed.
 
 ---
@@ -159,7 +160,7 @@ Registration succeeded: checksum recorded, bundle path stored **relative**,
 dataset fingerprint `53df6f08c6c8`, feature-schema fingerprint
 `c7c0a875626d83e2`, 80 features.
 
-The gate returned **REJECTED** (exit code 2):
+The gate returned **REQUIRES_REVIEW** (exit code 0):
 
 ```
 validation_status          PASS
@@ -171,17 +172,17 @@ contract_tests_passed      PASS
 inference_smoke_test       PASS
 leakage_check              PASS
 rul_mae                    UNKNOWN  MAE 8.561; no production baseline
-interval_coverage          FAIL     empirical coverage 0.764, minimum 0.800
+interval_coverage          PASS     empirical coverage 0.917, minimum 0.800
 inference_latency          UNKNOWN  no candidate latency measurement supplied
 ```
 
-**The current RUL bundle does not pass its own gate**, on cross-conformal
-out-of-fold interval coverage. It is left at `CANDIDATE`. The floor was not
-lowered to make it pass; a gate tuned until the current model clears it is not a
-gate. Nothing in this repository is at stage `PRODUCTION`.
+The current RUL bundle passes every measurable required check. Battery-block
+cross-conformal coverage is 0.917; the remaining `UNKNOWN` is RUL MAE because
+there is no production baseline or configured absolute first-model floor. It is
+left at `CANDIDATE`: `REQUIRES_REVIEW` is not an auto-promotion instruction.
 
 Promotion and rollback are exercised end to end against **fixture bundles** in
-`tests/test_registry.py` (29 tests) and
+`tests/test_registry.py` (31 tests) and
 `tests/test_milestone_3_regression.py::test_the_registry_round_trip_promotes_and_rolls_back`,
 which registers two versions, promotes both, rolls back, and asserts the
 single-production invariant and the restored artifact's checksum.
@@ -282,9 +283,10 @@ argument for running them.
 | Docker | **success** | [31686776108](https://github.com/onurozansunger/Battery-Digital-Twin-and-Predictive-Intelligence-Platform/actions/runs/31686776108) |
 | Security | **success** | [31686776102](https://github.com/onurozansunger/Battery-Digital-Twin-and-Predictive-Intelligence-Platform/actions/runs/31686776102) |
 
-CI jobs, all successful: Lint and format · type-check · Tests (3.11) ·
-Tests (3.12) · End-to-end pipeline (synthetic) · API contract and model-bundle
-fixtures · Repository hygiene.
+CI jobs in the recorded run were successful: Lint and format · type-check ·
+Tests (3.11) · Tests (3.12) · End-to-end pipeline (synthetic) · API contract and
+model-bundle fixtures · Repository hygiene. The current workflow also adds
+Python 3.13 to match the bundle/container interpreter.
 
 ### Three defects the runners found
 
@@ -324,7 +326,7 @@ artifacts/
 │   ├── alerts/<batch>.json
 │   └── performance_reports/<batch>.json
 ├── registry/models.json                                   battery-rul:1.0.0 CANDIDATE
-│   └── promotion_reports/<name>_<version>_<ts>.json       REJECTED
+│   └── promotion_reports/<name>_<version>_<ts>.json       REQUIRES_REVIEW
 └── persistence/platform.db                                620 KB SQLite
 
 reports/milestone_3/
@@ -348,7 +350,8 @@ because they are the reviewable deliverable.
   every real run. The pathway is exercised with fixture labels only.
 * **No load or multi-replica testing of the containers.** They were run
   single-instance on one laptop.
-* **No production model.** The gate rejects the only candidate.
+* **No production model.** The only candidate clears the interval floor but
+  requires human review because no first-model MAE policy is configured.
 * **No multi-replica or load testing.** Latency figures here are single-process
   timings on one laptop.
 * **No validation against real maintenance outcomes.** The priority score, the

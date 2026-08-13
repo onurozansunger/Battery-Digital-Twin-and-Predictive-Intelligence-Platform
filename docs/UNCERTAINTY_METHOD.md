@@ -14,10 +14,13 @@ checkable, that is the right trade.
 
 ## The construction
 
-For calibration rows *j* with target coverage 1 − α:
+For each calibration battery *b*, first collapse its autocorrelated cycle
+residuals to a single nonconformity score, then apply the finite-sample
+conformal quantile across batteries:
 
 ```
-q̂ = Quantile_{ceil((n+1)(1-α))/n} ( |y_j − ŷ_j| )
+s_b = max_{j in battery b} |y_j − ŷ_j|
+q̂ = Quantile_{ceil((B+1)(1-α))/B} ( s_b )
 interval(ŷ) = [ŷ − q̂, ŷ + q̂]
 ```
 
@@ -29,9 +32,9 @@ under-covers at small *n*, and at this cohort size every interval is small-*n*.
 Marginal coverage ≥ 1 − α holds **provided calibration and test rows are
 exchangeable**. Here that is only approximately true, in two specific ways:
 
-1. **Rows within a cell are strongly autocorrelated.** Consecutive cycles are
-   near-duplicates, so *n* overstates the effective sample size and realised
-   coverage is noisier than the nominal level suggests.
+1. **Rows within a cell are strongly autocorrelated.** The battery-block score
+   above makes the cell, rather than the cycle row, the calibration unit. This
+   is conservative: one difficult cycle widens the interval for the cell.
 2. **Calibration cells and the served cell are different physical cells.**
    Exchangeability is a cross-cell assumption, not an i.i.d.-rows one. Two cells
    from the same rig on the same duty cycle are close to exchangeable; a cell
@@ -56,10 +59,11 @@ far too wide near end of life — which is exactly where a maintenance decision 
 being made.
 
 With `uncertainty.normalise_by_life_stage` (default on), calibration residuals
-are bucketed by life fraction at `uncertainty.life_stage_edges` (default
-0.33 / 0.66 → `early` / `mid` / `late`) and a quantile is fitted per bucket. A
-bucket with fewer than `uncertainty.min_calibration_rows` residuals falls back to
-the global quantile, and the fallback is logged.
+are bucketed by measured SOH at `uncertainty.life_stage_edges` (default
+0.90 / 0.80 → `early` / `mid` / `late`). Each battery contributes its maximum
+residual in that bucket. A bucket represented by fewer than
+`uncertainty.min_calibration_batteries` independent cells falls back to the
+global battery-block quantile, and the fallback is logged.
 
 This is standard Mondrian (group-conditional) conformal prediction. The guarantee
 holds within each group under the same exchangeability assumption.
@@ -79,13 +83,13 @@ Test cells are excluded from every conformal fit.
 
 ## Coverage is measured out of fold, not on the fitting set
 
-An earlier version fitted the conformal quantile on the out-of-fold residuals
-and then measured coverage on those same residuals, reporting 91.7 %. That is
+An earlier version fitted a row-level conformal quantile on the out-of-fold
+residuals and then measured coverage on those same residuals, reporting 91.7 %. That is
 close to circular: applying a quantile back to the sample it was estimated from
 recovers the nominal level by construction and says nothing about a new cell.
 
-Coverage is now **leave-one-cell-out cross-conformal**: for each non-test cell
-the quantile is refitted on the other non-test cells and only then applied. The
+Coverage is **leave-one-cell-out cross-conformal with battery-block scores**:
+for each non-test cell the quantile is refitted on the other non-test cells and only then applied. The
 in-sample figure is still emitted as `in_sample_coverage_for_reference` so the
 gap between the two is visible instead of being the headline.
 

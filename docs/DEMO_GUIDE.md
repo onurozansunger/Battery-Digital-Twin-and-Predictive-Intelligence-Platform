@@ -91,9 +91,10 @@ python -m battery_rul.pipelines.evaluate_promotion --config configs/default.yaml
     --unit-tests --contract-tests --smoke-test --leakage-check
 ```
 
-On this repository's real bundle the gate returns **REJECTED** on interval
-coverage (0.764 against a 0.80 floor) and exits 2. That is the gate working; see
-`docs/MODEL_PROMOTION.md`.
+On this repository's real bundle the gate returns **REQUIRES_REVIEW**: interval
+coverage passes (0.917 against a 0.80 floor), but the first model has no
+production MAE baseline or configured absolute MAE floor. It remains a candidate
+until a human reviews it; see `docs/MODEL_PROMOTION.md`.
 
 ## 7. Serve it
 

@@ -9,7 +9,7 @@ asserts it; anything else says what is missing.
 
 | # | Criterion | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | Milestone 1 tests still pass | ✅ | 631/631 pass, exit 0; baseline was 349 before this milestone |
+| 1 | Milestone 1 tests still pass | ✅ | 638 tests collected; baseline was 349 before this milestone |
 | 2 | Milestone 2 tests still pass | ✅ | same run; `test_milestone_3_regression.py` asserts the M2 service, endpoints, dashboard, schema versions and recommendation engine |
 | 3 | `BatteryDigitalTwinService` remains the battery-level entry point | ✅ | `test_the_fleet_service_reuses_the_battery_level_service`, `test_bundles_are_loaded_once_not_once_per_battery` |
 | 4 | Existing snapshot schemas remain compatible | ✅ | `SNAPSHOT_SCHEMA_VERSION == "2.0"`, `BUNDLE_SCHEMA_VERSION == "2.0"` asserted |
@@ -47,9 +47,9 @@ asserts it; anything else says what is missing.
 | # | Criterion | Status | Evidence |
 | --- | --- | --- | --- |
 | 23 | Experiment tracking implemented | ✅ | file backend default, MLflow optional with fallback; 6 tests |
-| 24 | Model registry implemented | ✅ | `registry/store.py`; 29 tests; `battery-rul:1.0.0` registered |
-| 25 | Promotion gate implemented | ✅ | 14 checks; **rejected the real bundle** on interval coverage 0.764 < 0.800 |
-| 26 | Rollback implemented | ✅ | restores the previously *live* version; single-production invariant asserted |
+| 24 | Model registry implemented | ✅ | serving resolves and checksum-verifies the live bundle by task |
+| 25 | Promotion gate implemented | ✅ | 14 checks; real bundle is `REQUIRES_REVIEW`, coverage 0.917 ≥ 0.800, no MAE baseline |
+| 26 | Rollback implemented | ✅ | restores the previously *live* version and reloads the current API worker |
 | 27 | Reproducible training and inference | ✅ | config-driven, seeded, fingerprinted; `test_running_the_same_fleet_twice_gives_the_same_numbers` |
 | 28 | Batch / online separation | ✅ | 413 with the batch command past the online limit |
 | 29 | Persistence layer | ✅ | SQLite behind a `Repository` protocol; 30 tests; no SQL in route handlers |
@@ -87,8 +87,9 @@ asserts it; anything else says what is missing.
 outcomes. Until then the metrics are untuned and the statuses untested against
 reality.
 
-**No production model.** The gate rejects the only candidate on interval
-coverage. Closing it means improving conformal coverage, not lowering the floor.
+**No production model.** The candidate clears the interval floor, but the gate
+requires review because no first-model MAE policy is configured. Promotion
+remains an explicit human action.
 
 ---
 
@@ -97,7 +98,8 @@ coverage. Closing it means improving conformal coverage, not lowering the floor.
 **`v1.0.0` — Battery Digital Twin & Fleet Intelligence Platform**
 
 Every acceptance criterion is met and evidenced. Docker images build and run;
-CI, Docker and Security are green on GitHub-hosted runners; 631 tests pass; no
+CI, Docker and Security are green on the recorded GitHub-hosted run; 638 tests
+are collected locally; no
 metric in this repository is fabricated.
 
 **What `1.0.0` does and does not claim.** It describes the *platform*: the fleet
@@ -105,9 +107,9 @@ layer, the monitoring, the registry and the gates are complete, tested and
 running. It does not claim a validated model. Two things remain true and are
 documented rather than hidden:
 
-* **No model is at stage `PRODUCTION`.** The promotion gate refused the current
-  RUL bundle on conformal interval coverage (0.764 against a 0.80 floor). That is
-  the platform working. Closing it means improving coverage, not the threshold.
+* **No model is at stage `PRODUCTION`.** Battery-block calibration clears the
+  interval floor (0.917 against 0.80), but the current bundle is
+  `REQUIRES_REVIEW` because no production MAE baseline or absolute floor exists.
 * **No real delayed labels exist** for a five-cell laboratory cohort, so the
   performance monitor's thresholds are untuned and it reports `NO_LABELS` on
   every real run. The pathway is exercised with fixture labels.
