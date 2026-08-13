@@ -1,0 +1,63 @@
+[
+  {
+    "alert_id": "alert-417edddc54db52a3",
+    "type": "HIGH_CRITICAL_BATTERY_COUNT",
+    "severity": "WARNING",
+    "generated_at_utc": "2026-08-13T10:55:31.166001+00:00",
+    "fleet_id": "NASA-COHORT",
+    "model_version": "1.0.0",
+    "batch_id": "20260813T105529Z-f48bfe3a",
+    "message": "5 batteries are at a critical maintenance priority.",
+    "evidence": [
+      "B0005",
+      "B0006",
+      "B0018",
+      "B0033",
+      "B0034"
+    ],
+    "threshold": 5.0,
+    "observed_value": 5.0,
+    "recommended_human_action": "Review the critical cells individually against their measured capacity before scheduling any work.",
+    "acknowledged": false,
+    "acknowledged_at_utc": null,
+    "acknowledged_by": null
+  },
+  {
+    "alert_id": "alert-d6c34392033b7a78",
+    "type": "FEATURE_DRIFT_CRITICAL",
+    "severity": "CRITICAL",
+    "generated_at_utc": "2026-08-13T10:55:31.166017+00:00",
+    "fleet_id": "NASA-COHORT",
+    "model_version": "1.0.0",
+    "batch_id": "20260813T105529Z-f48bfe3a",
+    "message": "73 of 80 tested features have drifted from the training reference.",
+    "evidence": [
+      "capacity_ah",
+      "capacity_ah_cumstd",
+      "capacity_ah_lag_1",
+      "capacity_ah_lag_3",
+      "capacity_ah_lag_5",
+      "capacity_ah_rmax_10",
+      "capacity_ah_rmax_20",
+      "capacity_ah_rmax_3",
+      "capacity_ah_rmax_5",
+      "capacity_ah_rrange_20",
+      "cc_ct_ratio_cummean",
+      "cc_ct_ratio_cumstd",
+      "cc_ct_ratio_delta_from_initial",
+      "cc_ct_ratio_ewm_5",
+      "cc_ct_ratio_lag_1",
+      "cc_ct_ratio_lag_2",
+      "cc_ct_ratio_lag_3",
+      "cc_ct_ratio_lag_5",
+      "cc_ct_ratio_rmax_3",
+      "cc_ct_ratio_rmax_5"
+    ],
+    "threshold": 0.25,
+    "observed_value": 0.9125,
+    "recommended_human_action": "Establish whether the inputs changed (pipeline, sensors, units) or the population did (an older fleet). Feature drift alone is not evidence the model is less accurate \u2014 check the performance report before considering a retrain.",
+    "acknowledged": false,
+    "acknowledged_at_utc": null,
+    "acknowledged_by": null
+  }
+]

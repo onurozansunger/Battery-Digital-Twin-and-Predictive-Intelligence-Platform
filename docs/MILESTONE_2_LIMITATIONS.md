@@ -76,10 +76,12 @@ out-of-sample.
 ## The uncertainty
 
 Conformal coverage holds under **exchangeability between calibration and served
-rows**, which is only approximately satisfied here:
+cells**, which is only approximately satisfied here. The current estimator uses
+one worst-residual score per battery, so correlated rows no longer inflate the
+calibration sample size:
 
-- rows within a cell are strongly autocorrelated, so the effective sample size is
-  well below the nominal one and realised coverage is noisier than 90 % suggests;
+- rows within a cell are strongly autocorrelated; battery-block calibration
+  handles that dependence conservatively, at the cost of wider intervals;
 - calibration cells and the served cell are different physical cells — a
   cross-cell assumption, not an i.i.d.-rows one.
 

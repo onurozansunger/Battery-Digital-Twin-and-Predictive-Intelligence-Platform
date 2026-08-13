@@ -1,6 +1,6 @@
 # Milestone 2 — Battery Digital Twin: evaluation report
 
-Generated at 2026-08-02T11:47:27.877983+00:00 from git revision `cf411df`.
+Generated at 2026-08-13T10:46:15.616049+00:00 from git revision `985b886`.
 
 > Every number below was produced by the pipeline run that wrote `reports/milestone_2/metrics.json`. Nothing here is carried over from an earlier run.
 
@@ -27,35 +27,32 @@ Risk label positive rate by horizon: H=20: 0.202, H=30: 0.298, H=50: 0.490
 Deployed family: `elastic_net` — leave-one-cell-out over non-test cells. Leave-one-cell-out MAE by family: {'cohort_median_life': 13.49673, 'capacity_fade_extrapolation': 24.85964, 'soh_analogue': 14.29681, 'elastic_net': 8.53366, 'ridge': 12.14476, 'random_forest': 11.40809, 'xgboost': 13.77688, 'lightgbm': 12.82675}.
 
 
-> **The 90% interval does not achieve its nominal coverage.** Measured out-of-fold coverage is 0.764 and the held-out cell is 0.713. Treat the interval as indicative, not as a 90 % guarantee. The exchangeability assumption conformal prediction rests on is not satisfied across physically distinct cells at this cohort size — which is the honest reading, and the reason the in-sample figure was replaced.
+Out-of-fold empirical coverage: **0.917** against a 90% target, mean interval width 44.81 cycles over 373 rows.
 
 
-Out-of-fold empirical coverage: **0.764** against a 90% target, mean interval width 30.62 cycles over 373 rows.
+Scheme: leave-one-cell-out cross-conformal; the quantile applied to each cell was fitted on the other non-test cells only. For contrast, applying the quantile back to the residuals it was fitted from gives 1.000 — close to the nominal level by construction, which is why it is not the headline.
 
 
-Scheme: leave-one-cell-out cross-conformal; the quantile applied to each cell was fitted on the other non-test cells only. For contrast, applying the quantile back to the residuals it was fitted from gives 0.917 — close to the nominal level by construction, which is why it is not the headline.
-
-
-Held-out test coverage: **0.713**, mean width 41.76 cycles over 122 rows.
+Held-out test coverage: **0.951**, mean width 54.16 cycles over 122 rows.
 
 
 ### Coverage by life stage
 
 | life_stage | n | empirical_coverage | mean_interval_width |
 | --- | --- | --- | --- |
-| early | 159 | 0.5723 | 42.0199 |
-| late | 70 | 0.9286 | 25.9852 |
-| mid | 144 | 0.8958 | 20.2977 |
+| early | 159 | 0.8113 | 58.2535 |
+| late | 70 | 1.0000 | 54.9727 |
+| mid | 144 | 0.9931 | 25.0232 |
 
 
 ### Coverage by battery
 
 | battery_id | n | empirical_coverage | mean_interval_width |
 | --- | --- | --- | --- |
-| B0006 | 106 | 0.9528 | 37.5789 |
-| B0018 | 94 | 0.8830 | 34.6252 |
-| B0033 | 101 | 0.2970 | 17.5628 |
-| B0034 | 72 | 0.9861 | 33.4864 |
+| B0006 | 106 | 1.0000 | 56.2956 |
+| B0018 | 94 | 1.0000 | 44.9609 |
+| B0033 | 101 | 0.7030 | 38.0750 |
+| B0034 | 72 | 0.9861 | 37.1458 |
 
 
 ## State of health — forecast
@@ -99,10 +96,10 @@ Selected model: `lightgbm` — leave-one-cell-out over non-test cells.
 
 > **This model failed its acceptance gate.** It does not beat the cycle-index baseline out of fold, so the twin marks its probability `experimental` and withholds it from the recommendation rules. The numbers below are reported for transparency, not because the model is fit to drive a maintenance decision.
 
-Model: `lightgbm`, horizon 30 cycles, decision threshold 0.489 (tuned on out-of-fold non-test rows, objective `f1`).
+Model: `random_forest`, horizon 30 cycles, decision threshold 0.409 (tuned on out-of-fold non-test rows, objective `f1`).
 
 
-Calibration (isotonic) on 373 rows: Brier 0.2776 → 0.1416, ECE 0.2694 → 0.0000.
+Calibration (isotonic) on 373 rows: Brier 0.1327 → 0.0999, ECE 0.1439 → 0.0000.
 
 
 > **Read the AUCs against the cycle-index baseline, not against 1.0.** The label is `RUL ≤ H`, so within a single cell the positives are exactly the last H cycles and *cycle index alone* ranks them perfectly. Any AUC on a single-cell partition is degenerate; the `*_cycle_index_baseline` columns are what carry information.
@@ -115,15 +112,15 @@ Calibration (isotonic) on 373 rows: Brier 0.2776 → 0.1416, ECE 0.2694 → 0.00
 
 | variant | n | n_positive | pr_auc | pr_auc_cycle_index_baseline | roc_auc | roc_auc_cycle_index_baseline | beats_cycle_index_baseline | precision | recall | f1 | brier | ece |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| raw | 373 | 124 | 0.6287 | 0.9282 | 0.7849 | 0.9564 | no | 0.5739 | 0.5323 | 0.5523 | 0.2776 | 0.2694 |
-| calibrated | 373 | 124 | 0.6467 | 0.9282 | 0.8334 | 0.9564 | no | 0.5519 | 0.9435 | 0.6964 | 0.1417 | 0.0000 |
+| raw | 373 | 124 | 0.8325 | 0.9282 | 0.9082 | 0.9564 | no | 0.7727 | 0.6855 | 0.7265 | 0.1327 | 0.1439 |
+| calibrated | 373 | 124 | 0.8296 | 0.9282 | 0.9228 | 0.9564 | no | 0.6237 | 0.9758 | 0.7610 | 0.0999 | 0.0000 |
 
 
 ### Held-out test, calibrated
 
 | n | n_test_cells | n_positive | pr_auc | pr_auc_cycle_index_baseline | roc_auc | roc_auc_cycle_index_baseline | beats_cycle_index_baseline | precision | recall | f1 | brier | ece | true_positive | false_positive | false_negative | true_negative |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 122 | 1 | 31 | 0.7209 | 1.0000 | 0.9341 | 1.0000 | no | 0.7209 | 1.0000 | 0.8378 | 0.0924 | 0.1013 | 31 | 12 | 0 | 79 |
+| 122 | 1 | 31 | 0.9916 | 1.0000 | 0.9981 | 1.0000 | no | 0.7209 | 1.0000 | 0.8378 | 0.0690 | 0.1382 | 31 | 12 | 0 | 79 |
 
 
 ## Multi-task model versus independent models

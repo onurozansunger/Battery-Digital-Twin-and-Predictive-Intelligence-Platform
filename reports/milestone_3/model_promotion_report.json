@@ -1,0 +1,114 @@
+{
+  "decision": "REQUIRES_REVIEW",
+  "model_name": "battery-rul",
+  "model_version": "1.0.0",
+  "generated_at_utc": "2026-08-13T10:46:33.228320+00:00",
+  "compared_with": null,
+  "checks": [
+    {
+      "name": "validation_status",
+      "status": "PASS",
+      "required": true,
+      "detail": "validation_status=VALIDATED",
+      "candidate_value": null,
+      "production_value": null,
+      "threshold": null
+    },
+    {
+      "name": "artifact_checksum",
+      "status": "PASS",
+      "required": true,
+      "detail": "matches the registered checksum",
+      "candidate_value": null,
+      "production_value": null,
+      "threshold": null
+    },
+    {
+      "name": "required_metadata",
+      "status": "PASS",
+      "required": true,
+      "detail": "complete",
+      "candidate_value": null,
+      "production_value": null,
+      "threshold": null
+    },
+    {
+      "name": "feature_schema_compatible",
+      "status": "PASS",
+      "required": true,
+      "detail": "no production model to compare against; the candidate's own schema fingerprint is present",
+      "candidate_value": null,
+      "production_value": null,
+      "threshold": null
+    },
+    {
+      "name": "unit_tests_passed",
+      "status": "PASS",
+      "required": true,
+      "detail": "passed",
+      "candidate_value": null,
+      "production_value": null,
+      "threshold": null
+    },
+    {
+      "name": "contract_tests_passed",
+      "status": "PASS",
+      "required": true,
+      "detail": "passed",
+      "candidate_value": null,
+      "production_value": null,
+      "threshold": null
+    },
+    {
+      "name": "inference_smoke_test",
+      "status": "PASS",
+      "required": true,
+      "detail": "passed",
+      "candidate_value": null,
+      "production_value": null,
+      "threshold": null
+    },
+    {
+      "name": "leakage_check",
+      "status": "PASS",
+      "required": true,
+      "detail": "passed",
+      "candidate_value": null,
+      "production_value": null,
+      "threshold": null
+    },
+    {
+      "name": "rul_mae",
+      "status": "UNKNOWN",
+      "required": true,
+      "detail": "MAE 8.561; no production baseline",
+      "candidate_value": 8.560530482998841,
+      "production_value": null,
+      "threshold": null
+    },
+    {
+      "name": "interval_coverage",
+      "status": "PASS",
+      "required": true,
+      "detail": "empirical coverage 0.917, minimum 0.800",
+      "candidate_value": 0.91689,
+      "production_value": null,
+      "threshold": 0.8
+    },
+    {
+      "name": "inference_latency",
+      "status": "UNKNOWN",
+      "required": false,
+      "detail": "no candidate latency measurement was supplied",
+      "candidate_value": null,
+      "production_value": null,
+      "threshold": null
+    }
+  ],
+  "reasons": [
+    "rul_mae: MAE 8.561; no production baseline"
+  ],
+  "notes": [
+    "No PRODUCTION model exists for this family, so every comparative gate is evaluated against configured absolute floors only. A first promotion is a judgement call, not a regression test."
+  ]
+}

@@ -1,0 +1,391 @@
+{
+  "generated_at_utc": "2026-08-13T08:43:18.202183+00:00",
+  "reference_id": "training_reference",
+  "model_version": "1.0.0",
+  "status": "OK",
+  "results": [
+    {
+      "output_name": "predicted_rul",
+      "metric": "standardised_mean_shift",
+      "reference_value": 32.680714,
+      "current_value": 32.680714,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {
+        "scale_used": 22.140518
+      },
+      "warnings": []
+    },
+    {
+      "output_name": "predicted_rul[q10]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 9.491,
+      "current_value": 9.491,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "predicted_rul[q50]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 26.656,
+      "current_value": 26.656,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "predicted_rul[q90]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 66.781,
+      "current_value": 66.781,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "predicted_rul",
+      "metric": "psi",
+      "reference_value": null,
+      "current_value": null,
+      "drift_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "predicted_soh_forecast",
+      "metric": "standardised_mean_shift",
+      "reference_value": 0.821258,
+      "current_value": 0.821258,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {
+        "scale_used": 0.034142
+      },
+      "warnings": []
+    },
+    {
+      "output_name": "predicted_soh_forecast[q10]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 0.7775,
+      "current_value": 0.7775,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "predicted_soh_forecast[q50]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 0.81754,
+      "current_value": 0.81754,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "predicted_soh_forecast[q90]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 0.8425,
+      "current_value": 0.8425,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "predicted_soh_forecast",
+      "metric": "psi",
+      "reference_value": null,
+      "current_value": null,
+      "drift_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "failure_risk",
+      "metric": "standardised_mean_shift",
+      "reference_value": 0.542909,
+      "current_value": 0.542909,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {
+        "scale_used": 0.384865
+      },
+      "warnings": []
+    },
+    {
+      "output_name": "failure_risk[q10]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 0.0,
+      "current_value": 0.0,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "failure_risk[q50]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 0.48901,
+      "current_value": 0.48901,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "failure_risk[q90]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 1.0,
+      "current_value": 1.0,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "failure_risk",
+      "metric": "psi",
+      "reference_value": null,
+      "current_value": null,
+      "drift_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "interval_width",
+      "metric": "standardised_mean_shift",
+      "reference_value": 28.825099,
+      "current_value": 28.825099,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {
+        "scale_used": 13.606134
+      },
+      "warnings": []
+    },
+    {
+      "output_name": "interval_width[q10]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 20.2879,
+      "current_value": 20.2879,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "interval_width[q50]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 21.594477,
+      "current_value": 21.594477,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "interval_width[q90]",
+      "metric": "standardised_quantile_shift",
+      "reference_value": 59.175925,
+      "current_value": 59.175925,
+      "drift_value": 0.0,
+      "threshold": 0.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "interval_width",
+      "metric": "psi",
+      "reference_value": null,
+      "current_value": null,
+      "drift_value": 0.0,
+      "threshold": 0.1,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 21,
+      "sample_size": 21,
+      "detail": {},
+      "warnings": []
+    },
+    {
+      "output_name": "interval_width",
+      "metric": "width_ratio",
+      "reference_value": 21.5945,
+      "current_value": 21.5945,
+      "drift_value": 1.0,
+      "threshold": 1.25,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 0,
+      "sample_size": 0,
+      "detail": {
+        "note": "A wider interval means the model is less certain about this population, not that it is wrong about it."
+      },
+      "warnings": []
+    },
+    {
+      "output_name": "health_class_frequencies",
+      "metric": "total_variation_distance",
+      "reference_value": null,
+      "current_value": null,
+      "drift_value": 0.0,
+      "threshold": 0.15,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 0,
+      "sample_size": 21,
+      "detail": {
+        "reference": {
+          "healthy": 0.14285714285714285,
+          "slightly_degraded": 0.47619047619047616,
+          "warning": 0.38095238095238093
+        },
+        "current": {
+          "healthy": 0.14285714285714285,
+          "slightly_degraded": 0.47619047619047616,
+          "warning": 0.38095238095238093
+        }
+      },
+      "warnings": []
+    },
+    {
+      "output_name": "risk_class_frequencies",
+      "metric": "total_variation_distance",
+      "reference_value": null,
+      "current_value": null,
+      "drift_value": 0.0,
+      "threshold": 0.15,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 0,
+      "sample_size": 21,
+      "detail": {
+        "reference": {
+          "low": 0.23809523809523808,
+          "medium": 0.42857142857142855,
+          "very_high": 0.3333333333333333
+        },
+        "current": {
+          "low": 0.23809523809523808,
+          "medium": 0.42857142857142855,
+          "very_high": 0.3333333333333333
+        }
+      },
+      "warnings": []
+    },
+    {
+      "output_name": "priority_frequencies",
+      "metric": "total_variation_distance",
+      "reference_value": null,
+      "current_value": null,
+      "drift_value": 0.0,
+      "threshold": 0.15,
+      "drift_detected": false,
+      "severity": "OK",
+      "reference_sample_size": 0,
+      "sample_size": 21,
+      "detail": {
+        "reference": {
+          "P0_CRITICAL": 0.23809523809523808,
+          "P1_URGENT": 0.3333333333333333,
+          "P2_HIGH": 0.42857142857142855
+        },
+        "current": {
+          "P0_CRITICAL": 0.23809523809523808,
+          "P1_URGENT": 0.3333333333333333,
+          "P2_HIGH": 0.42857142857142855
+        }
+      },
+      "warnings": []
+    }
+  ],
+  "n_drifted": 0,
+  "sample_size": 21,
+  "interpretation": "Prediction drift does not prove model degradation. It shows that the model's output distribution or the population it is scoring has changed. Only labelled outcomes can establish that accuracy has fallen.",
+  "warnings": []
+}

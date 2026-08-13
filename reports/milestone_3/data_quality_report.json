@@ -1,0 +1,31 @@
+{
+  "status": "OK",
+  "quality_class_counts": {
+    "ACCEPTABLE": 2,
+    "GOOD": 3
+  },
+  "mean_quality_score": 0.9,
+  "poor_or_worse_fraction": 0.0,
+  "insufficient_fraction": 0.0,
+  "mean_missing_feature_fraction": 0.0,
+  "per_feature_missing_rate": {},
+  "batteries_with_schema_mismatch": [],
+  "batteries_with_ood_features": [
+    "B0005",
+    "B0006"
+  ],
+  "check_failure_rates": {
+    "cycle_gaps": 0.0,
+    "cycle_ordering": 0.0,
+    "distribution": 0.4,
+    "duplicate_cycles": 0.0,
+    "history_length": 0.0,
+    "missing_features": 0.0,
+    "value_plausibility": 0.0
+  },
+  "denominator": 5,
+  "warnings": [
+    "2 cell(s) have at least one feature outside the training reference range; those predictions are extrapolations. This is an input-range observation, not a drift verdict \u2014 see the feature-drift report for that."
+  ],
+  "provenance": "derived"
+}

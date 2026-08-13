@@ -25,8 +25,8 @@ import time
 import uuid
 from typing import Any
 
-from fastapi import Depends, FastAPI, Request, status
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from battery_rul import __version__
 from battery_rul.api.schemas import (
@@ -49,6 +49,8 @@ from battery_rul.digital_twin.service import (
     InvalidHistoryError,
     ModelsUnavailableError,
 )
+from battery_rul.observability.logging import bind_context
+from battery_rul.observability.metrics import METRICS, render_prometheus
 from battery_rul.utils.io import environment_fingerprint
 from battery_rul.utils.logging import get_logger
 
@@ -64,6 +66,8 @@ def create_app(
     *,
     service: BatteryDigitalTwinService | None = None,
     config_path: str | None = "configs/default.yaml",
+    repository: Any | None = None,
+    enable_fleet: bool = True,
 ) -> FastAPI:
     """Build the application.
 
@@ -75,6 +79,14 @@ def create_app(
         Pre-built service, for tests. When omitted one is constructed from
         ``cfg``; construction failures are captured so the app still starts and
         can report *why* it is not ready.
+    repository:
+        Persistence backend for the Milestone 3 fleet reads. Injected in tests;
+        built from configuration otherwise. A backend that cannot be opened is
+        recorded and the stored-snapshot endpoints answer 503 — the prediction
+        endpoints keep working, because they do not need storage.
+    enable_fleet:
+        Mount the Milestone 3 fleet router. On by default; a deployment that
+        only serves battery-level predictions can turn it off.
     """
     from pathlib import Path
 
@@ -110,8 +122,61 @@ def create_app(
     app.state.service = service
     app.state.startup_error = startup_error
 
+    # -- Milestone 3 dependencies -------------------------------------------
+    # Built once at startup, exactly like the twin service: a fleet service
+    # constructed per request would reload every model bundle per request.
+    fleet_service = None
+    if enable_fleet:
+        try:
+            from battery_rul.fleet.inference import FleetInferenceService
+
+            fleet_service = FleetInferenceService.create(cfg, twin=service)
+        except Exception as exc:  # noqa: BLE001 - fleet absence must not stop startup
+            logger.error("Fleet service construction failed: %s", exc)
+            app.state.startup_error = f"{startup_error or ''} fleet: {exc}".strip()
+
+    if repository is None and enable_fleet:
+        try:
+            from battery_rul.persistence import build_repository
+
+            repository = build_repository(cfg)
+        except Exception as exc:  # noqa: BLE001 - storage absence must not stop startup
+            logger.error("Persistence backend unavailable: %s", exc)
+            repository = None
+
+    app.state.fleet_service = fleet_service
+    app.state.repository = repository
+
     def get_service() -> BatteryDigitalTwinService:
         return app.state.service
+
+    def get_fleet_service() -> Any:
+        if app.state.fleet_service is None:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    "The fleet service is not available. Check /ready and the startup "
+                    "errors reported there."
+                ),
+            )
+        return app.state.fleet_service
+
+    def get_repository() -> Any:
+        return app.state.repository
+
+    # -- CORS ---------------------------------------------------------------
+    # Explicit allow-list only. An empty list means no cross-origin access at
+    # all, which is the correct default for a service with no authentication.
+    if cfg.deployment.cors_allow_origins:
+        from fastapi.middleware.cors import CORSMiddleware
+
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(cfg.deployment.cors_allow_origins),
+            allow_credentials=False,
+            allow_methods=["GET", "POST"],
+            allow_headers=["*"],
+        )
 
     # -- middleware ---------------------------------------------------------
     @app.middleware("http")
@@ -120,7 +185,8 @@ def create_app(
         request_id = request.headers.get(header) or str(uuid.uuid4())
         request.state.request_id = request_id
         started = time.perf_counter()
-        response = await call_next(request)
+        with bind_context(request_id=request_id, service="battery-rul-api"):
+            response = await call_next(request)
         elapsed_ms = 1000 * (time.perf_counter() - started)
         response.headers[header] = request_id
         # Path and status only — request bodies carry cell measurements and are
@@ -133,6 +199,26 @@ def create_app(
             elapsed_ms,
             request_id,
         )
+        if cfg.deployment.metrics_enabled:
+            # The route template, not the URL: labelling by path would create a
+            # new time series per fleet id and blow up the metrics cardinality.
+            route = request.scope.get("route")
+            path = getattr(route, "path", "unmatched")
+            METRICS.increment(
+                "api_requests_total",
+                labels={
+                    "method": request.method,
+                    "path": path,
+                    "status": str(response.status_code),
+                },
+                help_text="HTTP requests handled, by route and status.",
+            )
+            METRICS.observe(
+                "api_request_duration_seconds",
+                elapsed_ms / 1000.0,
+                labels={"method": request.method, "path": path},
+                help_text="HTTP request duration.",
+            )
         return response
 
     # -- error handling ------------------------------------------------------
@@ -153,7 +239,7 @@ def create_app(
     async def _invalid_history(request: Request, exc: InvalidHistoryError) -> JSONResponse:
         return _error(
             request,
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "invalid_history",
             str(exc),
             hint="See the canonical cycle schema in battery_rul.data.schema.",
@@ -204,6 +290,20 @@ def create_app(
     def model_info(svc: BatteryDigitalTwinService = Depends(get_service)) -> ModelInfoResponse:
         """Loaded artifacts, their fingerprints, and the definitions in force."""
         return ModelInfoResponse(metadata=svc.get_model_metadata())
+
+    if cfg.deployment.metrics_enabled and cfg.deployment.metrics_endpoint_enabled:
+
+        @app.get("/metrics", response_class=PlainTextResponse, tags=["operations"])
+        def metrics() -> PlainTextResponse:
+            """Prometheus text exposition of the in-process metrics.
+
+            Rendered by this project's own tiny registry rather than a client
+            library: the exposition format is the only part of that library
+            this service needs.
+            """
+            return PlainTextResponse(
+                render_prometheus(), media_type="text/plain; version=0.0.4; charset=utf-8"
+            )
 
     # -- prediction endpoints ---------------------------------------------------
     def _snapshot(
@@ -312,6 +412,16 @@ def create_app(
             generated_at_utc=snapshot_obj.generated_at_utc,
             explanation=snapshot_obj.explanation
             or BatteryExplanation(method="unavailable", drivers=[]),
+        )
+
+    # -- Milestone 3 fleet endpoints -----------------------------------------
+    if enable_fleet:
+        from battery_rul.api.fleet_routes import build_fleet_router
+
+        app.include_router(
+            build_fleet_router(
+                cfg, get_fleet_service=get_fleet_service, get_repository=get_repository
+            )
         )
 
     return app

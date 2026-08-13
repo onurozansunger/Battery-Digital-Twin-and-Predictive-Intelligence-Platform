@@ -1,0 +1,8 @@
+{
+  "model": "battery-rul:1.0.0",
+  "stage": "CANDIDATE",
+  "bundle_path": "artifacts/rul",
+  "artifact_checksum": "e5650c3f61a67a8e29cb003845f860b913027431c98f07632edfc514656c97f3",
+  "validation_status": "VALIDATED",
+  "registry_file": "artifacts/registry/models.json"
+}

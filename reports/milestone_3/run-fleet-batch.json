@@ -1,0 +1,27 @@
+{
+  "fleet_id": "NASA-COHORT",
+  "batch_id": "20260813T105525Z-e6002063",
+  "snapshot_id": "20260813T105525Z-e6002063",
+  "source": "processed",
+  "is_demo_data": false,
+  "battery_count": 5,
+  "successfully_processed_count": 5,
+  "failed_count": 0,
+  "insufficient_data_count": 0,
+  "critical_count": 5,
+  "median_soh": 0.75683,
+  "median_rul": 3.625,
+  "processing_duration_ms": 1032.974,
+  "active_model_version": "1.0.0",
+  "persisted": {
+    "snapshot_id": "20260813T105525Z-e6002063",
+    "prediction_records": 5
+  },
+  "artifacts": {
+    "fleet_snapshot": "artifacts/fleet/snapshots/20260813T105525Z-e6002063.json",
+    "fleet_ranking": "artifacts/fleet/rankings/20260813T105525Z-e6002063_ranking.csv",
+    "maintenance_plan": "artifacts/fleet/maintenance_plans/20260813T105525Z-e6002063_maintenance.csv",
+    "replacement_plan": "artifacts/fleet/replacement_plans/20260813T105525Z-e6002063_replacement.csv",
+    "fleet_summary": "reports/milestone_3/fleet_summary.json"
+  }
+}

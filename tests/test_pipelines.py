@@ -38,6 +38,7 @@ def _module_cfg(tmp_path_factory) -> ExperimentConfig:
             "models.training.device": "cpu",
             "models.sequence.window": 8,
             "models.sequence.hidden_size": 16,
+            "evaluation.nested_enabled": False,
             "evaluation.bootstrap_samples": 0,
             "explainability.enabled": False,
         }

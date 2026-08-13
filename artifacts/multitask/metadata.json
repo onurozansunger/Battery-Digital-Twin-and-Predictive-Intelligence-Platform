@@ -3,10 +3,10 @@
   "task": "multitask_rul_soh_risk",
   "schema_version": "2.0",
   "environment": {
-    "generated_at": "2026-08-02T11:43:23.105820+00:00",
+    "generated_at": "2026-08-13T10:46:15.568000+00:00",
     "python": "3.13.5",
     "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
-    "git_revision": "cf411df",
+    "git_revision": "985b886",
     "packages": {
       "numpy": "2.3.1",
       "pandas": "2.3.2",

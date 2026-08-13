@@ -99,6 +99,7 @@ class _Bundles:
     risk: ModelBundle | None = None
     multitask: Any | None = None
     multitask_preprocessing: Any | None = None
+    registry_entries: dict[str, Any] = field(default_factory=dict)
     errors: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -143,17 +144,37 @@ class BatteryDigitalTwinService:
 
     def load_artifacts(self) -> None:
         """Load every configured bundle, recording rather than raising failures."""
+        # Reload is supported after an administrative promotion, so stale bundles,
+        # registry metadata and errors must not survive a second call.
+        self.bundles = _Bundles()
         artifacts = self.cfg.artifacts
-        for name, path in (
-            ("rul", artifacts.rul_dir),
-            ("soh", artifacts.soh_dir),
-            ("risk", artifacts.risk_dir),
+        for name, task, fallback_path in (
+            ("rul", "rul_regression", artifacts.rul_dir),
+            ("soh", "soh_forecast", artifacts.soh_dir),
+            ("risk", "failure_risk_classification", artifacts.risk_dir),
         ):
             try:
-                setattr(self.bundles, name, load_bundle(path, self.cfg))
+                path, entry = self._serving_bundle_path(task, fallback_path)
+                bundle = load_bundle(path, self.cfg)
+                if bundle.metadata.task != task:
+                    raise ArtifactCompatibilityError(
+                        f"Bundle {path} declares task={bundle.metadata.task!r}; "
+                        f"serving slot {name!r} requires {task!r}."
+                    )
+                if entry is not None and bundle.metadata.model_version != entry.model_version:
+                    raise ArtifactCompatibilityError(
+                        f"Registry entry {entry.key} points at a bundle declaring version "
+                        f"{bundle.metadata.model_version}. Re-register the artifact."
+                    )
+                setattr(self.bundles, name, bundle)
+                if entry is not None:
+                    self.bundles.registry_entries[name] = entry
             except (FileNotFoundError, ArtifactCompatibilityError) as exc:
                 self.bundles.errors[name] = f"{type(exc).__name__}: {exc}"
                 logger.warning("Bundle %s unavailable: %s", name, exc)
+            except Exception as exc:  # registry failure must make the slot unavailable
+                self.bundles.errors[name] = f"{type(exc).__name__}: {exc}"
+                logger.error("Registry-backed bundle %s unavailable: %s", name, exc)
 
         multitask_path = Path(artifacts.multitask_dir) / "model.pkl"
         if multitask_path.is_file():
@@ -175,6 +196,24 @@ class BatteryDigitalTwinService:
         if self.recommender is None:
             self.recommender = RecommendationEngine(cfg=self.cfg)
         self._loaded = True
+
+    def _serving_bundle_path(self, task: str, fallback_path: Path) -> tuple[Path, Any | None]:
+        """Resolve a promoted bundle, or the explicit ungoverned fallback.
+
+        Once a registry file exists, a broken or tampered production entry is a
+        readiness failure rather than permission to serve an unrelated configured
+        artifact. With no production entry for this task the research-prototype
+        fallback remains available and is reported as ungoverned in metadata.
+        """
+        from battery_rul.registry.store import FileModelRegistry
+
+        registry = FileModelRegistry(cfg=self.cfg)
+        if not registry.path.is_file():
+            return Path(fallback_path), None
+        entry = registry.production_model(task=task)
+        if entry is None:
+            return Path(fallback_path), None
+        return registry.bundle_directory(entry, verify_checksum=True), entry
 
     # -- health / metadata ---------------------------------------------------
     def health_check(self) -> dict[str, Any]:
@@ -297,6 +336,20 @@ class BatteryDigitalTwinService:
         return health, features
 
     # -- public prediction API -------------------------------------------------
+    def prepare_features(self, battery_id: str, history: pd.DataFrame) -> pd.DataFrame:
+        """The engineered feature frame this service would score.
+
+        Added in Milestone 3 for feature-drift monitoring, which needs the
+        *serving* features rather than a re-derivation of them. Exposing the
+        existing pipeline is the alternative to monitoring code rebuilding
+        features itself, which is how a drift detector ends up watching a
+        different feature space from the one the model sees.
+
+        Purely additive: no existing caller or response shape changes.
+        """
+        _, features = self._prepare(battery_id, history)
+        return features
+
     def predict_rul(self, battery_id: str, history: pd.DataFrame) -> BatteryPrediction:
         """RUL for the latest cycle, with a conformal interval when available."""
         snapshot = self.create_snapshot(battery_id, history, explain=False)

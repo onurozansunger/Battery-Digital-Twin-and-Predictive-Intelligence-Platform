@@ -148,7 +148,9 @@ class ConformalIntervalEstimator:
     global_quantile: float = float("nan")
     stage_quantiles: dict[str, float] = field(default_factory=dict)
     stage_counts: dict[str, int] = field(default_factory=dict)
+    stage_group_counts: dict[str, int] = field(default_factory=dict)
     n_calibration: int = 0
+    n_calibration_groups: int = 0
     fitted: bool = False
     lower_clip: float | None = 0.0
     upper_clip: float | None = None
@@ -160,6 +162,7 @@ class ConformalIntervalEstimator:
         y_pred: np.ndarray,
         *,
         life_fraction: np.ndarray | None = None,
+        groups: np.ndarray | None = None,
     ) -> ConformalIntervalEstimator:
         """Learn the conformal quantile(s) from calibration residuals.
 
@@ -182,16 +185,59 @@ class ConformalIntervalEstimator:
                 "a handful of residuals carries no useful guarantee."
             )
 
-        self.global_quantile = conformal_quantile(residuals, self.cfg.coverage)
+        group_values: np.ndarray | None = None
+        if self.cfg.calibration_unit == "battery":
+            if groups is None:
+                raise ValueError(
+                    "Battery-block conformal calibration requires one group id per row. "
+                    "Pass battery_id values, or set calibration_unit='row' for data whose "
+                    "rows are genuinely exchangeable."
+                )
+            raw_groups = np.asarray(groups)
+            if raw_groups.shape != truth.shape:
+                raise ValueError(
+                    f"Group shape mismatch: groups={raw_groups.shape}, y_true={truth.shape}"
+                )
+            group_values = raw_groups[good].astype(str)
+            self.n_calibration_groups = int(np.unique(group_values).size)
+            if self.n_calibration_groups < self.cfg.min_calibration_batteries:
+                raise ValueError(
+                    "Battery-block conformal calibration needs at least "
+                    f"{self.cfg.min_calibration_batteries} independent batteries, got "
+                    f"{self.n_calibration_groups}."
+                )
+            global_scores = self._group_max_scores(residuals, group_values)
+        else:
+            self.n_calibration_groups = 0
+            global_scores = residuals
+
+        self.global_quantile = conformal_quantile(global_scores, self.cfg.coverage)
         self.stage_quantiles = {}
         self.stage_counts = {}
+        self.stage_group_counts = {}
 
         if self.cfg.normalise_by_life_stage and life_fraction is not None:
             stages = self.life_stages(np.asarray(life_fraction, dtype=float)[good])
             for stage in sorted(set(stages)):
                 subset = residuals[stages == stage]
                 self.stage_counts[stage] = int(subset.size)
-                if subset.size >= self.cfg.min_calibration_rows:
+                if self.cfg.calibration_unit == "battery":
+                    assert group_values is not None  # established above
+                    stage_groups = group_values[stages == stage]
+                    group_count = int(np.unique(stage_groups).size)
+                    self.stage_group_counts[stage] = group_count
+                    if group_count >= self.cfg.min_calibration_batteries:
+                        scores = self._group_max_scores(subset, stage_groups)
+                        self.stage_quantiles[stage] = conformal_quantile(scores, self.cfg.coverage)
+                    else:
+                        logger.info(
+                            "Life stage %s has only %d independent batteries (< %d); "
+                            "it falls back to the global battery-block quantile.",
+                            stage,
+                            group_count,
+                            self.cfg.min_calibration_batteries,
+                        )
+                elif subset.size >= self.cfg.min_calibration_rows:
                     self.stage_quantiles[stage] = conformal_quantile(subset, self.cfg.coverage)
                 else:
                     logger.info(
@@ -212,6 +258,20 @@ class ConformalIntervalEstimator:
             {k: round(v, 2) for k, v in self.stage_quantiles.items()},
         )
         return self
+
+    @staticmethod
+    def _group_max_scores(residuals: np.ndarray, groups: np.ndarray) -> np.ndarray:
+        """One non-conformity score per independent cell.
+
+        The maximum gives simultaneous protection across the submitted history of a
+        new cell. It is deliberately conservative: cycles within one physical cell
+        are autocorrelated and must not be counted as independent evidence.
+        """
+        labels = np.asarray(groups).astype(str)
+        return np.asarray(
+            [float(np.max(residuals[labels == label])) for label in np.unique(labels)],
+            dtype=float,
+        )
 
     # -- degradation stages ---------------------------------------------------
     def life_stages(self, soh: np.ndarray) -> np.ndarray:
@@ -267,7 +327,11 @@ class ConformalIntervalEstimator:
             lower_bound=float(lower),
             upper_bound=float(upper),
             interval_coverage_target=self.cfg.coverage,
-            uncertainty_method="split_conformal" + ("_by_life_stage" if stage is not None else ""),
+            uncertainty_method=(
+                ("battery_block_" if self.cfg.calibration_unit == "battery" else "")
+                + "split_conformal"
+                + ("_by_life_stage" if stage is not None else "")
+            ),
             calibration_sample_size=self.stage_counts.get(stage or "", self.n_calibration),
             life_stage=stage,
             note=(
@@ -304,11 +368,14 @@ class ConformalIntervalEstimator:
             "target": self.target_name,
             "coverage_target": self.cfg.coverage,
             "n_calibration_rows": self.n_calibration,
+            "calibration_unit": self.cfg.calibration_unit,
+            "n_calibration_batteries": self.n_calibration_groups,
             "global_quantile": (
                 round(self.global_quantile, 5) if np.isfinite(self.global_quantile) else None
             ),
             "stage_quantiles": {k: round(v, 5) for k, v in self.stage_quantiles.items()},
             "stage_counts": self.stage_counts,
+            "stage_battery_counts": self.stage_group_counts,
             "stage_variable": "measured state of health",
             "stage_edges": list(self.cfg.stage_edges),
             "clip": {"lower": self.lower_clip, "upper": self.upper_clip},

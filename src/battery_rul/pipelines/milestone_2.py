@@ -199,12 +199,12 @@ def _out_of_fold(
         train = _training_data(data, pipeline, train_mask & valid, y)
         test = _training_data(data, pipeline, test_mask, y)
 
-        model = build_model(model_name, cfg)
         if predict == "classification":
-            estimator = _fit_classifier(train, cfg)
+            estimator = _fit_classifier(train, cfg, model_name=model_name)
             probabilities = estimator.predict_proba(test.X)[:, 1]
             prediction = probabilities
         else:
+            model = build_model(model_name, cfg)
             model.fit(train)
             prediction = np.asarray(model.predict(test), dtype=float)
 
@@ -231,7 +231,9 @@ def _out_of_fold(
     return pd.concat(rows, ignore_index=True)
 
 
-def _fit_classifier(train: TrainingData, cfg: ExperimentConfig) -> Any:
+def _fit_classifier(
+    train: TrainingData, cfg: ExperimentConfig, *, model_name: str | None = None
+) -> Any:
     """Fit a scikit-learn-style classifier for the risk task.
 
     The registry's regressors are the wrong estimator class here, so the risk
@@ -241,7 +243,9 @@ def _fit_classifier(train: TrainingData, cfg: ExperimentConfig) -> Any:
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.linear_model import LogisticRegression
 
-    name = cfg.risk.model
+    name = model_name or cfg.risk.model
+    if name == "auto":
+        raise ValueError("risk.model='auto' must be resolved before fitting a classifier")
     weight = "balanced" if cfg.risk.class_weight_balanced else None
     labels = np.asarray(train.y, dtype=float)
     good = np.isfinite(labels)
@@ -513,12 +517,43 @@ def train_risk(cfg: ExperimentConfig, data: MultiTaskData | None = None) -> dict
     train_mask = data.mask("train") & valid
     test_mask = data.mask("test") & valid
 
+    candidates = list(cfg.risk.candidates) if cfg.risk.model == "auto" else [cfg.risk.model]
+    candidate_oof: dict[str, pd.DataFrame] = {}
+    selection_scores: dict[str, float] = {}
+    for candidate in candidates:
+        try:
+            predictions = _out_of_fold(
+                data, cfg, y=y, model_name=candidate, predict="classification"
+            )
+        except Exception as exc:  # noqa: BLE001 - one optional family may be unavailable
+            logger.warning("Risk family %s failed during selection: %s", candidate, exc)
+            continue
+        score = risk_metrics(
+            predictions["y_true"].to_numpy(),
+            predictions["y_pred"].to_numpy(),
+            threshold=0.5,
+            n_bins=cfg.calibration.n_bins,
+            cycle_index=predictions["cycle_index"].to_numpy(),
+        ).get("pr_auc")
+        if score is not None and np.isfinite(score):
+            candidate_oof[candidate] = predictions
+            selection_scores[candidate] = float(score)
+
+    if not selection_scores:
+        raise RuntimeError(f"No risk candidate produced a valid OOF PR-AUC: {candidates}")
+    selected = max(selection_scores, key=lambda name: selection_scores[name])
+    logger.info(
+        "Risk family selected on non-test cells only: %s (LOBO PR-AUC %s)",
+        selected,
+        {name: round(score, 5) for name, score in selection_scores.items()},
+    )
+
     pipeline = _fit_pipeline(data, cfg, train_mask, y)
     train = _training_data(data, pipeline, train_mask, y)
-    estimator = _fit_classifier(train, cfg)
+    estimator = _fit_classifier(train, cfg, model_name=selected)
 
     # --- calibration on out-of-fold, non-test rows only ---------------------
-    out_of_fold = _out_of_fold(data, cfg, y=y, model_name=cfg.risk.model, predict="classification")
+    out_of_fold = candidate_oof[selected]
     calibrator = ProbabilityCalibrator(cfg=cfg.calibration)
     calibrator.fit(
         out_of_fold["y_true"].to_numpy(),
@@ -591,12 +626,12 @@ def train_risk(cfg: ExperimentConfig, data: MultiTaskData | None = None) -> dict
     save_bundle(
         cfg.artifacts.risk_dir,
         model=RiskClassifierAdapter(
-            estimator, is_tree=cfg.risk.model in {"random_forest", "lightgbm", "xgboost"}
+            estimator, is_tree=selected in {"random_forest", "lightgbm", "xgboost"}
         ),
         preprocessing=pipeline,
         cfg=cfg,
         task="failure_risk_classification",
-        model_name=cfg.risk.model,
+        model_name=selected,
         dataset_fingerprint=_dataset_fingerprint(cfg),
         metrics={
             "out_of_fold_raw": oof_metrics_raw,
@@ -639,7 +674,12 @@ def train_risk(cfg: ExperimentConfig, data: MultiTaskData | None = None) -> dict
     write_table(curve, reports / "risk_reliability_curve.csv")
 
     return {
-        "model": cfg.risk.model,
+        "model": selected,
+        "configured_model": cfg.risk.model,
+        "selection_scheme": "leave-one-battery-out over non-test cells; maximise raw PR-AUC",
+        "selection_scores_pr_auc": {
+            name: round(score, 5) for name, score in selection_scores.items()
+        },
         "horizon_cycles": cfg.risk.horizon_cycles,
         "passes_acceptance_gate": passes_gate,
         "calibration": calibrator.to_dict(),
@@ -689,8 +729,14 @@ def calibrate_uncertainty(
     predicted = inverse_transform_target(out_of_fold["y_pred"].to_numpy(), cfg)
 
     stage_values = out_of_fold["stage_value"].to_numpy()
+    calibration_groups = out_of_fold["battery_id"].to_numpy()
     estimator = ConformalIntervalEstimator(cfg=cfg.uncertainty, target_name=cfg.target.name)
-    estimator.fit(truth, predicted, life_fraction=stage_values)
+    estimator.fit(
+        truth,
+        predicted,
+        life_fraction=stage_values,
+        groups=calibration_groups,
+    )
 
     # --- honest coverage: cross-conformal, never on the fitting rows ---------
     # Applying the fitted quantile back to the residuals it was fitted from
@@ -807,7 +853,12 @@ def _cross_conformal_frame(
             )
             continue
         fold = ConformalIntervalEstimator(cfg=cfg.uncertainty, target_name=cfg.target.name)
-        fold.fit(truth[rest], predicted[rest], life_fraction=stage_values[rest])
+        fold.fit(
+            truth[rest],
+            predicted[rest],
+            life_fraction=stage_values[rest],
+            groups=cells[rest],
+        )
         low, high = fold.intervals(predicted[held], life_fraction=stage_values[held])
         lower[held] = low
         upper[held] = high

@@ -89,6 +89,9 @@ class BundleMetadata:
     thresholds: dict[str, Any] = field(default_factory=dict)
     metrics: dict[str, Any] = field(default_factory=dict)
     dependencies: dict[str, Any] = field(default_factory=dict)
+    #: Interpreter that pickled this bundle, e.g. "3.13.5". Empty on bundles
+    #: built before this field existed, in which case the check is skipped.
+    python_version: str = ""
     notes: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -204,6 +207,7 @@ def save_bundle(
         thresholds=thresholds or {},
         metrics=metrics or {},
         dependencies=environment.get("packages", {}),
+        python_version=str(environment.get("python", "")),
         notes=notes,
     )
 
@@ -266,6 +270,8 @@ def load_bundle(
             f"supports {BUNDLE_SCHEMA_VERSION}. Rebuild the bundle."
         )
 
+    _check_interpreter(metadata, path)
+
     model = load_pickle(path / MODEL_FILE)
     preprocessing = load_pickle(path / PREPROCESSING_FILE)
     if not isinstance(preprocessing, FeaturePipeline):
@@ -316,6 +322,36 @@ def load_bundle(
         calibrator=calibrator,
         uncertainty=uncertainty,
         path=path,
+    )
+
+
+def _check_interpreter(metadata: BundleMetadata, path: Path) -> None:
+    """Refuse a bundle pickled by a different Python minor version.
+
+    A pickle carries module paths, and the standard library moves them between
+    minor releases. A bundle written on 3.13 and loaded on 3.12 fails with
+    ``ModuleNotFoundError: No module named 'pathlib._local'`` — an error that
+    says nothing about the actual problem and sends the reader looking for a
+    missing dependency. This check turns it into a sentence naming both
+    versions, which is the difference between a five-minute fix and an hour.
+
+    Bundles built before this field existed carry no interpreter version; the
+    check is skipped for them rather than guessing.
+    """
+    import sys
+
+    recorded = (metadata.python_version or "").strip()
+    if not recorded:
+        return
+    current = f"{sys.version_info.major}.{sys.version_info.minor}"
+    if ".".join(recorded.split(".")[:2]) == current:
+        return
+    raise ArtifactCompatibilityError(
+        f"Bundle {path} was pickled by Python {recorded}; this process is running "
+        f"Python {current}. Pickles are not portable across Python minor versions "
+        "(the standard library moves module paths between them). Either serve it "
+        f"with Python {'.'.join(recorded.split('.')[:2])}, or rebuild the bundle "
+        "with the interpreter that will serve it."
     )
 
 

@@ -1,10 +1,10 @@
 {
   "experiment_name": "battery_rul_v1",
   "environment": {
-    "generated_at": "2026-08-02T11:47:27.877983+00:00",
+    "generated_at": "2026-08-13T10:46:15.616049+00:00",
     "python": "3.13.5",
     "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
-    "git_revision": "cf411df",
+    "git_revision": "985b886",
     "packages": {
       "numpy": "2.3.1",
       "pandas": "2.3.2",
@@ -275,7 +275,13 @@
         50
       ],
       "target_name": "failure_within_horizon",
-      "model": "lightgbm",
+      "model": "auto",
+      "candidates": [
+        "logistic_regression",
+        "random_forest",
+        "lightgbm",
+        "xgboost"
+      ],
       "class_weight_balanced": true,
       "threshold": null,
       "threshold_objective": "f1",
@@ -317,12 +323,14 @@
     "uncertainty": {
       "method": "split_conformal",
       "coverage": 0.9,
+      "calibration_unit": "battery",
       "normalise_by_life_stage": true,
       "stage_edges": [
         0.9,
         0.8
       ],
       "min_calibration_rows": 20,
+      "min_calibration_batteries": 3,
       "cross_conformal_coverage": true
     },
     "calibration": {
@@ -365,6 +373,11 @@
       "multitask_dir": "<project_root>/artifacts/multitask",
       "calibration_dir": "<project_root>/artifacts/calibration",
       "bundle_dir": "<project_root>/artifacts/bundles",
+      "registry_dir": "<project_root>/artifacts/registry",
+      "monitoring_dir": "<project_root>/artifacts/monitoring",
+      "fleet_dir": "<project_root>/artifacts/fleet",
+      "tracking_dir": "<project_root>/artifacts/tracking",
+      "persistence_dir": "<project_root>/artifacts/persistence",
       "schema_version": "2.0",
       "strict_compatibility": true
     },
@@ -377,6 +390,247 @@
       "dashboard_api_url": "http://127.0.0.1:8000",
       "dashboard_mode": "service",
       "request_id_header": "X-Request-ID"
+    },
+    "fleet": {
+      "default_fleet_id": "DEMO-FLEET-01",
+      "max_batteries_per_request": 100,
+      "max_batteries_per_batch": 10000,
+      "max_concurrency": 1,
+      "min_cycles_per_battery": 2,
+      "max_upload_bytes": 26214400,
+      "page_size": 50,
+      "max_page_size": 500,
+      "critical_priorities": [
+        "P0_CRITICAL",
+        "P1_URGENT"
+      ],
+      "low_rul_thresholds": [
+        20,
+        50,
+        100
+      ],
+      "high_risk_thresholds": [
+        0.5,
+        0.8
+      ],
+      "quantiles": [
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        0.9
+      ],
+      "high_critical_count_alert": 5,
+      "ranking": {
+        "risk_weight": 0.3,
+        "rul_weight": 0.2,
+        "rul_lower_weight": 0.2,
+        "soh_weight": 0.15,
+        "trend_weight": 0.05,
+        "uncertainty_weight": 0.05,
+        "quality_weight": 0.05,
+        "rul_reference_cycles": 100,
+        "uncertainty_reference_cycles": 100,
+        "soh_reference_low": 0.7,
+        "soh_reference_high": 1.0,
+        "trend_reference_pct_per_10": 3.0,
+        "score_scale": 100.0,
+        "critical_override_score": 95.0
+      },
+      "maintenance": {
+        "critical_soh": 0.7,
+        "critical_rul_lower_cycles": 5,
+        "critical_risk": 0.85,
+        "urgent_rul_lower_cycles": 15,
+        "urgent_risk": 0.6,
+        "high_rul_lower_cycles": 40,
+        "high_fade_trend_pct_per_10": 1.0,
+        "medium_fade_trend_pct_per_10": 0.5,
+        "monitor_interval_width_cycles": 60.0,
+        "insufficient_quality_classes": [
+          "INSUFFICIENT"
+        ],
+        "inspection_window_cycles": {
+          "P0_CRITICAL": 0,
+          "P1_URGENT": 5,
+          "P2_HIGH": 10,
+          "P3_MEDIUM": 20,
+          "P4_LOW": 0,
+          "P5_MONITOR": 0
+        },
+        "min_cycles_for_rate_estimate": 10,
+        "disclaimer": "Fleet maintenance priority is deterministic decision support derived from model outputs and configurable engineering rules. It is not a schedule, not a safety control, and requires review by a qualified engineer."
+      },
+      "replacement": {
+        "near_term_cycles": 20,
+        "medium_term_cycles": 50,
+        "long_term_cycles": 100,
+        "use_lower_bound": true,
+        "risk_candidate_threshold": 0.6,
+        "soh_candidate_threshold": 0.72,
+        "wide_interval_ratio": 1.0
+      },
+      "workload": {
+        "horizons_cycles": [
+          10,
+          30,
+          50
+        ]
+      }
+    },
+    "monitoring": {
+      "enabled": true,
+      "reference_id": "training_reference",
+      "reference_partition": "train",
+      "max_reference_samples": 50000,
+      "data_quality": {
+        "warning_poor_fraction": 0.1,
+        "critical_poor_fraction": 0.25,
+        "warning_insufficient_fraction": 0.1,
+        "critical_insufficient_fraction": 0.25,
+        "warning_missing_feature_fraction": 0.1,
+        "critical_missing_feature_fraction": 0.3
+      },
+      "drift": {
+        "enabled": true,
+        "numerical_metrics": [
+          "psi",
+          "ks"
+        ],
+        "categorical_metrics": [
+          "chi2",
+          "unseen_rate"
+        ],
+        "psi_thresholds": [
+          0.1,
+          0.25
+        ],
+        "ks_thresholds": [
+          0.1,
+          0.2
+        ],
+        "wasserstein_thresholds": [
+          0.1,
+          0.25
+        ],
+        "js_thresholds": [
+          0.1,
+          0.25
+        ],
+        "unseen_rate_thresholds": [
+          0.01,
+          0.05
+        ],
+        "n_bins": 10,
+        "min_sample_size": 50,
+        "max_features": 200,
+        "multiple_comparison": "benjamini_hochberg",
+        "alpha": 0.05,
+        "fleet_warning_fraction": 0.1,
+        "fleet_critical_fraction": 0.25
+      },
+      "prediction_drift": {
+        "enabled": true,
+        "standardised_mean_shift_thresholds": [
+          0.25,
+          0.5
+        ],
+        "psi_thresholds": [
+          0.1,
+          0.25
+        ],
+        "class_frequency_thresholds": [
+          0.15,
+          0.3
+        ],
+        "interval_width_ratio_thresholds": [
+          1.25,
+          1.75
+        ],
+        "quantiles": [
+          0.1,
+          0.5,
+          0.9
+        ],
+        "min_sample_size": 20,
+        "n_bins": 10
+      },
+      "performance": {
+        "enabled": true,
+        "min_labels": 20,
+        "rul_mae_thresholds": [
+          15.0,
+          30.0
+        ],
+        "soh_mae_thresholds": [
+          0.03,
+          0.06
+        ],
+        "brier_thresholds": [
+          0.15,
+          0.25
+        ],
+        "pr_auc_floor": 0.5,
+        "coverage_tolerance": 0.05,
+        "label_delay_note": "Production monitoring metrics are computed on labels that became available after the prediction was made. They are not comparable with the Milestone 1 and Milestone 2 held-out test metrics, which describe a different partition."
+      },
+      "alerts": {
+        "enabled": true,
+        "muted_types": [],
+        "external_notifications": false,
+        "max_alerts_per_run": 200
+      }
+    },
+    "registry": {
+      "backend": "file",
+      "dir": "<project_root>/artifacts/registry",
+      "registry_file": "models.json",
+      "allow_multiple_production": false,
+      "verify_checksums": true,
+      "promotion": {
+        "require_validation_status": true,
+        "require_artifact_checksum": true,
+        "require_feature_schema_compatible": true,
+        "require_leakage_check": true,
+        "require_inference_smoke_test": true,
+        "require_contract_tests": true,
+        "require_tests_passed": true,
+        "max_rul_mae_regression": 0.05,
+        "max_soh_mae_regression": 0.05,
+        "max_brier_regression": 0.05,
+        "max_pr_auc_regression": 0.02,
+        "min_interval_coverage": 0.8,
+        "max_latency_regression_ratio": 1.5,
+        "max_absolute_rul_mae": null,
+        "allow_auto_promotion": false
+      }
+    },
+    "tracking": {
+      "backend": "file",
+      "dir": "<project_root>/artifacts/tracking",
+      "experiment_name": "battery-fleet",
+      "mlflow_tracking_uri": null,
+      "log_figures": true,
+      "log_raw_data": false
+    },
+    "persistence": {
+      "backend": "sqlite",
+      "database_path": "<project_root>/artifacts/persistence/platform.db",
+      "schema_version": "3.0",
+      "retention_days": 365,
+      "busy_timeout_s": 5.0
+    },
+    "deployment": {
+      "log_level": "INFO",
+      "log_format": "console",
+      "metrics_enabled": true,
+      "metrics_endpoint_enabled": true,
+      "read_only": false,
+      "demo_mode": false,
+      "admin_endpoints_enabled": false,
+      "cors_allow_origins": [],
+      "request_timeout_s": 60.0,
+      "max_request_bytes": 33554432
     }
   },
   "targets": {
@@ -447,16 +701,22 @@
       "target": "rul_cycles",
       "coverage_target": 0.9,
       "n_calibration_rows": 373,
-      "global_quantile": 19.74839,
+      "calibration_unit": "battery",
+      "n_calibration_batteries": 4,
+      "global_quantile": 35.00095,
       "stage_quantiles": {
-        "early": 29.58796,
-        "late": 15.0,
-        "mid": 10.79724
+        "early": 35.00095,
+        "mid": 13.56495
       },
       "stage_counts": {
         "early": 159,
         "late": 70,
         "mid": 144
+      },
+      "stage_battery_counts": {
+        "early": 4,
+        "late": 2,
+        "mid": 4
       },
       "stage_variable": "measured state of health",
       "stage_edges": [
@@ -470,82 +730,82 @@
     },
     "out_of_fold_coverage": {
       "n": 373,
-      "empirical_coverage": 0.76408,
-      "mean_interval_width": 30.6247,
-      "median_interval_width": 22.3262,
+      "empirical_coverage": 0.91689,
+      "mean_interval_width": 44.8089,
+      "median_interval_width": 45.544,
       "by_battery_id": {
         "B0006": {
           "n": 106,
-          "empirical_coverage": 0.95283,
-          "mean_interval_width": 37.5789
+          "empirical_coverage": 1.0,
+          "mean_interval_width": 56.2956
         },
         "B0018": {
           "n": 94,
-          "empirical_coverage": 0.88298,
-          "mean_interval_width": 34.6252
+          "empirical_coverage": 1.0,
+          "mean_interval_width": 44.9609
         },
         "B0033": {
           "n": 101,
-          "empirical_coverage": 0.29703,
-          "mean_interval_width": 17.5628
+          "empirical_coverage": 0.70297,
+          "mean_interval_width": 38.075
         },
         "B0034": {
           "n": 72,
           "empirical_coverage": 0.98611,
-          "mean_interval_width": 33.4864
+          "mean_interval_width": 37.1458
         }
       },
       "by_life_stage": {
         "early": {
           "n": 159,
-          "empirical_coverage": 0.57233,
-          "mean_interval_width": 42.0199
+          "empirical_coverage": 0.81132,
+          "mean_interval_width": 58.2535
         },
         "late": {
           "n": 70,
-          "empirical_coverage": 0.92857,
-          "mean_interval_width": 25.9852
+          "empirical_coverage": 1.0,
+          "mean_interval_width": 54.9727
         },
         "mid": {
           "n": 144,
-          "empirical_coverage": 0.89583,
-          "mean_interval_width": 20.2977
+          "empirical_coverage": 0.99306,
+          "mean_interval_width": 25.0232
         }
       },
       "scheme": "leave-one-cell-out cross-conformal; the quantile applied to each cell was fitted on the other non-test cells only",
-      "in_sample_coverage_for_reference": 0.91689
+      "in_sample_coverage_for_reference": 1.0
     },
     "test_coverage": {
       "n": 122,
-      "empirical_coverage": 0.71311,
-      "mean_interval_width": 41.7632,
-      "median_interval_width": 44.588,
+      "empirical_coverage": 0.95082,
+      "mean_interval_width": 54.1595,
+      "median_interval_width": 68.9823,
       "by_battery_id": {
         "B0005": {
           "n": 122,
-          "empirical_coverage": 0.71311,
-          "mean_interval_width": 41.7632
+          "empirical_coverage": 0.95082,
+          "mean_interval_width": 54.1595
         }
       },
       "by_life_stage": {
         "early": {
           "n": 61,
-          "empirical_coverage": 0.77049,
-          "mean_interval_width": 59.1759
+          "empirical_coverage": 0.90164,
+          "mean_interval_width": 70.0019
         },
         "late": {
           "n": 20,
-          "empirical_coverage": 0.35,
-          "mean_interval_width": 30.0
+          "empirical_coverage": 1.0,
+          "mean_interval_width": 61.2509
         },
         "mid": {
           "n": 41,
-          "empirical_coverage": 0.80488,
-          "mean_interval_width": 21.5945
+          "empirical_coverage": 1.0,
+          "mean_interval_width": 27.1299
         }
       }
     },
-    "meets_nominal_coverage": false
+    "meets_nominal_coverage": true
   },
   "soh": {
     "task": "soh_forecast",
@@ -650,72 +910,80 @@
     "representation": "fraction in [0, 1]"
   },
   "risk": {
-    "model": "lightgbm",
+    "model": "random_forest",
+    "configured_model": "auto",
+    "selection_scheme": "leave-one-battery-out over non-test cells; maximise raw PR-AUC",
+    "selection_scores_pr_auc": {
+      "logistic_regression": 0.8038,
+      "random_forest": 0.83255,
+      "lightgbm": 0.62868,
+      "xgboost": 0.70972
+    },
     "horizon_cycles": 30,
     "passes_acceptance_gate": false,
     "calibration": {
       "method": "isotonic",
       "n_calibration_rows": 373,
       "fitted_on": "validation/calibration partition only",
-      "threshold": 0.48901,
+      "threshold": 0.40909,
       "threshold_selection": {
         "objective": "f1",
-        "precision": 0.5518867924528302,
-        "recall": 0.9435483870967742,
-        "specificity": 0.6184738955823293,
-        "f1": 0.6964285714285715,
-        "objective_value": 0.6964285714285715
+        "precision": 0.6237113402061856,
+        "recall": 0.9758064516129032,
+        "specificity": 0.7068273092369478,
+        "f1": 0.7610062893081762,
+        "objective_value": 0.7610062893081762
       },
       "metrics_before": {
-        "brier": 0.27757,
-        "ece": 0.26943
+        "brier": 0.13268,
+        "ece": 0.14387
       },
       "metrics_after": {
-        "brier": 0.14165,
+        "brier": 0.09989,
         "ece": 0.0
       },
       "n_bins": 10
     },
-    "threshold": 0.489010989010989,
+    "threshold": 0.4090909090909091,
     "out_of_fold_raw": {
       "n": 373,
       "n_positive": 124,
       "positive_rate": 0.3324396782841823,
-      "threshold": 0.489010989010989,
-      "brier": 0.27757156877097744,
-      "ece": 0.26943337246985605,
-      "roc_auc": 0.7848652675216997,
-      "pr_auc": 0.6286797152520628,
+      "threshold": 0.4090909090909091,
+      "brier": 0.13267838309807825,
+      "ece": 0.1438702870485842,
+      "roc_auc": 0.9082458867728981,
+      "pr_auc": 0.832548975364922,
       "roc_auc_cycle_index_baseline": 0.9564386578572355,
       "pr_auc_cycle_index_baseline": 0.9282123507735737,
       "beats_cycle_index_baseline": false,
-      "precision": 0.5739130434782609,
-      "recall": 0.532258064516129,
-      "f1": 0.5523012552301255,
-      "true_negative": 200,
-      "false_positive": 49,
-      "false_negative": 58,
-      "true_positive": 66
+      "precision": 0.7727272727272727,
+      "recall": 0.6854838709677419,
+      "f1": 0.7264957264957265,
+      "true_negative": 224,
+      "false_positive": 25,
+      "false_negative": 39,
+      "true_positive": 85
     },
     "out_of_fold_calibrated": {
       "n": 373,
       "n_positive": 124,
       "positive_rate": 0.3324396782841823,
-      "threshold": 0.489010989010989,
-      "brier": 0.14165070854078898,
-      "ece": 8.512702011871173e-17,
-      "roc_auc": 0.8334466899857494,
-      "pr_auc": 0.6467441895698134,
+      "threshold": 0.4090909090909091,
+      "brier": 0.09988621087172256,
+      "ece": 1.6370580792059948e-17,
+      "roc_auc": 0.9227717320896489,
+      "pr_auc": 0.8295993517992605,
       "roc_auc_cycle_index_baseline": 0.9564386578572355,
       "pr_auc_cycle_index_baseline": 0.9282123507735737,
       "beats_cycle_index_baseline": false,
-      "precision": 0.5518867924528302,
-      "recall": 0.9435483870967742,
-      "f1": 0.6964285714285714,
-      "true_negative": 154,
-      "false_positive": 95,
-      "false_negative": 7,
-      "true_positive": 117,
+      "precision": 0.6237113402061856,
+      "recall": 0.9758064516129032,
+      "f1": 0.7610062893081762,
+      "true_negative": 176,
+      "false_positive": 73,
+      "false_negative": 3,
+      "true_positive": 121,
       "calibration_is_in_sample": true,
       "note": "Calibrated on these rows; Brier and ECE here are in-sample. Read the test-partition figures for out-of-sample calibration quality."
     },
@@ -723,11 +991,11 @@
       "n": 122,
       "n_positive": 31,
       "positive_rate": 0.2540983606557377,
-      "threshold": 0.489010989010989,
-      "brier": 0.09237326162730648,
-      "ece": 0.10130112052587296,
-      "roc_auc": 0.9340659340659341,
-      "pr_auc": 0.7209302325581395,
+      "threshold": 0.4090909090909091,
+      "brier": 0.0689619128848793,
+      "ece": 0.13818310820658497,
+      "roc_auc": 0.9980503367600142,
+      "pr_auc": 0.9915514592933947,
       "roc_auc_cycle_index_baseline": 1.0,
       "pr_auc_cycle_index_baseline": 1.0,
       "beats_cycle_index_baseline": false,
@@ -744,23 +1012,23 @@
       {
         "bin_lower": 0.0,
         "bin_upper": 0.1,
-        "n": 109,
+        "n": 167,
         "mean_predicted": 0.0,
         "observed": 0.0
       },
       {
         "bin_lower": 0.1,
         "bin_upper": 0.2,
-        "n": 52,
-        "mean_predicted": 0.13461538461538464,
-        "observed": 0.1346153846153846
+        "n": 0,
+        "mean_predicted": NaN,
+        "observed": NaN
       },
       {
         "bin_lower": 0.2,
         "bin_upper": 0.30000000000000004,
-        "n": 0,
-        "mean_predicted": NaN,
-        "observed": NaN
+        "n": 12,
+        "mean_predicted": 0.25,
+        "observed": 0.25
       },
       {
         "bin_lower": 0.30000000000000004,
@@ -772,16 +1040,16 @@
       {
         "bin_lower": 0.4,
         "bin_upper": 0.5,
-        "n": 182,
-        "mean_predicted": 0.48901098901098883,
-        "observed": 0.489010989010989
+        "n": 84,
+        "mean_predicted": 0.42857142857142855,
+        "observed": 0.42857142857142855
       },
       {
         "bin_lower": 0.5,
         "bin_upper": 0.6000000000000001,
-        "n": 2,
-        "mean_predicted": 0.5,
-        "observed": 0.5
+        "n": 55,
+        "mean_predicted": 0.5636363636363637,
+        "observed": 0.5636363636363636
       },
       {
         "bin_lower": 0.6000000000000001,
@@ -800,16 +1068,16 @@
       {
         "bin_lower": 0.8,
         "bin_upper": 0.9,
-        "n": 5,
-        "mean_predicted": 0.8,
-        "observed": 0.8
+        "n": 0,
+        "mean_predicted": NaN,
+        "observed": NaN
       },
       {
         "bin_lower": 0.9,
         "bin_upper": 1.0,
-        "n": 23,
-        "mean_predicted": 1.0,
-        "observed": 1.0
+        "n": 55,
+        "mean_predicted": 0.9818181818181818,
+        "observed": 0.9818181818181818
       }
     ]
   },
@@ -1036,11 +1304,11 @@
       }
     }
   },
-  "multitask_reused_existing_artifact": true,
   "timings_s": {
-    "prepare": 0.132,
-    "rul_uncertainty": 20.627,
-    "soh": 27.593,
-    "risk": 4.41
+    "prepare": 0.142,
+    "rul_uncertainty": 21.476,
+    "soh": 28.736,
+    "risk": 8.996,
+    "multitask": 6.22
   }
 }

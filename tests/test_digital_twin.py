@@ -408,6 +408,43 @@ def test_strict_compatibility_can_be_disabled(fitted_bundle):
     assert load_bundle(path, cfg) is not None
 
 
+def test_a_bundle_records_the_interpreter_that_pickled_it(fitted_bundle):
+    """Pickles are not portable across Python minor versions, so the version is
+    part of the bundle's contract."""
+    import sys
+
+    from battery_rul.utils.io import load_json
+
+    path, _ = fitted_bundle
+    recorded = load_json(path / "metadata.json")["python_version"]
+    assert recorded.startswith(f"{sys.version_info.major}.{sys.version_info.minor}")
+
+
+def test_a_bundle_from_another_python_minor_version_is_refused(fitted_bundle):
+    """The alternative is `ModuleNotFoundError: No module named 'pathlib._local'`,
+    which names nothing useful and sends the reader hunting for a dependency."""
+    from battery_rul.utils.io import load_json, save_json
+
+    path, cfg = fitted_bundle
+    payload = load_json(path / "metadata.json")
+    payload["python_version"] = "3.7.9"
+    save_json(payload, path / "metadata.json")
+
+    with pytest.raises(ArtifactCompatibilityError, match="pickled by Python 3.7.9"):
+        load_bundle(path, cfg)
+
+
+def test_a_bundle_without_a_recorded_interpreter_still_loads(fitted_bundle):
+    """Bundles built before the field existed are not retroactively rejected."""
+    from battery_rul.utils.io import load_json, save_json
+
+    path, cfg = fitted_bundle
+    payload = load_json(path / "metadata.json")
+    payload["python_version"] = ""
+    save_json(payload, path / "metadata.json")
+    assert load_bundle(path, cfg) is not None
+
+
 def test_unsupported_schema_version_is_refused(fitted_bundle):
     path, cfg = fitted_bundle
     from battery_rul.utils.io import load_json, save_json

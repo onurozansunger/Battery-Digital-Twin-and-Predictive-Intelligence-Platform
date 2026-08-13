@@ -83,3 +83,98 @@ def labelled_cycles(raw_cycles: pd.DataFrame, cfg: ExperimentConfig) -> pd.DataF
 def nasa_available(repo_root: Path) -> bool:
     mat_dir = repo_root / "data" / "raw" / "nasa" / "mat"
     return mat_dir.is_dir() and any(mat_dir.glob("*.mat"))
+
+
+# ---------------------------------------------------------------------------
+# Milestone 3 — a trained platform, built once per session
+# ---------------------------------------------------------------------------
+@pytest.fixture(scope="session")
+def m3_config(tmp_path_factory) -> ExperimentConfig:
+    """A small configuration rooted in a temporary directory.
+
+    Everything Milestone 3 writes — registry, database, monitoring artifacts —
+    is anchored to ``paths.root``, so a test session never touches the
+    developer's real artifacts. That is the whole reason those paths resolve
+    against the configuration rather than the repository root.
+    """
+    root = tmp_path_factory.mktemp("m3")
+    return load_config(
+        "configs/synthetic.yaml",
+        overrides={
+            "paths.root": str(root),
+            "data.cache_interim": False,
+            "evaluation.nested_enabled": False,
+            "models.enabled": ["ridge", "random_forest"],
+            "features.max_features": 25,
+            "features.rolling_windows": [3, 5],
+            "features.lags": [1, 3],
+            "features.slope_windows": [5],
+            "features.ewm_halflives": [5],
+            "multitask.enabled": False,
+            "uncertainty.min_calibration_rows": 10,
+            "calibration.min_calibration_rows": 10,
+            "explainability.enabled": False,
+            "persistence.backend": "sqlite",
+            "monitoring.drift.min_sample_size": 20,
+            "monitoring.prediction_drift.min_sample_size": 3,
+            "monitoring.performance.min_labels": 5,
+        },
+    )
+
+
+@pytest.fixture(scope="session")
+def m3_platform(m3_config: ExperimentConfig):
+    """Real bundles trained on synthetic cells, plus the processed cycles.
+
+    Session-scoped because building four small models per test module would
+    dominate the suite's runtime. Fixture metrics are **not** model performance
+    and no test asserts a quality number: these tests assert behaviour.
+    """
+    from battery_rul.pipelines import prepare_data
+    from battery_rul.pipelines.milestone_2 import build_bundles, prepare_multitask_data
+
+    prepared = prepare_data.run(m3_config, verify_leakage=False)
+    data = prepare_multitask_data(m3_config, prepared=prepared)
+    build_bundles(m3_config, data)
+    return m3_config, prepared.cycles
+
+
+@pytest.fixture(scope="session")
+def fleet_service(m3_platform):
+    from battery_rul.fleet.inference import FleetInferenceService
+
+    cfg, _ = m3_platform
+    return FleetInferenceService.create(cfg, strict=True)
+
+
+@pytest.fixture(scope="session")
+def fleet_histories(m3_platform):
+    """Validated per-battery histories for the synthetic cohort."""
+    from battery_rul.fleet.ingestion import FleetIngestor
+
+    cfg, cycles = m3_platform
+    label_prefixes = (
+        "rul_",
+        "eol_",
+        "life_",
+        "is_censored",
+        "soh",
+        "capacity_smooth",
+        "reference_capacity",
+        "capacity_fade",
+        "equivalent_full",
+        "failure_within",
+        "split",
+    )
+    frame = cycles.drop(
+        columns=[c for c in cycles.columns if c.startswith(label_prefixes)], errors="ignore"
+    )
+    return FleetIngestor(cfg=cfg).from_frame("TEST-FLEET", frame, source="fixture")
+
+
+@pytest.fixture(scope="session")
+def fleet_snapshot(fleet_service, fleet_histories):
+    ingestion, histories = fleet_histories
+    return fleet_service.create_fleet_snapshot(
+        "TEST-FLEET", histories, ingestion=ingestion, batch_id="test-batch-0001"
+    )

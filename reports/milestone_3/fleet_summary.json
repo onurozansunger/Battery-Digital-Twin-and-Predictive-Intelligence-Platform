@@ -1,0 +1,306 @@
+{
+  "summary": {
+    "fleet_id": "NASA-COHORT",
+    "generated_at_utc": "2026-08-13T10:55:27.023291+00:00",
+    "battery_count": 5,
+    "successfully_processed_count": 5,
+    "failed_count": 0,
+    "insufficient_data_count": 0,
+    "healthy_count": 0,
+    "slightly_degraded_count": 2,
+    "warning_count": 2,
+    "critical_count": 1,
+    "inspection_recommended_count": 5,
+    "replacement_planning_count": 5,
+    "high_priority_battery_ids": [
+      "B0005",
+      "B0006",
+      "B0018",
+      "B0033",
+      "B0034"
+    ],
+    "median_soh": 0.75683,
+    "median_rul": 3.625,
+    "drift_status": "UNKNOWN",
+    "data_quality_status": "OK",
+    "active_model_version": "1.0.0",
+    "is_demo_data": false
+  },
+  "health_distribution": {
+    "counts": {
+      "warning": 2,
+      "critical": 1,
+      "slightly_degraded": 2
+    },
+    "denominator": 5,
+    "unknown_count": 0,
+    "provenance": "derived"
+  },
+  "risk_distribution": {
+    "counts": {
+      "high": 2,
+      "very_high": 3
+    },
+    "denominator": 5,
+    "unknown_count": 0,
+    "quantiles": {
+      "q10": 0.566,
+      "q25": 0.566,
+      "q50": 1.0,
+      "q75": 1.0,
+      "q90": 1.0
+    },
+    "mean": 0.82642,
+    "experimental_model": true,
+    "above_thresholds": {
+      "0.5": 5,
+      "0.8": 3
+    },
+    "provenance": "predicted"
+  },
+  "maintenance_summary": {
+    "priority_counts": {
+      "P0_CRITICAL": 5
+    },
+    "action_counts": {
+      "IMMEDIATE_ENGINEERING_REVIEW": 5
+    },
+    "critical_count": 5,
+    "inspection_recommended_count": 5,
+    "insufficient_data_count": 0,
+    "denominator": 5,
+    "high_risk_battery_ids": [
+      "B0005",
+      "B0006",
+      "B0018",
+      "B0033",
+      "B0034"
+    ],
+    "provenance": "rule_based"
+  },
+  "replacement_summary": {
+    "counts_by_horizon": {
+      "near_term": 5,
+      "medium_term": 0,
+      "long_term": 0,
+      "not_flagged": 0,
+      "unknown": 0
+    },
+    "lower_counts_by_horizon": {
+      "near_term": 2,
+      "medium_term": 3,
+      "long_term": 5
+    },
+    "upper_counts_by_horizon": {
+      "near_term": 5,
+      "medium_term": 5,
+      "long_term": 5
+    },
+    "candidate_count": 5,
+    "denominator": 5,
+    "candidate_battery_ids": [
+      "B0005",
+      "B0006",
+      "B0018",
+      "B0033",
+      "B0034"
+    ],
+    "caveats": [
+      "Replacement horizons are advisory planning input derived from model predictions and configurable thresholds, not a maintenance schedule.",
+      "Remaining-life predictions carry interval-width uncertainty; the lower and upper counts bracket the plan under those intervals.",
+      "No cost, downtime or spares-availability assumption is applied, so these counts must not be converted into financial figures without them."
+    ],
+    "provenance": "rule_based"
+  },
+  "workload_forecast": {
+    "buckets": [
+      {
+        "label": "immediate",
+        "horizon_cycles": 0,
+        "battery_count": 5,
+        "percent_of_evaluated": 100.0,
+        "priority_counts": {
+          "P0_CRITICAL": 5
+        },
+        "lower_count": null,
+        "upper_count": null,
+        "battery_ids": [
+          "B0005",
+          "B0006",
+          "B0018",
+          "B0033",
+          "B0034"
+        ]
+      },
+      {
+        "label": "next_10_cycles",
+        "horizon_cycles": 10,
+        "battery_count": 0,
+        "percent_of_evaluated": 0.0,
+        "priority_counts": {},
+        "lower_count": 0,
+        "upper_count": 5,
+        "battery_ids": []
+      },
+      {
+        "label": "next_30_cycles",
+        "horizon_cycles": 30,
+        "battery_count": 0,
+        "percent_of_evaluated": 0.0,
+        "priority_counts": {},
+        "lower_count": 2,
+        "upper_count": 5,
+        "battery_ids": []
+      },
+      {
+        "label": "next_50_cycles",
+        "horizon_cycles": 50,
+        "battery_count": 0,
+        "percent_of_evaluated": 0.0,
+        "priority_counts": {},
+        "lower_count": 3,
+        "upper_count": 5,
+        "battery_ids": []
+      },
+      {
+        "label": "beyond_50_cycles",
+        "horizon_cycles": null,
+        "battery_count": 0,
+        "percent_of_evaluated": 0.0,
+        "priority_counts": {},
+        "lower_count": null,
+        "upper_count": null,
+        "battery_ids": []
+      },
+      {
+        "label": "monitor_only",
+        "horizon_cycles": null,
+        "battery_count": 0,
+        "percent_of_evaluated": 0.0,
+        "priority_counts": {},
+        "lower_count": null,
+        "upper_count": null,
+        "battery_ids": []
+      },
+      {
+        "label": "insufficient_data",
+        "horizon_cycles": null,
+        "battery_count": 0,
+        "percent_of_evaluated": 0.0,
+        "priority_counts": {},
+        "lower_count": null,
+        "upper_count": null,
+        "battery_ids": []
+      }
+    ],
+    "evaluated_count": 5,
+    "excluded_count": 0,
+    "basis": "Cells at priority P0/P1 are counted as immediate; the remaining cells are bucketed by the RUL interval lower bound where one exists, otherwise by the point estimate.",
+    "caveats": [
+      "A workload forecast, not a schedule: it describes expected demand under the configured policy, and does not account for crew availability, spares, or operational constraints.",
+      "Percentages are of the evaluated fleet, not of the submitted fleet; 0 cell(s) could not be evaluated."
+    ],
+    "provenance": "rule_based"
+  },
+  "fleet_statistics": {
+    "soh_median": 0.75683,
+    "soh_mean": 0.77433,
+    "soh_quantiles": {
+      "q10": 0.7161,
+      "q25": 0.7566,
+      "q50": 0.7568,
+      "q75": 0.8312,
+      "q90": 0.8352
+    },
+    "soh_denominator": 5,
+    "rul_median": 3.625,
+    "rul_mean": 8.669,
+    "rul_quantiles": {
+      "q10": 0.9946,
+      "q25": 1.174,
+      "q50": 3.625,
+      "q75": 16.129,
+      "q90": 19.378
+    },
+    "rul_denominator": 5,
+    "rul_lower_bound_median": 0.0,
+    "interval_width_median": 36.175,
+    "risk_median": 1.0,
+    "risk_mean": 0.82642,
+    "risk_denominator": 5,
+    "below_rul_threshold_counts": {
+      "20": 4,
+      "50": 5,
+      "100": 5
+    },
+    "above_risk_threshold_counts": {
+      "0.5": 5,
+      "0.8": 3
+    },
+    "missingness": {
+      "measured_soh": 0.0,
+      "predicted_rul": 0.0,
+      "rul_lower_bound": 0.0,
+      "failure_risk": 0.0
+    },
+    "provenance": "derived"
+  },
+  "data_quality": {
+    "status": "OK",
+    "quality_class_counts": {
+      "ACCEPTABLE": 2,
+      "GOOD": 3
+    },
+    "mean_quality_score": 0.9,
+    "poor_or_worse_fraction": 0.0,
+    "insufficient_fraction": 0.0,
+    "mean_missing_feature_fraction": 0.0,
+    "per_feature_missing_rate": {},
+    "batteries_with_schema_mismatch": [],
+    "batteries_with_ood_features": [
+      "B0005",
+      "B0006"
+    ],
+    "check_failure_rates": {
+      "cycle_gaps": 0.0,
+      "cycle_ordering": 0.0,
+      "distribution": 0.4,
+      "duplicate_cycles": 0.0,
+      "history_length": 0.0,
+      "missing_features": 0.0,
+      "value_plausibility": 0.0
+    },
+    "denominator": 5,
+    "warnings": [
+      "2 cell(s) have at least one feature outside the training reference range; those predictions are extrapolations. This is an input-range observation, not a drift verdict \u2014 see the feature-drift report for that."
+    ],
+    "provenance": "derived"
+  },
+  "model_metadata": {
+    "active_model_version": "1.0.0",
+    "active_model_name": "elastic_net",
+    "registry_model_name": null,
+    "registry_stage": null,
+    "bundle_versions": {
+      "rul": "1.0.0",
+      "soh": "1.0.0",
+      "risk": "1.0.0"
+    },
+    "feature_pipeline_fingerprint": "c7c0a875626d83e2",
+    "data_version": "53df6f08c6c8",
+    "snapshot_schema_version": "3.0",
+    "battery_snapshot_schema_version": "2.0",
+    "git_revision": "985b886",
+    "package_version": "0.1.0",
+    "risk_horizon_cycles": 30,
+    "end_of_life_definition": {
+      "threshold_fraction_of_reference": 0.7,
+      "reference": "nominal",
+      "persistence_cycles": 3
+    }
+  },
+  "warnings": [
+    "The failure-risk model is marked experimental (it did not beat the cycle-index baseline out of fold). Risk probabilities are reported but were withheld from the maintenance rules."
+  ],
+  "disclaimer": "Fleet intelligence from a research prototype. Rankings, maintenance priorities and replacement horizons are configurable engineering policy applied to model outputs, not validated operational decisions, and not a substitute for battery-management-system protection or qualified engineering review."
+}

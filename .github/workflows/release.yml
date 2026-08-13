@@ -1,0 +1,136 @@
+name: Release
+
+# Manual, or on a version tag. Builds the images, produces release artifacts and
+# their checksums, and attaches them to the run.
+#
+# Nothing is published externally. Pushing to a container registry or to PyPI
+# needs credentials this repository does not hold; the required secrets are
+# documented in docs/SECURITY.md rather than invented here. Add the publish step
+# when the secrets exist, not before.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version label for the artifacts (e.g. v1.0.0)"
+        required: true
+        default: "v0.0.0-dev"
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    name: Quality gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Lint, format, types
+        run: |
+          ruff check src tests scripts
+          black --check src tests scripts
+          mypy src tests scripts
+      - name: Tests
+        run: pytest -m "not slow" -q
+
+  artifacts:
+    name: Build release artifacts
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip build
+          pip install -e "."
+      - name: Build the wheel and sdist
+        run: python -m build
+
+      - name: Resolve the version label
+        id: version
+        run: |
+          version="${{ github.event.inputs.version }}"
+          if [ -z "${version}" ]; then version="${GITHUB_REF_NAME}"; fi
+          echo "value=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Provenance manifest
+        # Records what this release was built from, so a downloaded artifact can
+        # be tied back to a commit without trusting the filename.
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          dist = pathlib.Path("dist")
+          payload = {
+              "version": os.environ["VERSION"],
+              "git_revision": subprocess.run(
+                  ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+              ).stdout.strip(),
+              "built_at_utc": subprocess.run(
+                  ["date", "-u", "+%Y-%m-%dT%H:%M:%SZ"], capture_output=True, text=True, check=True
+              ).stdout.strip(),
+              "artifacts": {
+                  path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                  for path in sorted(dist.iterdir())
+                  if path.is_file() and path.name != "SHA256SUMS"
+              },
+              "note": (
+                  "Built by the release workflow. No container image or package was "
+                  "published: this repository holds no publishing credentials."
+              ),
+          }
+          pathlib.Path("dist/RELEASE_MANIFEST.json").write_text(json.dumps(payload, indent=2))
+          print(json.dumps(payload, indent=2))
+          PY
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.version.outputs.value }}
+          path: dist/
+          retention-days: 30
+
+  images:
+    name: Build release images
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [api, dashboard, jobs]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build (not pushed)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: ${{ matrix.target }}
+          push: false
+          load: true
+          tags: battery-rul-${{ matrix.target }}:${{ github.ref_name }}
+      - name: Image digest and size
+        run: |
+          docker images battery-rul-${{ matrix.target }} --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+          docker inspect --format '{{.Id}}' battery-rul-${{ matrix.target }}:${{ github.ref_name }}
