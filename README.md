@@ -929,12 +929,19 @@ compose stack healthy, batch and monitoring jobs green under a read-only root
 filesystem. Running them found two real defects (a Python-minor-version pickle
 mismatch and a fatal `mkdir` on a read-only root), both fixed and tested.
 
-Still open: the CI workflows have **not run on a GitHub runner**, no real
-delayed labels exist for this cohort, and no model is at stage `PRODUCTION`
-because the gate refused the only candidate.
+CI: **CI, Docker and Security are green on GitHub-hosted runners.** Their first
+run was not — bandit found a templated SQL statement, mypy turned out to be
+checking nothing because a NumPy stub no longer parses under the pinned Python
+version, and one smoke-job step asserted the opposite of the truth. All fixed.
 
-Recommended release: **`v0.9.0-rc1`**. See the acceptance checklist for what
-`v1.0.0` needs.
+Still true, and documented rather than hidden: no real delayed labels exist for
+a five-cell laboratory cohort, and no model is at stage `PRODUCTION` because the
+gate refused the only candidate on interval coverage.
+
+Recommended release: **`v1.0.0`** — for the *platform*. It does not claim a
+validated model: the registry has no `PRODUCTION` entry, because the gate
+refused the only candidate. See
+[`MILESTONE_3_ACCEPTANCE_CHECKLIST.md`](docs/MILESTONE_3_ACCEPTANCE_CHECKLIST.md).
 
 ---
 

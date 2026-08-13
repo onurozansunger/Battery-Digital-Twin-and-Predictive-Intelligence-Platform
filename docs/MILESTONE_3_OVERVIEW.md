@@ -186,11 +186,11 @@ promotion gate returned REJECTED.
 | --- | --- |
 | Fleet inference, ranking, priority engine | Implemented and tested; **not** validated against real maintenance outcomes |
 | Drift and data-quality monitoring | Implemented and tested on real and synthetic batches |
-| Delayed-label performance monitoring | Implemented; exercised with fixture labels only — no real delayed labels exist for this cohort |
+| Delayed-label performance monitoring | Implemented; exercised with fixture labels only — no real delayed labels exist for this cohort, so real runs report `NO_LABELS` |
 | Model registry, promotion gate, rollback | Implemented and tested; the gate genuinely rejects the current RUL bundle on interval coverage |
 | Persistence (SQLite) | Implemented and tested; single-node |
-| Docker images | Written; **not built in this environment** (no Docker daemon) — see `docs/DOCKER_DEPLOYMENT.md` |
-| CI workflows | Written and YAML-validated; not executed on a runner from here |
+| Docker images | Built and run: non-root, no artifacts baked in, `/ready` 503→200 with mounts, jobs green under a read-only root |
+| CI workflows | **Green on GitHub-hosted runners** (CI, Docker, Security) |
 | Authentication, multi-tenancy, secrets management | **Not implemented.** See `docs/SECURITY.md` |
 
 Read `docs/MILESTONE_3_LIMITATIONS.md` before quoting anything here as a result.

@@ -273,20 +273,46 @@ argument for running them.
 
 ## 9. CI
 
-All four workflows are valid YAML (parsed and job names enumerated):
+**Executed on GitHub-hosted runners.** All three workflows green on
+`milestone-3-fleet-intelligence`:
 
-| Workflow | Jobs |
-| --- | --- |
-| `ci.yml` | contract, hygiene, lint, smoke, test, type-check |
-| `docker.yml` | build, compose-validate |
-| `release.yml` | artifacts, images, quality-gate |
-| `security.yml` | dependency-audit, filesystem-hygiene, secrets, static-analysis |
+| Workflow | Result | Run |
+| --- | --- | --- |
+| CI | **success** | [31686776118](https://github.com/onurozansunger/Battery-Digital-Twin-and-Predictive-Intelligence-Platform/actions/runs/31686776118) |
+| Docker | **success** | [31686776108](https://github.com/onurozansunger/Battery-Digital-Twin-and-Predictive-Intelligence-Platform/actions/runs/31686776108) |
+| Security | **success** | [31686776102](https://github.com/onurozansunger/Battery-Digital-Twin-and-Predictive-Intelligence-Platform/actions/runs/31686776102) |
 
-They have **not** been executed on a GitHub runner from this session. The lint,
-format, type-check and test steps mirror commands that were run locally and are
-reported in §1.
+CI jobs, all successful: Lint and format · type-check · Tests (3.11) ·
+Tests (3.12) · End-to-end pipeline (synthetic) · API contract and model-bundle
+fixtures · Repository hygiene.
 
----
+### Three defects the runners found
+
+The first run was **not** green, which is the argument for running it.
+
+**1. bandit — `B608`, medium severity.** `SQLiteRepository.prune()` built its
+DELETE with an f-string over a table-name loop. The names were a hardcoded
+tuple, so it was not injectable — but a templated DELETE is indistinguishable
+from an injectable one to a reader and to an analyser, and "the analyser is
+wrong here" is how a genuinely injectable query eventually gets waved through.
+Replaced with three literal statements.
+
+**2. mypy could not check anything.** NumPy's own stubs now use `type X = ...`,
+which mypy refuses to parse under the pinned `python_version = "3.11"`, and a
+fatal error in a third-party stub stops the whole run: the job had been
+reporting nothing about this codebase. Moved to `3.12`. The 3.11 guarantee that
+pin existed for is unaffected — the Tests (3.11) job imports every module and
+fails immediately on syntax it cannot parse, which is where the original
+regression was caught in the first place.
+
+**3. My own smoke-job step asserted the opposite of the truth.** It ran
+`sanitise_reports.py --check` on *freshly generated* artifacts and expected no
+absolute paths. The Milestone 1/2 stages write their output locations, and the
+sanitiser is the step that strips them before a commit. The step now performs
+the cycle a developer actually does — sanitise, then verify — while the
+`hygiene` job keeps checking what is already in git.
+
+None of the three was reachable from a green local run.
 
 ## 10. Artifacts produced
 
@@ -322,7 +348,6 @@ because they are the reviewable deliverable.
   every real run. The pathway is exercised with fixture labels only.
 * **No load or multi-replica testing of the containers.** They were run
   single-instance on one laptop.
-* **No CI executed on a runner.**
 * **No production model.** The gate rejects the only candidate.
 * **No multi-replica or load testing.** Latency figures here are single-process
   timings on one laptop.

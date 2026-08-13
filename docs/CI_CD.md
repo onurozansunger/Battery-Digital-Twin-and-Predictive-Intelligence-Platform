@@ -9,10 +9,12 @@ Four workflows. None of them holds a secret, and none publishes anything.
 | `security.yml` | push, PR, weekly cron, manual | dependency-audit, bandit, secrets, path hygiene |
 | `release.yml` | version tag or manual | quality-gate, artifacts, images |
 
-> **Not executed here.** These files were written and their YAML validated on
-> this machine; they have not run on a GitHub runner from this session. The test,
-> lint and type-check steps mirror commands that *were* run locally — see
-> `docs/MILESTONE_3_EVALUATION.md` for what was actually executed.
+> **Executed and green.** All three workflows ran on GitHub-hosted runners for
+> the Milestone 3 branch and passed. Their first run did not: bandit found a
+> templated SQL statement, mypy turned out to be checking nothing because a
+> NumPy stub failed to parse under the pinned Python version, and one smoke-job
+> step asserted the opposite of the truth. All three are fixed; see
+> `docs/MILESTONE_3_EVALUATION.md` §9.
 
 ---
 
@@ -20,9 +22,11 @@ Four workflows. None of them holds a secret, and none publishes anything.
 
 **lint** — `ruff check src tests scripts`, `black --check src tests scripts`.
 
-**type-check** — `mypy src tests scripts`, pinned to `python_version = 3.11`
-(the lowest supported interpreter) so a 3.12-only construct is caught here
-rather than in the 3.11 test job.
+**type-check** — `mypy src tests scripts`, at `python_version = 3.12`. It was
+pinned to 3.11 so that 3.12-only constructs were caught here rather than in the
+3.11 test job; NumPy's stubs now use `type X = ...`, which mypy refuses to parse
+under 3.11, and a fatal error in a third-party stub stops it checking anything.
+The 3.11 guarantee lives in the Tests (3.11) job, which imports every module.
 
 **test** — matrix over Python 3.11 and 3.12, `pytest -m "not slow"` with
 coverage. The one test that parses real `.mat` files is deselected: the 209 MB
@@ -38,7 +42,8 @@ synthetic generator.
 5. **Milestone 3**: register a bundle and evaluate the promotion gate
 6. assert every expected artifact exists
 7. both dashboards import and compile
-8. no absolute machine paths in the generated artifacts
+8. sanitise the generated artifacts, then verify no absolute machine paths
+   remain — the cycle a developer performs before committing
 
 The promotion-gate step ends in `|| true` on purpose. A REJECTED verdict exits
 2, and a gate that fails the build creates pressure to loosen the gate.
@@ -99,7 +104,9 @@ blocking full audit trains reviewers to skip it. The packages that actually face
 untrusted input do block.
 
 Bandit's known-and-accepted findings are the joblib loads, documented in
-`docs/SECURITY.md` — they only ever read paths this process configured.
+`docs/SECURITY.md` — they only ever read paths this process configured. Its
+first run found a real one: a templated DELETE in the retention prune, since
+replaced with literal statements.
 
 The weekly cron matters: a vulnerability disclosed after a merge is still found.
 

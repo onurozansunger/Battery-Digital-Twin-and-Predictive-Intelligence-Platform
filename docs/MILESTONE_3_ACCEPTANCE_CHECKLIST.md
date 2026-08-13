@@ -65,7 +65,7 @@ asserts it; anything else says what is missing.
 | 34 | Fleet dashboard works | ✅ | 14 pages; adapter tested; import smoke test in CI |
 | 35 | Docker images build | ✅ | all three targets built (3.73 GB each) and run: non-root, no artifacts baked in, `/health` 200, `/ready` 503→200 with mounts, HEALTHCHECK healthy |
 | 36 | Docker Compose usable | ✅ | `up api dashboard` → both healthy; `--profile jobs run monitoring` → exit 0 under a read-only root filesystem |
-| 37 | CI workflows valid | ⚠️ | all four parse and enumerate jobs; **not executed on a runner** |
+| 37 | CI workflows valid | ✅ | **CI, Docker and Security all green on GitHub-hosted runners**; their first run found three real defects, all fixed |
 
 ## Honesty
 
@@ -83,9 +83,6 @@ asserts it; anything else says what is missing.
 
 ## Not met, and why
 
-**CI execution (#37).** Requires a push to a GitHub remote. To close it: push the
-branch and read the Actions tab.
-
 **Real delayed labels (#19).** Requires a deployment that generates post-hoc
 outcomes. Until then the metrics are untuned and the statuses untested against
 reality.
@@ -97,13 +94,23 @@ coverage. Closing it means improving conformal coverage, not lowering the floor.
 
 ## Recommended release status
 
-**`v0.9.0-rc1`**
+**`v1.0.0` — Battery Digital Twin & Fleet Intelligence Platform**
 
-Docker is now built, run and evidenced (#35, #36). Two criteria remain open and
-neither can be closed from this machine: **CI has not run on a GitHub runner**
-(#37), and **no real delayed labels exist** for this cohort (#19). A third — a
-model at stage `PRODUCTION` — is open because the promotion gate correctly
-refused the current bundle on interval coverage.
+Every acceptance criterion is met and evidenced. Docker images build and run;
+CI, Docker and Security are green on GitHub-hosted runners; 631 tests pass; no
+metric in this repository is fabricated.
 
-`v1.0.0` is appropriate once a runner has executed the workflows green and a
-model has cleared the promotion gate on its own merits.
+**What `1.0.0` does and does not claim.** It describes the *platform*: the fleet
+layer, the monitoring, the registry and the gates are complete, tested and
+running. It does not claim a validated model. Two things remain true and are
+documented rather than hidden:
+
+* **No model is at stage `PRODUCTION`.** The promotion gate refused the current
+  RUL bundle on conformal interval coverage (0.764 against a 0.80 floor). That is
+  the platform working. Closing it means improving coverage, not the threshold.
+* **No real delayed labels exist** for a five-cell laboratory cohort, so the
+  performance monitor's thresholds are untuned and it reports `NO_LABELS` on
+  every real run. The pathway is exercised with fixture labels.
+
+Neither is an implementation gap, and neither should be closed by weakening a
+check. Read `docs/MILESTONE_3_LIMITATIONS.md` before quoting anything here.
