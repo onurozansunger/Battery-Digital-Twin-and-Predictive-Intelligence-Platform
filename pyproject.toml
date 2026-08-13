@@ -94,9 +94,17 @@ ignore = ["E501", "B008", "N803", "N806"]
 "src/battery_rul/models/baselines.py" = ["ARG002"]
 
 [tool.mypy]
-# The lowest supported interpreter, so 3.12-only constructs are caught here
-# rather than in the 3.11 CI job.
-python_version = "3.11"
+# Was "3.11" — the lowest supported interpreter — so that 3.12-only constructs
+# were caught here rather than in the 3.11 test job. That stopped being possible:
+# NumPy's own stubs now use `type X = ...`, which mypy refuses to parse under
+# python_version = 3.11, and a fatal error in a third-party stub prevents any
+# checking at all ("Found 1 error in 1 file (errors prevented further checking)").
+#
+# The 3.11 guarantee did not disappear with it. The Tests (3.11) CI job imports
+# every module in this package, so 3.12-only syntax in our own code fails there
+# immediately — which is where the original regression was caught in the first
+# place. This setting was belt to that job's braces, and the belt no longer fits.
+python_version = "3.12"
 # `warn_return_any` fires almost exclusively on values returned from numpy,
 # pandas, torch and sklearn calls whose stubs return Any. Those warnings are
 # noise that trains reviewers to skim the type-check output, which is worse than
