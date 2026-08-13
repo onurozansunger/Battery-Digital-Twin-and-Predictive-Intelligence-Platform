@@ -489,11 +489,21 @@ class SQLiteRepository:
             return 0
         cutoff = datetime.now(UTC).timestamp() - float(days) * 86400.0
         cutoff_iso = datetime.fromtimestamp(cutoff, tz=UTC).isoformat()
+
+        # Three literal statements rather than one f-string over a table-name
+        # loop. The loop was safe — the names were a hardcoded tuple — but it is
+        # indistinguishable from an injectable query to a reader and to a static
+        # analyser, and "it is fine, the analyser is wrong" is how a genuinely
+        # injectable query eventually gets waved through. Spelling them out costs
+        # two lines and leaves nothing to argue about.
+        statements = (
+            "DELETE FROM fleet_snapshots WHERE generated_at_utc < ?",
+            "DELETE FROM monitoring_snapshots WHERE generated_at_utc < ?",
+            "DELETE FROM alerts WHERE generated_at_utc < ?",
+        )
         deleted = 0
-        for table in ("fleet_snapshots", "monitoring_snapshots", "alerts"):
-            cursor = self._execute(
-                f"DELETE FROM {table} WHERE generated_at_utc < ?", (cutoff_iso,)  # noqa: S608
-            )
+        for statement in statements:
+            cursor = self._execute(statement, (cutoff_iso,))
             deleted += cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
         logger.info("Pruned %d row(s) older than %s", deleted, cutoff_iso)
         return deleted
