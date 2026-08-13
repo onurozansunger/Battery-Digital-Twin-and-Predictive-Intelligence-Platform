@@ -33,7 +33,7 @@ jobs:
     name: Compose file is valid
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate docker-compose.yml
         run: docker compose -f docker-compose.yml config --quiet
       - name: Entry point is valid shell
@@ -47,7 +47,7 @@ jobs:
       matrix:
         target: [api, dashboard, jobs]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3
       - name: Build
         uses: docker/build-push-action@v6
