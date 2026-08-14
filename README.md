@@ -13,9 +13,9 @@ Built on the NASA Ames PCoE battery aging dataset. Every milestone's interfaces
 remain intact — regression tests assert it.
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[all,dev]"
 python scripts/download_data.py                                    # ~209 MB
-python scripts/run_pipeline.py --config configs/default.yaml       # Milestone 1
+make all                                                           # Milestone 1 + README tables
 python -m battery_rul.pipelines.run_milestone_2 --config configs/default.yaml
 
 # Milestone 3
@@ -57,12 +57,12 @@ Fifteen-minute tour: [`docs/DEMO_GUIDE.md`](docs/DEMO_GUIDE.md).
 | **Serving** | `FleetInferenceService` calls `BatteryDigitalTwinService` once per cell — one inference path, bundles loaded once per process |
 | **Interfaces** | 15 new API endpoints (including `/metrics` and two administrative ones disabled by default) with pagination and partial success · a 14-page Streamlit fleet dashboard · 8 CLI pipelines |
 | **Platform** | SQLite persistence behind a repository protocol · structured JSON logs · Prometheus `/metrics` · multi-stage Docker (built and run, non-root, read-only rootfs) · four CI workflows |
-| **Tests** | 638 collected, all non-slow tests passing |
+| **Tests** | 640 collected, all non-slow tests passing |
 
 Honest headline from this repository's own run: battery-block conformal
-calibration raises cross-conformal coverage to 0.917, above the 0.80 promotion
-floor. The gate now returns **REQUIRES_REVIEW**, because there is no production
-MAE baseline or configured absolute MAE floor. Nothing is promoted automatically.
+calibration reaches 0.917 marginal coverage, but the worst held-out cell
+(`B0033`) reaches only 0.703 against the 0.80 floor. The gate therefore returns
+**REJECTED**. Nothing is promoted automatically.
 Full evidence: [`docs/MILESTONE_3_EVALUATION.md`](docs/MILESTONE_3_EVALUATION.md).
 
 ---
@@ -186,8 +186,8 @@ ridge does not.
 
 Cross-validation is used because after the data-quality gates the cohort is five
 cells — a single holdout would put **one** cell in test, and the metric would
-swing on which cell was drawn. It demonstrably does: Ridge finishes **last on the
-validation cell and first on the test cell** (see §8).
+swing on which cell was drawn. It demonstrably does: GRU wins the validation
+selection while Transformer has the best test RMSE (see §8).
 
 Random row-level splitting is not used anywhere. On this data it produces R²
 above 0.99 and means nothing: consecutive cycles of one cell are near-duplicates,
@@ -349,84 +349,106 @@ study is reproducible from a git revision.
 
 ## 8. Results
 
+<!-- BEGIN AUTO-GENERATED RESULTS -->
+
 ### 8.1 The headline: leave-one-battery-out cross-validation
 
-Each of the 5 cells is held out in turn, the feature pipeline is re-fit inside
-every fold, and out-of-fold predictions are pooled. Champion: **Transformer**.
+Each of the 5 cells is held out in turn, the feature pipeline is re-fit
+inside every fold, and out-of-fold predictions are pooled. The model selected
+on the validation partition is **GRU**.
 
 | | MAE | RMSE | R² | Bias | within 10 cycles |
 |---|---|---|---|---|---|
-| **Pooled (400 rows, 5 folds)** | **8.06** | **9.93** | **0.850** | −1.84 | 61.3 % |
+| **Pooled (400 rows, 5 folds)** | **11.84** | **13.94** | **0.705** | −3.47 | 44.8 % |
 
 | Held-out cell | n | MAE | RMSE | R² | Bias |
 |---|---|---|---|---|---|
-| B0005 | 103 | 6.66 | 8.85 | 0.911 | −4.64 |
-| B0006 | 87 | 6.52 | 8.20 | 0.894 | −2.40 |
-| B0018 | 75 | 8.47 | 9.77 | 0.797 | +8.46 |
-| B0033 | 82 | 11.99 | 13.71 | 0.664 | −8.37 |
-| B0034 | 53 | 6.66 | 7.46 | 0.762 | +0.09 |
+| B0005 | 103 | 11.85 | 13.89 | 0.782 | −11.83 |
+| B0006 | 87 | 10.61 | 11.70 | 0.783 | +0.26 |
+| B0018 | 75 | 11.44 | 11.66 | 0.710 | +11.44 |
+| B0033 | 82 | 16.80 | 19.56 | 0.317 | −16.73 |
+| B0034 | 53 | 6.73 | 9.11 | 0.646 | +6.06 |
 
-Per-fold MAE spans 6.5 – 12.0 cycles (σ = 2.34). **That spread is the honest
-uncertainty on the headline number** — more so than any bootstrap over rows,
-because rows within a cell are strongly correlated.
+Per-fold MAE spans 6.7–16.8 cycles (σ = 3.60). **That spread is the honest
+uncertainty on this model-level estimate**—more so than a bootstrap over rows,
+because rows within a cell are strongly correlated. The repository's primary
+claim remains the nested LOBO estimate in §2, which also includes model selection.
 
 ### 8.2 The single holdout, and why it is not the headline
 
-Train on B0018/B0033/B0034, validate on B0006, test on B0005:
+Train on B0018/B0033/B0034, validate on B0006, test on B0005. GRU was selected
+by validation RMSE (6.42 cycles); the ranking below is
+the untouched test result and therefore must not be used to re-select the model.
 
-| Rank | Model | MAE | RMSE | R² | Bias | α-λ (20 %) |
-|---|---|---|---|---|---|---|
-| 1 | Ridge | **10.83** | **13.19** | **0.860** | +3.60 | 0.590 |
-| 2 | **Transformer** (champion) | 11.62 | 13.82 | 0.784 | **−1.19** | 0.398 |
-| 3 | GRU | 15.10 | 16.86 | 0.678 | +3.42 | 0.350 |
-| 4 | Random Forest | 19.19 | 23.51 | 0.555 | −5.15 | 0.361 |
-| 5 | LightGBM | 20.77 | 23.62 | 0.550 | −4.34 | 0.238 |
-| 6 | LSTM | 19.46 | 23.65 | 0.367 | −6.32 | 0.243 |
-| 7 | XGBoost | 21.22 | 24.24 | 0.526 | −4.55 | 0.246 |
-| 8 | CatBoost | 21.85 | 27.19 | 0.404 | −6.21 | 0.344 |
-| 9 | Linear Regression | 31.13 | 33.80 | 0.079 | −31.13 | 0.008 |
+| Rank | Model | n | MAE | RMSE | R² | Bias | α-λ (20 %) |
+|---|---|---|---|---|---|---|---|
+| 1 | Transformer | 103 | 12.37 | 13.95 | 0.780 | +2.09 | 0.369 |
+| 2 | **GRU (validation-selected champion)** | 103 | 11.69 | 14.74 | 0.754 | −1.48 | 0.447 |
+| 3 | LightGBM | 122 | 12.57 | 17.07 | 0.765 | −10.58 | 0.557 |
+| 4 | Ridge | 122 | 13.90 | 17.57 | 0.751 | −3.10 | 0.484 |
+| 5 | XGBoost | 122 | 13.04 | 17.95 | 0.740 | −11.76 | 0.566 |
+| 6 | Random Forest | 122 | 16.05 | 20.48 | 0.662 | −7.53 | 0.459 |
+| 7 | Linear Regression | 122 | 19.88 | 21.98 | 0.610 | −19.88 | 0.320 |
+| 8 | LSTM | 103 | 20.00 | 22.68 | 0.418 | +2.27 | 0.262 |
+| 9 | CatBoost | 122 | 19.65 | 24.66 | 0.510 | −6.49 | 0.385 |
 
 ![Model comparison](figures/results/model_comparison.png)
 
-**Ridge finishes last on the validation cell (RMSE 24.7) and first on the test
-cell (13.2).** The Transformer does the reverse — best on validation (4.7), second
-on test. With one validation cell and one test cell, model selection is close to
-a coin flip, and this run demonstrates it rather than hiding it. It is the single
-strongest argument for the cross-validated number in §8.1, and for treating any
-"best model" claim at this cohort size with suspicion.
+**GRU is the frozen validation-selected champion, while Transformer ranks first by test RMSE.** This disagreement is
+exactly why the one-cell test partition is not used for model selection and why
+the nested cross-validated procedure in §2 is the repository's headline estimate.
 
 ### 8.3 Like-for-like
 
 Sequence models cannot score a cell's first 19 cycles, and those early rows are
-the hardest — so the table above compares models on different row counts.
-Restricted to the 103 rows every model can score, Ridge's lead widens (MAE 9.19
-vs 11.62) but its bias grows to +7.9 against the Transformer's −1.2. If you need
-an unbiased estimate rather than the lowest error, the ranking flips again.
+often the hardest. The table below restricts every model to the rows all models can
+score, so input coverage cannot silently change the ranking.
+
+| Rank | Model | n | MAE | RMSE | R² | Bias | α-λ (20 %) |
+|---|---|---|---|---|---|---|---|
+| 1 | LightGBM | 103 | 8.70 | 11.21 | 0.858 | −6.34 | 0.660 |
+| 2 | XGBoost | 103 | 9.05 | 12.07 | 0.835 | −7.54 | 0.670 |
+| 3 | Ridge | 103 | 10.28 | 12.26 | 0.830 | +2.51 | 0.573 |
+| 4 | Random Forest | 103 | 11.63 | 13.88 | 0.782 | −1.55 | 0.544 |
+| 5 | Transformer | 103 | 12.37 | 13.95 | 0.780 | +2.09 | 0.369 |
+| 6 | **GRU (validation-selected champion)** | 103 | 11.69 | 14.74 | 0.754 | −1.48 | 0.447 |
+| 7 | CatBoost | 103 | 15.04 | 18.48 | 0.614 | +0.55 | 0.456 |
+| 8 | LSTM | 103 | 20.00 | 22.68 | 0.418 | +2.27 | 0.262 |
+| 9 | Linear Regression | 103 | 21.17 | 23.24 | 0.389 | −21.17 | 0.194 |
+
+On the 103 common rows, LightGBM has the lowest RMSE (11.21); GRU records 14.74. This is a diagnostic comparison, not a second
+selection step.
+
+_Generated from `reports/metrics.json`, `cross_validation_by_battery.csv`,
+`model_comparison.csv`, and `model_comparison_common_rows.csv` by
+`scripts/update_readme_results.py`._
+
+<!-- END AUTO-GENERATED RESULTS -->
 
 ### 8.4 What the model actually gets wrong
 
-![RUL trajectory](figures/results/rul_trajectories_transformer.png)
+![RUL trajectory](figures/results/rul_trajectories_gru.png)
 
 This is the most informative plot in the repository. The prediction tracks truth
-closely from about cycle 60 onward, but early in life the model predicts ~74
-cycles remaining when the true answer is ~100. It is regressing toward the mean
+closely later in life, but around cycle 25 the model predicts ~67 cycles
+remaining when the true answer is ~102. It is regressing toward the mean
 of the training cells, because at cycle 25 a healthy cell genuinely does not yet
 look like one that will last 127 cycles rather than 90.
 
-![Error by RUL band](figures/explainability/error_by_rul_band_transformer.png)
+![Error by RUL band](figures/explainability/error_by_rul_band_gru.png)
 
-The same effect quantified: MAE is 8.5 cycles at RUL 25–50 but 27.8 at RUL 100+,
+The same effect quantified: MAE is 7.0 cycles at RUL 25–50 but 34.2 at RUL 100+,
 and the bias flips sign across the life curve — it **under**-predicts remaining
 life when the cell is fresh and **over**-predicts it near end of life. For a
 maintenance decision that is the wrong way round near EOL, and it is the reason
 §14 puts uncertainty quantification at the top of the roadmap.
 
-![Prediction vs truth](figures/results/pred_vs_truth_transformer.png)
+![Prediction vs truth](figures/results/pred_vs_truth_gru.png)
 
 Predicted against true RUL, with the ±20 % α-λ cone shaded. Points leave the cone
 at both ends of the life curve for the reason above.
 
-![Residual diagnostics](figures/results/residual_analysis_transformer.png)
+![Residual diagnostics](figures/results/residual_analysis_gru.png)
 
 Residual diagnostics: distribution, residual vs true RUL (the clear downward
 trend is the level-dependent bias), a Q–Q plot against the normal, and absolute
@@ -434,17 +456,16 @@ error against state of health.
 
 ### 8.5 Two more things worth noticing
 
-**Gradient boosting loses badly, and that is informative.** Trees extrapolate by
-returning a constant outside their training range, and each unseen cell sits at a
-slightly different capacity scale. The linear and recurrent models extrapolate;
-the trees cannot. Under a chronological split (`configs/chronological.yaml`),
-where the model has already seen each test cell's early life, the ranking
-reverses.
+**Scoreable-row coverage materially changes the ranking.** On each model's own
+rows Transformer has the best test RMSE; on the common 103 rows LightGBM does.
+That is why both tables report `n` and why the common-row comparison is generated
+alongside the ordinary result rather than left to an informal caveat.
 
-**Unregularised OLS collapses** (R² 0.08, bias −31 cycles) while Ridge tops the
-table. With 3 training cells and 80 features, the only thing separating them is
-the L2 penalty. It is a compact demonstration of why the baseline you compare
-against has to be a *tuned* baseline.
+**Selection remains unstable at this cohort size.** GRU wins on the one-cell
+validation partition, Transformer wins by RMSE on the one-cell test partition,
+and nested LOBO selects three different families across five outer folds. The
+repository therefore treats the nested procedure-level estimate as the headline
+and no longer turns one split's ordering into an architectural claim.
 
 ## 9. Explainability
 
@@ -480,13 +501,13 @@ the family-level view above is the one to quote.
 ```bash
 # 1. Environment (Python 3.11+; 3.12 recommended)
 python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[all,dev]"
 
 # 2. Data (~209 MB from the NASA PCoE S3 mirror)
 python scripts/download_data.py
 
 # 3. Everything: prepare → train → evaluate → predict
-python scripts/run_pipeline.py --config configs/default.yaml
+make all                         # pipeline + generated README result tables
 
 # 4. Tests
 pytest                          # full suite
@@ -688,6 +709,11 @@ Summarised — the full treatment is **[`docs/limitations.md`](docs/limitations.
   authenticated gateway and deployment-specific validation.
 * **The failure-risk label is derived, not observed.** The dataset contains no
   safety events, so the model has never seen one and cannot predict one.
+* **Operational evidence is incomplete.** Real monitoring still reports
+  `NO_LABELS`, prediction drift is `UNKNOWN`, and the promotion report has no
+  candidate latency measurement. The SOH test metric covers one held-out cell;
+  the measured five-cell fleet has median RUL 3.625 cycles, while the larger
+  ranking demonstration is synthetic. Healthy-field-fleet ranking is untested.
 
 ## 15. Roadmap
 
@@ -899,11 +925,10 @@ has the diagnostic table.
 The registry records which version is live, who promoted it and when, with a
 checksum over the bundle files that is re-verified both at promotion and every
 service load. Serving resolves the PRODUCTION bundle by task. The gate
-compares a candidate against production on fourteen checks and returns
+compares a candidate against production on fifteen checks and returns
 `APPROVED` / `REQUIRES_REVIEW` / `REJECTED`. The current bundle clears the
-coverage floor (0.917 ≥ 0.800) and returns `REQUIRES_REVIEW`: its MAE is 8.561,
-but there is neither a production baseline nor an absolute first-model floor.
-It remains a candidate pending an explicit human decision.
+marginal coverage floor (0.917 ≥ 0.800) but fails the worst-cell floor
+(B0033: 0.703 < 0.800), so the gate returns `REJECTED`. It remains a candidate.
 
 Promotion is never automatic: `registry.promotion.allow_auto_promotion` is
 false and CI never sets it.
@@ -941,12 +966,12 @@ checking nothing because a NumPy stub no longer parses under the pinned Python
 version, and one smoke-job step asserted the opposite of the truth. All fixed.
 
 Still true, and documented rather than hidden: no real delayed labels exist for
-a five-cell laboratory cohort, and no model is at stage `PRODUCTION` because a
-`REQUIRES_REVIEW` verdict is evidence for a human decision, not auto-promotion.
+a five-cell laboratory cohort, and no model is at stage `PRODUCTION` because the
+candidate fails the worst-cell interval-coverage gate.
 
 Recommended release: **`v1.0.0`** — for the *platform*. It does not claim a
 validated model: the registry has no `PRODUCTION` entry because the candidate
-still requires review. See
+is rejected by the current evidence. See
 [`MILESTONE_3_ACCEPTANCE_CHECKLIST.md`](docs/MILESTONE_3_ACCEPTANCE_CHECKLIST.md).
 
 ---

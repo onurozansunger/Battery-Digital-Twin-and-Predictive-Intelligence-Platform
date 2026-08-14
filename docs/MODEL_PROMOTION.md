@@ -37,6 +37,7 @@ failure makes the first model of a family unpromotable.
 | `risk_pr_auc` | no | ≥ production − `max_pr_auc_regression` |
 | `risk_brier` | no | ≤ production × (1 + `max_brier_regression`) |
 | `interval_coverage` | yes | ≥ `min_interval_coverage` (0.80) |
+| `worst_cell_interval_coverage` | yes | worst reported held-out cell ≥ `min_worst_cell_interval_coverage` (0.80) |
 | `inference_latency` | no | ≤ production × `max_latency_regression_ratio` (1.5) |
 
 Test evidence is **supplied to the gate**, not assumed by it. A gate that
@@ -52,7 +53,7 @@ $ python -m battery_rul.pipelines.evaluate_promotion \
       --model-name battery-rul --model-version 1.0.0 \
       --unit-tests --contract-tests --smoke-test --leakage-check
 
-REQUIRES_REVIEW
+REJECTED
   validation_status          PASS | validation_status=VALIDATED
   artifact_checksum          PASS | matches the registered checksum
   required_metadata          PASS | complete
@@ -63,15 +64,15 @@ REQUIRES_REVIEW
   leakage_check              PASS | passed
   rul_mae                    UNKNOWN | MAE 8.561; no production baseline
   interval_coverage          PASS | empirical coverage 0.917, minimum 0.800
+  worst_cell_interval_coverage FAIL | worst cell B0033 coverage 0.703, minimum 0.800
   inference_latency          UNKNOWN | no candidate latency measurement was supplied
-reasons: ['rul_mae: MAE 8.561; no production baseline']
+reasons: ['worst_cell_interval_coverage: worst cell B0033 coverage 0.703, minimum 0.800']
 ```
 
-This is a real result from the real Milestone 2 RUL bundle. Battery-block
-cross-conformal coverage is 0.917 against a configured floor of 0.80. No check
-fails, but the first model has neither a production MAE baseline nor a configured
-absolute MAE floor, so the gate correctly asks for review. The bundle stays at
-`CANDIDATE`; a `REQUIRES_REVIEW` result is not an automatic deployment decision.
+This is a real result from the real Milestone 2 RUL bundle. Marginal
+battery-block cross-conformal coverage is 0.917, but B0033 covers only 0.703.
+The worst-cell check therefore rejects the candidate instead of allowing the
+aggregate to hide a cohort-specific miss. The bundle stays at `CANDIDATE`.
 
 ---
 

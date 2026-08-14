@@ -65,7 +65,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY pyproject.toml README.md ./
 COPY src/battery_rul/__init__.py src/battery_rul/__init__.py
 RUN pip install --upgrade pip setuptools wheel \
-    && pip install --extra-index-url https://download.pytorch.org/whl/cpu .
+    && pip install --extra-index-url https://download.pytorch.org/whl/cpu ".[all]"
 
 # Now the real source.
 COPY src/ src/

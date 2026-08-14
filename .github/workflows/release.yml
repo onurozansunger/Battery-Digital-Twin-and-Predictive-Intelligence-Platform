@@ -35,7 +35,8 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -r requirements-lock.txt
+          pip install --no-deps -e .
       - name: Lint, format, types
         run: |
           ruff check src tests scripts
@@ -56,8 +57,9 @@ jobs:
           cache: pip
       - name: Install build tooling
         run: |
-          python -m pip install --upgrade pip build
-          pip install -e "."
+          python -m pip install --upgrade pip
+          pip install -r requirements-lock.txt
+          pip install --no-deps -e .
       - name: Build the wheel and sdist
         run: python -m build
 

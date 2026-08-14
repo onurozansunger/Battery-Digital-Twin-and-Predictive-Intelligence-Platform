@@ -17,7 +17,7 @@ built by Milestone 2.
 | Lint | `ruff check src tests scripts` | **pass** — all checks passed |
 | Format | `black --check src tests scripts` | **pass** |
 | Types | `mypy src tests scripts` | **pass** — no issues in 152 source files |
-| Tests | `pytest -m "not slow"` | **pass** — 638 collected, exit code 0 |
+| Tests | `pytest -m "not slow"` | **pass** — 640 collected, exit code 0 |
 | Secrets | `python scripts/check_secrets.py` | **pass** — no credential patterns in 227 tracked files |
 | Paths | `python scripts/sanitise_reports.py --check` | **pass** — no absolute machine paths |
 
@@ -28,7 +28,7 @@ built by Milestone 2.
 | Milestone 1 + 2 baseline (before this milestone) | 349 |
 | Milestone 3 additions | **282** |
 | Registry/conformal/model-selection hardening additions | **7** |
-| **Total** | **638** |
+| **Total** | **640** |
 
 Milestone 3 test files:
 
@@ -48,7 +48,7 @@ Milestone 3 test files:
 | `test_digital_twin.py` (bundle interpreter check) | 3 added to an existing file |
 
 The baseline suite was run **before** any Milestone 3 code was written (349
-passed) and again after (all 638 pass), so the Milestone 1 and 2 regression
+passed) and again after (all 640 pass), so the Milestone 1 and 2 regression
 claim is measured, not assumed.
 
 ---
@@ -160,7 +160,7 @@ Registration succeeded: checksum recorded, bundle path stored **relative**,
 dataset fingerprint `53df6f08c6c8`, feature-schema fingerprint
 `c7c0a875626d83e2`, 80 features.
 
-The gate returned **REQUIRES_REVIEW** (exit code 0):
+The gate returned **REJECTED** (exit code 2):
 
 ```
 validation_status          PASS
@@ -173,13 +173,14 @@ inference_smoke_test       PASS
 leakage_check              PASS
 rul_mae                    UNKNOWN  MAE 8.561; no production baseline
 interval_coverage          PASS     empirical coverage 0.917, minimum 0.800
+worst_cell_interval_coverage FAIL   worst cell B0033 coverage 0.703, minimum 0.800
 inference_latency          UNKNOWN  no candidate latency measurement supplied
 ```
 
-The current RUL bundle passes every measurable required check. Battery-block
-cross-conformal coverage is 0.917; the remaining `UNKNOWN` is RUL MAE because
-there is no production baseline or configured absolute first-model floor. It is
-left at `CANDIDATE`: `REQUIRES_REVIEW` is not an auto-promotion instruction.
+The current RUL bundle's marginal cross-conformal coverage is 0.917, but B0033
+covers only 0.703. The required worst-cell check rejects it. RUL MAE also remains
+`UNKNOWN` because there is no production baseline or configured absolute
+first-model floor. The candidate is left at `CANDIDATE`.
 
 Promotion and rollback are exercised end to end against **fixture bundles** in
 `tests/test_registry.py` (31 tests) and
@@ -326,7 +327,7 @@ artifacts/
 │   ├── alerts/<batch>.json
 │   └── performance_reports/<batch>.json
 ├── registry/models.json                                   battery-rul:1.0.0 CANDIDATE
-│   └── promotion_reports/<name>_<version>_<ts>.json       REQUIRES_REVIEW
+│   └── promotion_reports/<name>_<version>_<ts>.json       REJECTED
 └── persistence/platform.db                                620 KB SQLite
 
 reports/milestone_3/
@@ -362,7 +363,7 @@ because they are the reviewable deliverable.
 ## 12. Reproducing this
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[all,dev]"
 python scripts/download_data.py
 python scripts/run_pipeline.py --config configs/default.yaml
 python -m battery_rul.pipelines.run_milestone_2 --config configs/default.yaml

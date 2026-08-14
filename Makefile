@@ -1,5 +1,5 @@
 # Battery RUL platform — common tasks.
-.PHONY: help install data prepare train tune evaluate predict all fast smoke test test-fast lint type format clean clean-data \
+.PHONY: help install data prepare train tune evaluate predict all readme-results fast smoke test test-fast lint type format clean clean-data \
 	milestone2 snapshot api dashboard lock sanitise \
 	reference fleet monitoring fleet-report milestone3 fleet-dashboard docker-build secrets
 
@@ -11,8 +11,8 @@ FLEET_SOURCE ?= demo
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
-install:  ## Install the package with dev extras
-	pip install -e ".[dev]"
+install:  ## Install the complete platform with development tools
+	pip install -e ".[all,dev]"
 
 data:  ## Download and unpack the NASA dataset (~209 MB)
 	python scripts/download_data.py
@@ -34,6 +34,10 @@ predict:  ## Stage 4 — score the held-out cells
 
 all:  ## Full pipeline with the default config
 	python scripts/run_pipeline.py --config configs/default.yaml
+	python scripts/update_readme_results.py
+
+readme-results:  ## Regenerate README result tables from committed artifacts
+	python scripts/update_readme_results.py
 
 fast:  ## Full pipeline, reduced zoo (~1 minute)
 	python scripts/run_pipeline.py --config configs/fast.yaml
@@ -104,7 +108,7 @@ sanitise:  ## Strip absolute machine paths from committed artifacts
 	python scripts/sanitise_reports.py
 
 lock:  ## Regenerate the pinned environment
-	uv pip compile pyproject.toml --extra dev --universal --python-version 3.13 \
+	uv pip compile pyproject.toml --extra all --extra dev --universal --python-version 3.13 \
 		--output-file requirements-lock.txt
 
 clean:  ## Remove caches and build artifacts

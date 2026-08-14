@@ -1,6 +1,6 @@
 # Evaluation Report — battery_rul_v1
 
-_Generated 2026-08-02 11:42 UTC_
+_Generated 2026-08-14 09:04 UTC_
 
 > NASA li-ion remaining-useful-life baseline. Battery-holdout split, causal feature engineering, nine models compared, champion selected on validation.
 
@@ -280,10 +280,10 @@ Training data is subsampled **by cell**, keeping the earliest cycles, so each po
 
 ```json
 {
-  "generated_at": "2026-08-02T11:42:22.276507+00:00",
+  "generated_at": "2026-08-14T09:04:01.992766+00:00",
   "python": "3.13.5",
   "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
-  "git_revision": "cf411df",
+  "git_revision": "5ec4a8e",
   "packages": {
     "numpy": "2.3.1",
     "pandas": "2.3.2",
@@ -301,20 +301,20 @@ Training data is subsampled **by cell**, keeping the earliest cycles, so each po
 
 | stage | seconds |
 | --- | --- |
-| build_partitions | 0.4090 |
-| cross_validate | 151.7650 |
-| eda_figures | 1.2050 |
-| explainability | 6.9930 |
-| fit:catboost | 0.7490 |
-| fit:gru | 5.1570 |
-| fit:lightgbm | 3.0720 |
-| fit:linear_regression | 0.0020 |
-| fit:lstm | 1.4750 |
-| fit:random_forest | 0.1690 |
-| fit:ridge | 0.0030 |
-| fit:transformer | 5.2110 |
-| fit:xgboost | 0.5470 |
-| learning_curve | 41.1220 |
-| nested_comparison | 856.0510 |
-| result_figures | 3.6130 |
+| build_partitions | 0.3990 |
+| cross_validate | 150.1620 |
+| eda_figures | 1.2690 |
+| explainability | 6.5310 |
+| fit:catboost | 0.7440 |
+| fit:gru | 4.9900 |
+| fit:lightgbm | 3.0130 |
+| fit:linear_regression | 0.0040 |
+| fit:lstm | 1.6100 |
+| fit:random_forest | 0.1790 |
+| fit:ridge | 0.0010 |
+| fit:transformer | 5.2860 |
+| fit:xgboost | 0.5340 |
+| learning_curve | 41.7220 |
+| nested_comparison | 863.1710 |
+| result_figures | 3.6030 |
 

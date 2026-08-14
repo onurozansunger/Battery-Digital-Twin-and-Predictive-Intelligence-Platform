@@ -105,12 +105,13 @@ behaviour, and it is also a reduced evidence base.
 
 ---
 
-## 8. The current RUL bundle requires promotion review
+## 8. The current RUL bundle fails the promotion gate
 
-Battery-block cross-conformal out-of-fold interval coverage is **0.917** against
-a configured floor of **0.80**. The coverage check passes, but the gate returns
-`REQUIRES_REVIEW` because the first model has no production MAE baseline or
-configured absolute MAE floor.
+Battery-block cross-conformal out-of-fold interval coverage is **0.917**, but
+the worst held-out cell (`B0033`) covers only **0.703** against a configured
+worst-cell floor of **0.80**. The promotion gate therefore returns `REJECTED`;
+the aggregate is not allowed to hide this cohort-specific miss. The first model
+also has no production MAE baseline or configured absolute MAE floor.
 
 Nothing in this repository is at stage `PRODUCTION`. The serving path still
 loads the configured artifacts and works; what is missing is the *explicit*
@@ -140,6 +141,9 @@ statement that a reviewed model is live. Promotion remains a human decision.
 | No rate limiting | a proxy must provide it |
 | Single-node SQLite | several API replicas against one database file on a shared volume is untested |
 | No tracing | correlation relies on `batch_id` in structured logs |
+| No candidate latency measurement | the promotion gate reports `inference_latency: UNKNOWN`; serving performance has not been benchmarked |
+| SOH test set is one cell | `n_test_cells = 1`, so its test metric does not establish cross-cell generalisation |
+| Measured fleet is five near-EOL cells | median RUL is 3.625 cycles; ranking on a healthy real fleet has not been tested, and the larger demo is synthetic |
 | Docker images not built here | see the note at the top of `docs/DOCKER_DEPLOYMENT.md` |
 | CI not executed here | workflows are YAML-valid and mirror locally-run commands |
 | Model bundles are pickles | mitigated (configured paths only, checksums, JSON reference), not eliminated |

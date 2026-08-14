@@ -290,7 +290,13 @@ def _candidate(**overrides) -> RegisteredModel:
         "feature_schema_fingerprint": "def456",
         "task": "rul_regression",
         "metrics": {"out_of_fold": {"mae": 10.0}},
-        "uncertainty_metrics": {"empirical_coverage": 0.91},
+        "uncertainty_metrics": {
+            "empirical_coverage": 0.91,
+            "by_battery_id": {
+                "B0005": {"empirical_coverage": 0.90},
+                "B0006": {"empirical_coverage": 0.92},
+            },
+        },
         "calibration_metrics": {"pr_auc": 0.7, "brier_score": 0.12},
     }
     return RegisteredModel(**{**base, **overrides})
@@ -384,6 +390,43 @@ def test_insufficient_interval_coverage_rejects(registry_cfg, tmp_path):
     assert any("coverage" in reason for reason in report.reasons)
 
 
+def test_marginal_coverage_cannot_hide_a_failing_cell(registry_cfg, tmp_path):
+    bundle = _write_bundle(tmp_path, "cand")
+    candidate = _candidate(
+        bundle_path=str(bundle),
+        artifact_checksum=bundle_checksum(bundle),
+        uncertainty_metrics={
+            "empirical_coverage": 0.917,
+            "by_battery_id": {
+                "B0005": {"empirical_coverage": 0.95},
+                "B0033": {"empirical_coverage": 0.703},
+            },
+        },
+    )
+
+    report = _gate(registry_cfg, candidate)
+
+    assert report.decision is PromotionDecision.REJECTED
+    check = next(r for r in report.results if r.name == "worst_cell_interval_coverage")
+    assert check.passed is False
+    assert check.candidate_value == pytest.approx(0.703)
+    assert "B0033" in check.detail
+
+
+def test_missing_per_cell_coverage_requires_review(registry_cfg, tmp_path):
+    bundle = _write_bundle(tmp_path, "cand")
+    candidate = _candidate(
+        bundle_path=str(bundle),
+        artifact_checksum=bundle_checksum(bundle),
+        uncertainty_metrics={"empirical_coverage": 0.91},
+    )
+
+    report = _gate(registry_cfg, candidate)
+
+    assert report.decision is PromotionDecision.REQUIRES_REVIEW
+    assert any("worst_cell_interval_coverage" in reason for reason in report.reasons)
+
+
 def test_a_regressed_candidate_is_rejected_against_production(registry_cfg, tmp_path):
     bundle = _write_bundle(tmp_path, "cand")
     candidate = _candidate(
@@ -427,6 +470,11 @@ def test_every_check_reports_its_own_verdict(registry_cfg, tmp_path):
     report = _gate(registry_cfg, candidate)
 
     names = {check.name for check in report.results}
-    assert {"validation_status", "artifact_checksum", "interval_coverage"} <= names
+    assert {
+        "validation_status",
+        "artifact_checksum",
+        "interval_coverage",
+        "worst_cell_interval_coverage",
+    } <= names
     assert all(check.status in ("PASS", "FAIL", "UNKNOWN") for check in report.results)
     assert all(check.detail for check in report.results)

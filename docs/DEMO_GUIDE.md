@@ -7,7 +7,7 @@ A fifteen-minute tour of the platform, from a clean checkout.
 ## 0. Install
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[all,dev]"
 ```
 
 ## 1. Build the models (once, ~10 minutes)
@@ -91,10 +91,10 @@ python -m battery_rul.pipelines.evaluate_promotion --config configs/default.yaml
     --unit-tests --contract-tests --smoke-test --leakage-check
 ```
 
-On this repository's real bundle the gate returns **REQUIRES_REVIEW**: interval
-coverage passes (0.917 against a 0.80 floor), but the first model has no
-production MAE baseline or configured absolute MAE floor. It remains a candidate
-until a human reviews it; see `docs/MODEL_PROMOTION.md`.
+On this repository's real bundle the gate returns **REJECTED**: marginal
+interval coverage passes (0.917 against a 0.80 floor), but the worst held-out
+cell B0033 covers only 0.703. It remains a candidate; see
+`docs/MODEL_PROMOTION.md`.
 
 ## 7. Serve it
 

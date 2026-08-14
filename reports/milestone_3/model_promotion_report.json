@@ -1,8 +1,8 @@
 {
-  "decision": "REQUIRES_REVIEW",
+  "decision": "REJECTED",
   "model_name": "battery-rul",
   "model_version": "1.0.0",
-  "generated_at_utc": "2026-08-13T10:46:33.228320+00:00",
+  "generated_at_utc": "2026-08-14T08:43:52.782571+00:00",
   "compared_with": null,
   "checks": [
     {
@@ -96,6 +96,15 @@
       "threshold": 0.8
     },
     {
+      "name": "worst_cell_interval_coverage",
+      "status": "FAIL",
+      "required": true,
+      "detail": "worst cell B0033 coverage 0.703, minimum 0.800",
+      "candidate_value": 0.70297,
+      "production_value": null,
+      "threshold": 0.8
+    },
+    {
       "name": "inference_latency",
       "status": "UNKNOWN",
       "required": false,
@@ -106,7 +115,7 @@
     }
   ],
   "reasons": [
-    "rul_mae: MAE 8.561; no production baseline"
+    "worst_cell_interval_coverage: worst cell B0033 coverage 0.703, minimum 0.800"
   ],
   "notes": [
     "No PRODUCTION model exists for this family, so every comparative gate is evaluated against configured absolute floors only. A first promotion is a judgement call, not a regression test."

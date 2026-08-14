@@ -7,7 +7,7 @@
 | **Task** | Regression — remaining useful life of a lithium-ion cell, in discharge cycles |
 | **Version** | 0.1.0 |
 | **Type** | Model zoo of nine estimators; one champion selected per run |
-| **Champion (default config)** | Transformer encoder — attention-pooled, pre-norm, 20-cycle window |
+| **Champion (default config)** | GRU — selected by validation RMSE, 20-cycle window |
 | **Headline metric** | See `reports/metrics.json → nested_evaluation`. The previously published MAE 8.06 / R² 0.850 figure is **withdrawn** — it predates the Milestone 1.1 hardening and is not comparable. |
 | **Input** | 80 causal features derived from a cell's own charge/discharge/EIS history |
 | **Output** | A single scalar: estimated remaining cycles until 70 % SoH |
@@ -50,15 +50,14 @@ the fact that early-life RUL is nearly unpredictable, and `target.cap_at` enable
 it, but it is off by default so headline numbers remain comparable with the
 raw-RUL literature.
 
-## Architecture — the champion
+## Architecture — the validation-selected champion
 
-A pre-norm Transformer encoder over a 20-cycle sliding window:
+A GRU over a 20-cycle sliding window:
 
-* Linear projection of 80 features to `d_model = 96`
-* Fixed sinusoidal positional encoding (learned embeddings overfit at this sample size)
-* 2 encoder layers, 4 heads, feed-forward 192, dropout 0.15
-* Learned attention pooling over the window, then a 2-layer MLP head
-* ≈162 k parameters
+* 80 causal features per cycle
+* 2 recurrent layers, hidden size 96, dropout 0.15
+* Last-state and mean pooling followed by a normalised MLP head
+* 126,145 fitted parameters in the committed run
 
 Trained with AdamW (lr 2e-3, weight decay 1e-4), Huber loss (δ = 5), gradient
 clipping at 1.0, `ReduceLROnPlateau`, and early stopping on validation loss with
@@ -69,51 +68,26 @@ squared error there drags the whole fit toward the last few cycles of each cell.
 
 ## Performance
 
-Regenerate with `python scripts/run_pipeline.py --config configs/default.yaml`;
+Regenerate with `make all`; it runs the default pipeline and refreshes README §8;
 live numbers are in `reports/metrics.json` and `reports/evaluation_report.md`.
 
-### Headline — leave-one-battery-out cross-validation
+### Current committed results
 
-Each of the 5 cells is held out in turn; the feature pipeline is re-fit inside
-every fold; out-of-fold predictions are pooled.
+The repository's primary estimate is nested leave-one-battery-out evaluation of
+the complete selection procedure: 476 scored rows, MAE 12.51, RMSE 16.33 and
+R² 0.676. For the validation-selected GRU alone, ordinary LOBO over 400
+scoreable rows gives MAE 11.84, RMSE 13.94 and R² 0.705; per-cell MAE ranges
+from 6.73 to 16.80 cycles.
 
-| | MAE | RMSE | R² | Bias | within 10 cycles |
-|---|---|---|---|---|---|
-| **Transformer, pooled (400 rows)** | ~~8.06~~ | ~~9.93~~ | ~~0.850~~ | ~~−1.84~~ | ~~61.3 %~~ |
+On the single untouched test cell, Transformer has the lowest RMSE (13.95) while
+GRU records 14.74. On the 103 commonly scoreable rows, LightGBM has the lowest
+RMSE (11.21). These disagreements are why no one-cell ordering is presented as
+the headline.
 
-> **Withdrawn.** These figures predate Milestone 1.1. They were produced with
-> pre-split feature pruning, an end-of-life rule that accepted an unconfirmed
-> two-cycle crossing at the end of a record, and a champion selected on a
-> one-cell validation partition. The current numbers — including the nested
-> estimate that accounts for model selection — are in `reports/metrics.json` and
-> `reports/nested_model_comparison*.csv`. Do not quote the two side by side; see
-> `docs/MILESTONE_1_1_HARDENING.md`.
-
-| Held-out cell | n | MAE | RMSE | R² | Bias |
-|---|---|---|---|---|---|
-| B0005 | 103 | 6.66 | 8.85 | 0.911 | −4.64 |
-| B0006 | 87 | 6.52 | 8.20 | 0.894 | −2.40 |
-| B0018 | 75 | 8.47 | 9.77 | 0.797 | +8.46 |
-| B0033 | 82 | 11.99 | 13.71 | 0.664 | −8.37 |
-| B0034 | 53 | 6.66 | 7.46 | 0.762 | +0.09 |
-
-Errors are in **cycles**. Per-fold MAE spans 6.5 – 12.0 (σ = 2.34). **Quote that
-spread**, not a bootstrap interval over rows — rows within a cell are correlated,
-so the bootstrap understates the real uncertainty.
-
-### Single battery-holdout (train B0018/B0033/B0034, val B0006, test B0005)
-
-| Model | MAE | RMSE | R² | Bias | α-λ (20 %) |
-|---|---|---|---|---|---|
-| Ridge | 10.83 | 13.19 | 0.860 | +3.60 | 0.590 |
-| **Transformer** (champion) | 11.62 | 13.82 | 0.784 | **−1.19** | 0.398 |
-| GRU | 15.10 | 16.86 | 0.678 | +3.42 | 0.350 |
-| Random Forest | 19.19 | 23.51 | 0.555 | −5.15 | 0.361 |
-| LightGBM | 20.77 | 23.62 | 0.550 | −4.34 | 0.238 |
-| LSTM | 19.46 | 23.65 | 0.367 | −6.32 | 0.243 |
-| XGBoost | 21.22 | 24.24 | 0.526 | −4.55 | 0.246 |
-| CatBoost | 21.85 | 27.19 | 0.404 | −6.21 | 0.344 |
-| Linear Regression | 31.13 | 33.80 | 0.079 | −31.13 | 0.008 |
+README §8 is generated from the committed CSV and JSON artifacts by
+`scripts/update_readme_results.py`; use it for the complete tables. The
+pre-hardening MAE 8.06 / R² 0.850 result remains withdrawn; see
+`docs/MILESTONE_1_1_HARDENING.md`.
 
 ## Factors affecting performance
 
@@ -188,7 +162,7 @@ life but reverses near end of life — exactly where the cost is highest.
 
 ```bash
 python scripts/download_data.py
-python scripts/run_pipeline.py --config configs/default.yaml
+make all
 ```
 
 Seed 42 throughout. `reports/metrics.json` embeds the git revision, Python

@@ -33,7 +33,9 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -e "." pip-audit
+          pip install -r requirements-lock.txt
+          pip install --no-deps -e .
+          pip install pip-audit
       - name: pip-audit
         # Reported, not enforced: this project's dependency tree includes
         # scientific libraries whose advisories are frequently unfixable in the
@@ -88,6 +90,7 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -r requirements-lock.txt
+          pip install --no-deps -e .
       - name: Check committed artifacts
         run: python scripts/sanitise_reports.py --check

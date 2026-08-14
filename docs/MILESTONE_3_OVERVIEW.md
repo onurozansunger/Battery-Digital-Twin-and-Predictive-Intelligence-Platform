@@ -187,7 +187,7 @@ Exit codes: `0` success (including `REQUIRES_REVIEW`), `1` the stage failed,
 | Fleet inference, ranking, priority engine | Implemented and tested; **not** validated against real maintenance outcomes |
 | Drift and data-quality monitoring | Implemented and tested on real and synthetic batches |
 | Delayed-label performance monitoring | Implemented; exercised with fixture labels only — no real delayed labels exist for this cohort, so real runs report `NO_LABELS` |
-| Model registry, promotion gate, rollback | Implemented and tested; the gate genuinely rejects the current RUL bundle on interval coverage |
+| Model registry, promotion gate, rollback | Implemented and tested; the gate rejects the current RUL bundle on worst-cell interval coverage (0.703 < 0.800) |
 | Persistence (SQLite) | Implemented and tested; single-node |
 | Docker images | Built and run: non-root, no artifacts baked in, `/ready` 503→200 with mounts, jobs green under a read-only root |
 | CI workflows | **Green on GitHub-hosted runners** (CI, Docker, Security) |

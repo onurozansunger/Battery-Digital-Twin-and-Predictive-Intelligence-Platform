@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "battery-rul"
 version = "0.1.0"
-description = "Production-grade Remaining Useful Life prediction for lithium-ion batteries."
+description = "Research prototype for battery remaining-useful-life prediction and fleet intelligence."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Onur Ozan Sunger" }]
 keywords = ["battery", "prognostics", "remaining-useful-life", "time-series", "machine-learning"]
 classifiers = [
@@ -32,27 +32,46 @@ dependencies = [
     "seaborn>=0.13",
     "tqdm>=4.66",
     "rich>=13.7",
+    "optuna>=3.5",
+]
+
+[project.optional-dependencies]
+classical = [
     "xgboost>=2.0",
     "lightgbm>=4.1",
     "catboost>=1.2",
-    "optuna>=3.5",
-    "shap>=0.44",
-    "torch>=2.1",
-    # Milestone 2 — serving layer.
+]
+neural = ["torch>=2.1"]
+serving = [
     "fastapi>=0.110",
     "uvicorn>=0.27",
     "httpx>=0.26",
     "streamlit>=1.31",
 ]
-
-[project.optional-dependencies]
+explain = ["shap>=0.44"]
+# Convenience extra for the complete modelling and serving platform. Keeping
+# the named extras above means a core install no longer pulls several GB of
+# neural, booster, explainability and dashboard dependencies.
+all = [
+    "xgboost>=2.0",
+    "lightgbm>=4.1",
+    "catboost>=1.2",
+    "torch>=2.1",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "httpx>=0.26",
+    "streamlit>=1.31",
+    "shap>=0.44",
+]
 dev = [
+    "build>=1.2",
     "pytest>=8.0",
     "pytest-cov>=4.1",
     "ruff>=0.3",
     "black>=24.1",
     "mypy>=1.8",
     "jupyter>=1.0",
+    "uv>=0.9",
 ]
 
 [project.scripts]
@@ -118,7 +137,7 @@ ignore_missing_imports = true
 disallow_untyped_defs = false
 # Notebooks are exploratory and are excluded from every quality gate — see the
 # Ruff configuration below and the CI workflow, which use the same scope.
-exclude = ["^notebooks/", "^build/", "^dist/", " [0-9]\\."]
+exclude = ["^notebooks/", "^build/", "^dist/"]
 
 [[tool.mypy.overrides]]
 # Matplotlib's `subplots()` is typed as returning `Axes | ndarray[Axes]`, so

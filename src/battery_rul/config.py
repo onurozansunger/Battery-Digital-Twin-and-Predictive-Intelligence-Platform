@@ -1287,6 +1287,15 @@ class PromotionGateConfig(_Base):
     #: PR-AUC may fall by at most this much in absolute terms.
     max_pr_auc_regression: float = Field(default=0.02, ge=0.0)
     min_interval_coverage: float = Field(default=0.80, ge=0.0, le=1.0)
+    min_worst_cell_interval_coverage: float = Field(
+        default=0.80,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Minimum empirical coverage on the worst individually reported held-out "
+            "cell. Marginal coverage can hide a severe cohort-specific miss."
+        ),
+    )
     max_latency_regression_ratio: float = Field(default=1.50, gt=1.0)
     #: Absolute floors applied when there is no production model to compare with.
     max_absolute_rul_mae: float | None = Field(default=None)
@@ -1355,12 +1364,6 @@ class DeploymentConfig(_Base):
         description="Refuse every write to persistence and artifacts. For a "
         "container running with a read-only root filesystem.",
     )
-    demo_mode: bool = Field(
-        default=False,
-        description="Dashboard/API demo data is generated and labelled as synthetic. "
-        "Never silently on: a demo fleet mistaken for a real one is the failure this "
-        "flag exists to prevent.",
-    )
     admin_endpoints_enabled: bool = Field(
         default=False, description="Model promotion/rollback over HTTP. Off by default."
     )
@@ -1368,7 +1371,6 @@ class DeploymentConfig(_Base):
         default_factory=list,
         description="Explicit origin allow-list. Empty means no cross-origin access.",
     )
-    request_timeout_s: float = Field(default=60.0, gt=0.0)
     max_request_bytes: int = Field(default=32 * 1024 * 1024, ge=1024)
 
 

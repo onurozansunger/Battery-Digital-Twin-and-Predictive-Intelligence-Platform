@@ -70,7 +70,7 @@ is in `docs/UNCERTAINTY_METHOD.md`.
 ## Reproduction
 
 ```bash
-pip install -e ".[dev]"                                        # or: pip install -r requirements-lock.txt
+pip install -e ".[all,dev]"                                    # or: pip install -r requirements-lock.txt
 python scripts/download_data.py                                # ~209 MB
 python scripts/run_pipeline.py --config configs/default.yaml   # Milestone 1 (+ nested comparison)
 python -m battery_rul.pipelines.run_milestone_2 --config configs/default.yaml

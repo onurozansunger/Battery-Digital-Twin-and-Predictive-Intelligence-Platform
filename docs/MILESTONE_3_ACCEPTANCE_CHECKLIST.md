@@ -9,7 +9,7 @@ asserts it; anything else says what is missing.
 
 | # | Criterion | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | Milestone 1 tests still pass | ✅ | 638 tests collected; baseline was 349 before this milestone |
+| 1 | Milestone 1 tests still pass | ✅ | 640 tests collected; baseline was 349 before this milestone |
 | 2 | Milestone 2 tests still pass | ✅ | same run; `test_milestone_3_regression.py` asserts the M2 service, endpoints, dashboard, schema versions and recommendation engine |
 | 3 | `BatteryDigitalTwinService` remains the battery-level entry point | ✅ | `test_the_fleet_service_reuses_the_battery_level_service`, `test_bundles_are_loaded_once_not_once_per_battery` |
 | 4 | Existing snapshot schemas remain compatible | ✅ | `SNAPSHOT_SCHEMA_VERSION == "2.0"`, `BUNDLE_SCHEMA_VERSION == "2.0"` asserted |
@@ -48,7 +48,7 @@ asserts it; anything else says what is missing.
 | --- | --- | --- | --- |
 | 23 | Experiment tracking implemented | ✅ | file backend default, MLflow optional with fallback; 6 tests |
 | 24 | Model registry implemented | ✅ | serving resolves and checksum-verifies the live bundle by task |
-| 25 | Promotion gate implemented | ✅ | 14 checks; real bundle is `REQUIRES_REVIEW`, coverage 0.917 ≥ 0.800, no MAE baseline |
+| 25 | Promotion gate implemented | ✅ | 15 checks; real bundle is `REJECTED`, worst-cell coverage 0.703 < 0.800 |
 | 26 | Rollback implemented | ✅ | restores the previously *live* version and reloads the current API worker |
 | 27 | Reproducible training and inference | ✅ | config-driven, seeded, fingerprinted; `test_running_the_same_fleet_twice_gives_the_same_numbers` |
 | 28 | Batch / online separation | ✅ | 413 with the batch command past the online limit |
@@ -98,7 +98,7 @@ remains an explicit human action.
 **`v1.0.0` — Battery Digital Twin & Fleet Intelligence Platform**
 
 Every acceptance criterion is met and evidenced. Docker images build and run;
-CI, Docker and Security are green on the recorded GitHub-hosted run; 638 tests
+CI, Docker and Security are green on the recorded GitHub-hosted run; 640 tests
 are collected locally; no
 metric in this repository is fabricated.
 
@@ -108,8 +108,8 @@ running. It does not claim a validated model. Two things remain true and are
 documented rather than hidden:
 
 * **No model is at stage `PRODUCTION`.** Battery-block calibration clears the
-  interval floor (0.917 against 0.80), but the current bundle is
-  `REQUIRES_REVIEW` because no production MAE baseline or absolute floor exists.
+  marginal floor (0.917 against 0.80), but the current bundle is `REJECTED`
+  because worst-cell coverage is 0.703.
 * **No real delayed labels exist** for a five-cell laboratory cohort, so the
   performance monitor's thresholds are untuned and it reports `NO_LABELS` on
   every real run. The pathway is exercised with fixture labels.

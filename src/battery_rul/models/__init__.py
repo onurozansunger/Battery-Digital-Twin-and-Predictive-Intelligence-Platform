@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from battery_rul.models import baselines as _baselines  # noqa: F401  (registers models)
 from battery_rul.models import classical as _classical  # noqa: F401  (registers models)
-from battery_rul.models import neural as _neural  # noqa: F401  (registers models)
+
+try:
+    from battery_rul.models import neural as _neural  # noqa: F401  (registers models)
+except ModuleNotFoundError as exc:  # core installs deliberately omit the neural extra
+    if exc.name != "torch":
+        raise
 from battery_rul.models.base import (
     BaseModel,
     TrainingData,

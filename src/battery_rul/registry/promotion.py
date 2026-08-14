@@ -179,6 +179,7 @@ class PromotionGate:
             )
         results.extend(self._metric_gates(candidate, production, policy))
         results.append(self._coverage(candidate, policy))
+        results.append(self._worst_cell_coverage(candidate, policy))
         results.append(self._latency(candidate_latency_ms, production_latency_ms, policy))
 
         required_failures = [r for r in results if r.required and r.passed is False]
@@ -399,9 +400,9 @@ class PromotionGate:
         return out
 
     def _coverage(self, candidate: RegisteredModel, policy: Any) -> GateResult:
-        coverage = _metric(candidate.uncertainty_metrics, "empirical_coverage") or _metric(
-            candidate.metrics, "out_of_fold_coverage", "empirical_coverage"
-        )
+        coverage = _metric(candidate.uncertainty_metrics, "empirical_coverage")
+        if coverage is None:
+            coverage = _metric(candidate.metrics, "out_of_fold_coverage", "empirical_coverage")
         if coverage is None:
             return GateResult(
                 name="interval_coverage",
@@ -417,6 +418,37 @@ class PromotionGate:
             ),
             candidate_value=coverage,
             threshold=policy.min_interval_coverage,
+        )
+
+    def _worst_cell_coverage(self, candidate: RegisteredModel, policy: Any) -> GateResult:
+        by_cell: Any = (candidate.uncertainty_metrics or {}).get("by_battery_id")
+        if not isinstance(by_cell, dict):
+            nested = (candidate.metrics or {}).get("out_of_fold_coverage") or {}
+            by_cell = nested.get("by_battery_id") if isinstance(nested, dict) else None
+
+        values: list[tuple[str, float]] = []
+        if isinstance(by_cell, dict):
+            for battery_id, cell_metrics in by_cell.items():
+                coverage = _metric(cell_metrics, "empirical_coverage")
+                if coverage is not None:
+                    values.append((str(battery_id), coverage))
+
+        threshold = policy.min_worst_cell_interval_coverage
+        if not values:
+            return GateResult(
+                name="worst_cell_interval_coverage",
+                passed=None,
+                detail="the candidate reports no per-cell empirical interval coverage",
+                threshold=threshold,
+            )
+
+        battery_id, coverage = min(values, key=lambda item: item[1])
+        return GateResult(
+            name="worst_cell_interval_coverage",
+            passed=coverage >= threshold,
+            detail=(f"worst cell {battery_id} coverage {coverage:.3f}, minimum {threshold:.3f}"),
+            candidate_value=coverage,
+            threshold=threshold,
         )
 
     def _latency(
