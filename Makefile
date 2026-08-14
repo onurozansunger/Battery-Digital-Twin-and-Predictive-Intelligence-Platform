@@ -108,7 +108,7 @@ sanitise:  ## Strip absolute machine paths from committed artifacts
 	python scripts/sanitise_reports.py
 
 lock:  ## Regenerate the pinned environment
-	uv pip compile pyproject.toml --extra all --extra dev --universal --python-version 3.13 \
+	uv pip compile pyproject.toml --extra all --extra dev --universal --python-version 3.11 \
 		--output-file requirements-lock.txt
 
 clean:  ## Remove caches and build artifacts
