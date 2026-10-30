@@ -12,7 +12,7 @@ help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
 install:  ## Install the complete platform with development tools
-	pip install -e ".[all,dev]"
+	pip install -c requirements-security.in -e ".[all,dev]"
 
 data:  ## Download and unpack the NASA dataset (~209 MB)
 	python scripts/download_data.py
@@ -109,7 +109,7 @@ sanitise:  ## Strip absolute machine paths from committed artifacts
 
 lock:  ## Regenerate the pinned environment
 	uv pip compile pyproject.toml --extra all --extra dev --universal --python-version 3.11 \
-		--output-file requirements-lock.txt
+		-c requirements-security.in --output-file requirements-lock.txt
 
 clean:  ## Remove caches and build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
