@@ -1,0 +1,16 @@
+# Minimum fixed versions for advisories found in the full dependency lock.
+# Use with -c when compiling requirements-lock.txt; this does not add packages.
+black>=26.10.1
+certifi>=2026.10.18
+filelock>=4.2.1
+fsspec>=2026.6.0
+jupyter-server>=2.21.0
+jupyterlab>=4.6.4
+notebook>=7.6.3
+pillow>=13.0.0
+pytest>=9.0.3
+setuptools>=84.1.0
+torch>=2.13.0
+tornado>=6.6
+urllib3>=2.8.0
+uv>=0.13.4

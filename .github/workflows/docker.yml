@@ -12,6 +12,7 @@ on:
       - "docker-compose.yml"
       - ".dockerignore"
       - "pyproject.toml"
+      - "requirements-security.in"
       - "src/**"
       - ".github/workflows/docker.yml"
   pull_request:
@@ -20,6 +21,7 @@ on:
       - "docker-compose.yml"
       - ".dockerignore"
       - "pyproject.toml"
+      - "requirements-security.in"
       - "src/**"
       - ".github/workflows/docker.yml"
   workflow_dispatch:

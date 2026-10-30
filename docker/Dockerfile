@@ -62,10 +62,10 @@ ENV PATH="/opt/venv/bin:$PATH"
 # is what actually saves the rebuild time; the pip cache only helps when the
 # dependency set itself changes. CI still gets registry-layer caching through
 # buildx.
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md requirements-security.in ./
 COPY src/battery_rul/__init__.py src/battery_rul/__init__.py
 RUN pip install --upgrade pip setuptools wheel \
-    && pip install --extra-index-url https://download.pytorch.org/whl/cpu ".[all]"
+    && pip install -c requirements-security.in --extra-index-url https://download.pytorch.org/whl/cpu ".[all]"
 
 # Now the real source.
 COPY src/ src/
